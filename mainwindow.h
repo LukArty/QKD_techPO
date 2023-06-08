@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <conserial.h>
+#include <QVector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -75,14 +76,31 @@ private slots:
 
     void on_ReadIni_clicked();
 
-    //void on_InitPD_clicked();
-
     void on_InitByPD_clicked();
+
+    void on_PulseLaser_clicked();
+
+    void on_StopLaser_clicked();
+
+    void killLoop() { Flag_ = true; }
+
+    void on_ScanAngles1_clicked();
+
+    void on_ScanAngles2_clicked();
+
+    void on_ScanAngles3_clicked();
+
+    void on_ScanAngles4_clicked();
+
+    void on_MonitoringPD_clicked();
+
+    void on_GetInitParams_clicked();
 
 private:
     Ui::MainWindow *ui;
 
     hwe::Conserial stand_;
-
+    bool Flag_;
+    QVector<double> x,y1,y2;
 };
 #endif // MAINWINDOW_H

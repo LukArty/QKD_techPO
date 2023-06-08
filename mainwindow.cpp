@@ -17,6 +17,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
 DebugLogger::StartLogging("./log.log");
 ui->setupUi(this);
+
+
+ui->widget->xAxis->setRange(0,180);
+ui->widget->yAxis->setRange(0,3000);
 }
 
 
@@ -285,53 +289,26 @@ api::AngleResponse response;
 
 }
 
-void MainWindow::on_GetMaxLaserPowerBut_clicked()
-{
-    api::AdcResponse response;
-    response = stand_.GetMaxLaserPower();
-    ConsoleLog("Выполнена команда GetMaxLaserPower");
-    if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
-        ConsoleLog("Максимальная мощность лазера: "+ QString::number (response.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
-    }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
-
-}
-
 
 void MainWindow::on_SetPlateAngleBut_clicked()
 {
-     api::AngleResponse response;
-     QString idPlate = ui->PlateNumber-> currentText();
-     QString angleValue = ui ->PlateAngleValue -> text();
-     //std::cout << idPlate.toInt() << " " << angleValue.toDouble() << std::endl;
-     response = stand_.SetPlateAngle(idPlate.toInt(), angleValue.toDouble());
+     api::WAnglesResponse response;
+     QString angles1 = ui ->InitAngles1 -> text();
+     QString angles2 = ui ->InitAngles2 -> text();
+     QString angles3 = ui ->InitAngles3 -> text();
+     QString angles4 = ui ->InitAngles4 -> text();
+
+     response = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
      ConsoleLog("Выполнена команда SetPlateAngle");
      if (response.errorCode_ == 0){
          ConsoleLog("Установленны значения:");
-         ConsoleLog("Поворот пластины:"+ idPlate);
-         ConsoleLog("Значение: "+ QString::number (response.angle_));
+         ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.angles_.aHalf_));
+         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
+         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
+         ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.angles_.bQuart_));
          ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
      }
      else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
-}
-
-
-void MainWindow::on_GetStartPlatesAnglesBut_clicked()
-{
-    api::WAnglesResponse response;
-    response = stand_.GetStartPlatesAngles();
-    ConsoleLog("Выполнена команда GetStartPlatesAngles");
-    if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
-        ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.angles_.aHalf_));
-        ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
-        ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
-        ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.angles_.bQuart_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
-    }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
 }
 
 
@@ -399,21 +376,6 @@ void MainWindow::on_GetSignalLevelBut_clicked()
 }
 
 
-void MainWindow::on_GetMaxSignalLevel_clicked()
-{
-    api::SLevelsResponse response;
-    response = stand_.GetMaxSignalLevels();
-    ConsoleLog("Выполнена команда GetMaxSignalLevel");
-    ConsoleLog("Установленны значения:");
-    if(response.errorCode_ == 0){
-        ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.signal_.h_));
-        ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.signal_.v_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
-    }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
-}
-
-
 void MainWindow::on_GetLightNoisesBut_clicked()
 {
     api::SLevelsResponse response;
@@ -423,21 +385,6 @@ void MainWindow::on_GetLightNoisesBut_clicked()
     if(response.errorCode_ == 0){
         ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.signal_.h_));
         ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.signal_.v_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
-    }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
-}
-
-
-void MainWindow::on_GetStartLightNoisesBut_clicked()
-{
-    api::SLevelsResponse response;
-    response = stand_.GetStartLightNoises();
-    ConsoleLog("Выполнена команда GetStartLightNoises");
-    ConsoleLog("Установленны значения:");
-    if(response.errorCode_ == 0){
-        ConsoleLog("Начальная засветка на первом фотодетекторе: "+ QString::number (response.signal_.h_));
-        ConsoleLog("Начальная засветка на втором фотодетекторе: "+ QString::number (response.signal_.v_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
@@ -611,6 +558,495 @@ void MainWindow::on_InitByPD_clicked()
 
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+    }
+    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
+}
+
+void MainWindow::on_PulseLaser_clicked()
+{
+    Flag_ = false;
+    api::AdcResponse response;
+
+        response = stand_.GetLaserPower();
+        response = stand_.SetLaserPower(response.adcResponse_);
+        if(response.errorCode_ == 0){
+        while (Flag_ == false)
+        {
+            response = stand_.SetLaserState(1);
+            response = stand_.SetLaserState(0);
+            QApplication::processEvents();
+            connect( ui->StopLaser, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+        }
+        }
+        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
+}
+
+void MainWindow::on_StopLaser_clicked()
+{
+
+}
+
+
+void MainWindow::on_ScanAngles1_clicked()
+{
+    //очистка предыдущего графика
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    QString angles1 = ui ->Angles1 -> text();
+    QString angles2 = ui ->Angles2 -> text();
+    QString angles3 = ui ->Angles3 -> text();
+    QString angles4 = ui ->Angles4 -> text();
+    float h = 0.3;
+    float n = angles1.toFloat(); //начальный отступ от 0
+    float angles = angles1.toDouble(); // значения для Sendmessage
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+
+    float y1_max = 0,y1_ = 0, y1_min =0;
+    float y2_max = 0,y2_ = 0, y2_min =0;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    for (angles; angles <= n+180;angles +=h)
+    {
+        response  = stand_.Sendmessage({angles,angles2.toFloat(),angles3.toFloat(),angles4.toFloat()},Power);
+        x.push_back(angles-n);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        y1.push_back(y1_);
+        y2.push_back(y2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+    }
+
+    /*for (angles; angles <= n + 180;angles +=h)
+    {
+        x.push_back(angles-n);
+        y1.push_back(angles+50);
+        y2.push_back(angles+2);
+        y1_ = angles+50;
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        y2_ = angles+2;
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+    }*/
+}
+
+void MainWindow::on_ScanAngles2_clicked()
+{
+    //очистка предыдущего графика
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    QString angles1 = ui ->Angles1 -> text();
+    QString angles2 = ui ->Angles2 -> text();
+    QString angles3 = ui ->Angles3 -> text();
+    QString angles4 = ui ->Angles4 -> text();
+    float h = 0.3;
+    float n = angles2.toFloat();
+    float angles = angles2.toDouble();
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+
+    float y1_max = 0,y1_ = 0, y1_min =0;
+    float y2_max = 0,y2_ = 0, y2_min =0;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    for (angles; angles <= n+180;angles +=h)
+    {
+        response  = stand_.Sendmessage({angles1.toFloat(),angles,angles3.toFloat(),angles4.toFloat()},Power);
+        x.push_back(angles-n);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        y1.push_back(y1_);
+        y2.push_back(y2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+    }
+}
+
+void MainWindow::on_ScanAngles3_clicked()
+{
+    //очистка предыдущего графика
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    QString angles1 = ui ->Angles1 -> text();
+    QString angles2 = ui ->Angles2 -> text();
+    QString angles3 = ui ->Angles3 -> text();
+    QString angles4 = ui ->Angles4 -> text();
+    float h = 0.3;
+    float n = angles3.toFloat();
+    float angles = angles3.toDouble();
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+
+    float y1_max = 0,y1_ = 0, y1_min =0;
+    float y2_max = 0,y2_ = 0, y2_min =0;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    for (angles; angles <= n+180;angles +=h)
+    {
+        response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles,angles4.toFloat()},Power);
+        x.push_back(angles-n);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        y1.push_back(y1_);
+        y2.push_back(y2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+    }
+}
+
+void MainWindow::on_ScanAngles4_clicked()
+{
+    //очистка предыдущего графика
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    QString angles1 = ui ->Angles1 -> text();
+    QString angles2 = ui ->Angles2 -> text();
+    QString angles3 = ui ->Angles3 -> text();
+    QString angles4 = ui ->Angles4 -> text();
+    float h = 0.3;
+    float n = angles4.toFloat();
+    float angles = angles4.toDouble();
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+
+    float y1_max = 0,y1_ = 0, y1_min =0;
+    float y2_max = 0,y2_ = 0, y2_min =0;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    for (angles; angles <= n+180;angles +=h)
+    {
+        response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles3.toFloat(),angles},Power);
+        x.push_back(angles-n);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        y1.push_back(y1_);
+        y2.push_back(y2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+    }
+}
+
+void MainWindow::on_MonitoringPD_clicked()
+{
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+
+    api::SLevelsResponse response;
+
+    /*api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;*/
+    Flag_ = false;
+    int time = 0;
+    float y1_max = 0,y1_ = 0, y1_min =0;
+    float y2_max = 0,y2_ = 0, y2_min =0;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    if(response.errorCode_ == 0){
+    while (Flag_ == false)
+    {
+        /*response  = stand_.Sendmessage({0,0,0,0},Power);
+        x.push_back(time++);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;*/
+
+        response = stand_.GetSignalLevels();
+        x.push_back(time++);
+        y1_ = response.signal_.h_;
+        y2_ = response.signal_.v_;
+        y1.push_back(y1_);
+        y2.push_back(y2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+
+        ui->widget->xAxis->setRange(0 ,time + 10);
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+        QApplication::processEvents();
+        connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+    }
+    }
+    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
+   /* while (Flag_ == false)
+    {
+        x.push_back(time++);
+        y1.push_back(time+50);
+        y2.push_back(time+2);
+        y1_ = time+50;
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        y2_ = time+2;
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+
+        ui->widget->xAxis->setRange(0 ,time + 10);
+        ui->widget->yAxis->setRange(0 ,y1_max + 10);
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+        QApplication::processEvents();
+        connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+    }*/
+}
+
+void MainWindow::on_GetInitParams_clicked()
+{
+    api::InitResponse response;
+    response = stand_.GetInitParams();
+
+    ConsoleLog("Выполнена команда GetInitParams:");
+    if (response.errorCode_ == 0){
+        ConsoleLog("Установленны значения:");
+        ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
+        ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
+        ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.startPlatesAngles_.bHalf_));
+        ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.startPlatesAngles_.bQuart_));
+
+        ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (response.startLightNoises_.h_));
+        ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (response.startLightNoises_.v_));
+
+        ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.maxSignalLevels_.h_));
+        ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
+
+        ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
     }
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
 }
