@@ -34,11 +34,7 @@ private slots:
 
     void on_GetRotateStepBut_clicked();
 
-    void on_GetMaxLaserPowerBut_clicked();
-
     void on_SetPlateAngleBut_clicked();
-
-    void on_GetStartPlatesAnglesBut_clicked();
 
     void on_GetCurPlatesAnglesBut_clicked();
 
@@ -48,11 +44,7 @@ private slots:
 
     void on_GetSignalLevelBut_clicked();
 
-    void on_GetMaxSignalLevel_clicked();
-
     void on_GetLightNoisesBut_clicked();
-
-    void on_GetStartLightNoisesBut_clicked();
 
     void on_SendMessageBut_clicked();
 
@@ -96,7 +88,26 @@ private slots:
 
     void on_GetInitParams_clicked();
 
+    void on_PDRatio_clicked();
+
+    void on_LaserTest_clicked();
+
+    void on_Start_protocol_clicked();
+
+    void on_Auto_Filing_clicked();
+
+    void on_Delete_clicked();
+
+    void on_TestLine_clicked();
+
+    void on_RotateAngles_clicked();
+
 private:
+    float AngleCheck (float angle, float step);
+    QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
+    QStringList ConvertingArray (QString str);
+    int randomBetween(int low, int high);
+    QStringList Random(int n);
     Ui::MainWindow *ui;
 
     hwe::Conserial stand_;

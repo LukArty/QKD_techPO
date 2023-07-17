@@ -87,7 +87,7 @@ api::InitResponse Conserial::InitByPD()
     response.maxSignalLevels_.h_ = pack.parameters_[6]; // <- максимальный уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
     response.maxSignalLevels_.v_ = pack.parameters_[7]; // <- максимальный уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
 
-    response.maxLaserPower_ = pack.parameters_[9];
+    response.maxLaserPower_ = pack.parameters_[8];
     response.errorCode_ = pack.status_;
 
     stand.curAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
@@ -496,7 +496,7 @@ ce::UartResponse Conserial::Twiting (char commandName, int N,... ){
     va_end(temp_params);
 
     int count = 0;
-    while (count<9) {
+    while (count<3) {
         //SendUart      //Посылаем запрос МК
         switch (N) {
         case 0:
@@ -527,7 +527,7 @@ ce::UartResponse Conserial::Twiting (char commandName, int N,... ){
     pack.status_= CheckStatus(pack.status_);
     delete [] params;
     return pack;
-};
+}
 
 //Функция передачи по uart
 uint16_t Conserial:: SendUart (char commandName,int N,...){
@@ -578,15 +578,19 @@ uint8_t Conserial::CheckStatus(uint8_t status){
         break;//Успех
         case 2:
         cout<<"Количество принятых параметров превышает допустимый предел"<<endl;
+        errorCode = 3;
          break;
         case 4:
         cout<<"Необнаружена метка конца пакета"<<endl;
+        errorCode = 3;
          break;
         case 8:
         cout<<"Неизвестный ID  Команды"<<endl;
+        errorCode = 3;
          break;
         case 16:
         cout<<"Несоответствие CRC"<<endl;
+        errorCode = 3;
          break;
         case 17:
         errorCode = 1; //Проблема с подключением
