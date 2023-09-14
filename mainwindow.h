@@ -102,9 +102,20 @@ private slots:
 
     void on_RotateAngles_clicked();
 
+    void on_MonitoringSend_clicked();
+
+    void on_MonitorNoises_clicked();
+
+    void on_Test_Oleg_clicked();
+
+    void on_Test_Speed_2_clicked();
+
+    void on_Scan_step_clicked();
+
 private:
     float AngleCheck (float angle, float step);
     QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
+    QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_);
     QStringList ConvertingArray (QString str);
     int randomBetween(int low, int high);
     QStringList Random(int n);
@@ -112,6 +123,6 @@ private:
 
     hwe::Conserial stand_;
     bool Flag_;
-    QVector<double> x,y1,y2;
+    QVector<double> x,y1,y2,y3;
 };
 #endif // MAINWINDOW_H

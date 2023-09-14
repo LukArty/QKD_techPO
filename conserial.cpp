@@ -69,17 +69,17 @@ api::InitResponse Conserial::InitByPD()
     api::InitResponse response; // Структура для формирования ответа
     response.errorCode_ = 0;
     uint16_t tempTimeOut_ = 900;
-    uint16_t tempData = stand.timeoutTime_;
-    stand.timeoutTime_ = tempTimeOut_;
+    uint16_t tempData = standOptions.timeoutTime_;
+    standOptions.timeoutTime_ = tempTimeOut_;
 
     ce::UartResponse pack;
     pack = Twiting(dict_.find("Init")->second, 0);
 
     // Заполняем поля структуры
-    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * stand.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * stand.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * stand.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * stand.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
+    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
+    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
+    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
+    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
 
     response.startLightNoises_.h_ = pack.parameters_[4]; // <- начальная засветка детектора, принимающего горизонтальную поляризацию
     response.startLightNoises_.v_ = pack.parameters_[5]; //<- начальная засветка детектора, принимающего вертикальную поляризацию
@@ -87,11 +87,14 @@ api::InitResponse Conserial::InitByPD()
     response.maxSignalLevels_.h_ = pack.parameters_[6]; // <- максимальный уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
     response.maxSignalLevels_.v_ = pack.parameters_[7]; // <- максимальный уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
 
-    response.maxLaserPower_ = pack.parameters_[8];
+    response.maxLaserPower_ = pack.parameters_[9];
     response.errorCode_ = pack.status_;
 
-    stand.curAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
-    stand.timeoutTime_ = tempData;
+    standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+    standOptions.startLightNoises_ = response.startLightNoises_;
+    standOptions.maxSignalLevels_ = response.maxSignalLevels_;
+    standOptions.maxLaserPower_ = response.maxLaserPower_;
+    standOptions.timeoutTime_ = tempData;
     return debug.Return(response); // Возвращаем сформированный ответ
 }
 
@@ -106,10 +109,10 @@ api::InitResponse Conserial::InitByButtons(WAngles<angle_t> angles)
     pack = Twiting(dict_.find("InitByButtons")->second, 4, steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
 
     // Заполняем поля структуры
-    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * stand.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * stand.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * stand.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * stand.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
+    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
+    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
+    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
+    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
 
     response.startLightNoises_.h_ = pack.parameters_[4]; // <- начальная засветка детектора, принимающего горизонтальную поляризацию
     response.startLightNoises_.v_ = pack.parameters_[5]; //<- начальная засветка детектора, принимающего вертикальную поляризацию
@@ -120,8 +123,10 @@ api::InitResponse Conserial::InitByButtons(WAngles<angle_t> angles)
     response.maxLaserPower_ = pack.parameters_[8];
     response.errorCode_ = pack.status_;
 
-    stand.maxLaserPower_ = response.maxLaserPower_;
-    stand.curAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+    standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+    standOptions.startLightNoises_ = response.startLightNoises_;
+    standOptions.maxSignalLevels_ = response.maxSignalLevels_;
+    standOptions.maxLaserPower_ = response.maxLaserPower_;
     return debug.Return(response); // Возвращаем сформированный ответ
 }
 
@@ -150,10 +155,10 @@ api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t p
     pack = Twiting(dict_.find("SendMessage")->second, 5, steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_, power);
 
     // Заполняем поля
-    response.newPlatesAngles_.aHalf_  = ((float)pack.parameters_[0]) * stand.rotateStep_; // <- полуволновая пластина "Алисы"     (1я пластинка)
-    response.newPlatesAngles_.aQuart_ = ((float)pack.parameters_[1]) * stand.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-    response.newPlatesAngles_.bHalf_  = ((float)pack.parameters_[2]) * stand.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-    response.newPlatesAngles_.bQuart_ = ((float)pack.parameters_[3]) * stand.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
+    response.newPlatesAngles_.aHalf_  = ((float)pack.parameters_[0]) * standOptions.rotateStep_; // <- полуволновая пластина "Алисы"     (1я пластинка)
+    response.newPlatesAngles_.aQuart_ = ((float)pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
+    response.newPlatesAngles_.bHalf_  = ((float)pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
+    response.newPlatesAngles_.bQuart_ = ((float)pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
 
     response.currentLightNoises_.h_ = pack.parameters_[4]; // <- засветка детектора, принимающего горизонтальную поляризацию
     response.currentLightNoises_.v_ = pack.parameters_[5]; // <- засветка детектора, принимающего вертикальную поляризацию
@@ -163,7 +168,9 @@ api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t p
 
     response.errorCode_ = pack.status_;
 
-    stand.curAngles_ = response.newPlatesAngles_; // Запомнили текущие значения углов
+    standOptions.curAngles_ = response.newPlatesAngles_; // Запомнили текущие значения углов
+    standOptions.lightNoises = response.currentLightNoises_;
+    standOptions.signalLevels_ = response.currentSignalLevels_;
 
     return debug.Return(response);
 }
@@ -184,7 +191,7 @@ api::AdcResponse Conserial::SetTimeout(adc_t timeout)
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
 
-    stand.timeoutTime_ = response.adcResponse_ ;
+    standOptions.timeoutTime_ = response.adcResponse_ ;
 
     return debug.Return(response);
 }
@@ -205,7 +212,7 @@ api::AdcResponse Conserial::SetLaserState(adc_t on)
 
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
-
+    standOptions.laserState_ = response.adcResponse_;
     return debug.Return(response); // Возвращаем значение, соответствующее установленному состоянию
 }
 
@@ -215,7 +222,7 @@ api::AdcResponse Conserial::SetLaserPower(adc_t power)
     api::AdcResponse response; // Структура для формирования ответа
 
     ce::UartResponse pack;
-    if (power > stand.maxLaserPower_)
+    if (power > standOptions.maxLaserPower_)
     {
         response.errorCode_ = 2; // Принят некорректный входной параметр
         return debug.Return(response);
@@ -226,6 +233,7 @@ api::AdcResponse Conserial::SetLaserPower(adc_t power)
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
 
+    standOptions.laserPower_= response.adcResponse_;
     return debug.Return(response); // Возвращаем значение, соответствующее установленному уровню
 }
 
@@ -245,6 +253,7 @@ api::WAnglesResponse Conserial::SetPlatesAngles(WAngles<angle_t> angles)
     response.angles_ =  CalcAngles(steps);
     response.errorCode_ = pack.status_;
 
+    standOptions.curAngles_ = response.angles_;
     return debug.Return(response); // Возвращаем, чего там получилось установить
 }
 
@@ -327,6 +336,7 @@ api::AdcResponse Conserial::GetLaserState()
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
 
+    standOptions.laserState_ = response.adcResponse_;
     return debug.Return(response); // Возвращаем полученное состояние
 }
 
@@ -342,6 +352,7 @@ api::AdcResponse Conserial::GetLaserPower()
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
 
+    standOptions.laserPower_= response.adcResponse_;
     return debug.Return(response); // Возвращаем полученное состояние
 }
 
@@ -360,6 +371,7 @@ api::WAnglesResponse Conserial::GetPlatesAngles()
     response.angles_ =  CalcAngles(steps);
     response.errorCode_ = pack.status_;
 
+    standOptions.curAngles_ = response.angles_;
     return debug.Return(response);
 }
 
@@ -376,6 +388,7 @@ api::SLevelsResponse Conserial::GetSignalLevels()
     response.signal_.v_ = pack.parameters_[1]; // <- уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазер
     response.errorCode_ = pack.status_;
 
+    standOptions.signalLevels_ = response.signal_;
     return debug.Return(response);
 }
 
@@ -389,9 +402,9 @@ api::AngleResponse Conserial::GetRotateStep()
 
     // Получаем от МК количество шагов для поворота на 360 градусов
     uint16_t steps_ = pack.parameters_[0];
-    if(steps_!=0){  stand.rotateStep_ = 360.0 / steps_;} // Считаем сколько градусов в одном шаге
+    if(steps_!=0){  standOptions.rotateStep_ = 360.0 / steps_;} // Считаем сколько градусов в одном шаге
 
-    response.angle_= stand.rotateStep_;
+    response.angle_= standOptions.rotateStep_;
     response.errorCode_ = pack.status_;
 
     return debug.Return(response);
@@ -410,6 +423,7 @@ api::SLevelsResponse Conserial::GetLightNoises()
     response.signal_.v_ = pack.parameters_[1]; // <- уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
     response.errorCode_ = pack.status_;
 
+    standOptions.lightNoises = response.signal_;
     return debug.Return(response);
 }
 
@@ -439,7 +453,7 @@ api::AdcResponse Conserial::GetTimeout()
     response.adcResponse_ = pack.parameters_[0];
     response.errorCode_ = pack.status_;
 
-    stand.timeoutTime_  = response.adcResponse_;
+    standOptions.timeoutTime_  = response.adcResponse_;
 
     return debug.Return(response);
 }
@@ -456,10 +470,10 @@ api::InitResponse Conserial::GetInitParams(){
 
 
     // Заполняем поля структуры
-    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * stand.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * stand.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * stand.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * stand.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
+    response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
+    response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
+    response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
+    response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
 
     response.startLightNoises_.h_ = pack.parameters_[4]; // <- начальная засветка детектора, принимающего горизонтальную поляризацию
     response.startLightNoises_.v_ = pack.parameters_[5]; //<- начальная засветка детектора, принимающего вертикальную поляризацию
@@ -470,7 +484,10 @@ api::InitResponse Conserial::GetInitParams(){
     response.maxLaserPower_ = pack.parameters_[9];
     response.errorCode_ = pack.status_;
 
-    stand.curAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+    standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+    standOptions.startLightNoises_ = response.startLightNoises_;
+    standOptions.maxSignalLevels_ = response.maxSignalLevels_;
+    standOptions.maxLaserPower_ = response.maxLaserPower_;
 
     return debug.Return(response); // Возвращаем сформированный ответ
 
@@ -485,7 +502,6 @@ ce::UartResponse Conserial::Twiting (char commandName, int N,... ){
         pack.status_= 17;
         return pack;
     }
-
 
     va_list temp_params;
     va_start(temp_params,N);
@@ -520,7 +536,7 @@ ce::UartResponse Conserial::Twiting (char commandName, int N,... ){
         }
 
         //Чтение ответа
-        pack = com_.Read_com(stand.timeoutTime_);
+        pack = com_.Read_com(standOptions.timeoutTime_);
         if (pack.status_==1){break;}
         ++count;
     }
@@ -631,23 +647,23 @@ uint16_t Conserial::CalcStep(angle_t angle, angle_t rotateStep){
 
 WAngles<adc_t> Conserial::CalcSteps(WAngles<angle_t> angles){
 
-    DebugLogger debug(__FUNCTION__, 2, angles, stand.rotateStep_);
+    DebugLogger debug(__FUNCTION__, 2, angles, standOptions.rotateStep_);
     WAngles<adc_t> steps;
-    steps.aHalf_ = CalcStep(angles.aHalf_,stand.rotateStep_);
-    steps.aQuart_ = CalcStep(angles.aQuart_,stand.rotateStep_);
-    steps.bHalf_ = CalcStep(angles.bHalf_,stand.rotateStep_);
-    steps.bQuart_ = CalcStep(angles.bQuart_,stand.rotateStep_);
+    steps.aHalf_ = CalcStep(angles.aHalf_,standOptions.rotateStep_);
+    steps.aQuart_ = CalcStep(angles.aQuart_,standOptions.rotateStep_);
+    steps.bHalf_ = CalcStep(angles.bHalf_,standOptions.rotateStep_);
+    steps.bQuart_ = CalcStep(angles.bQuart_,standOptions.rotateStep_);
     return steps;
 }
 
 WAngles<angle_t> Conserial::CalcAngles(WAngles<adc_t> steps)
 {
-    DebugLogger debug(__FUNCTION__, 2, steps, stand.rotateStep_);
+    DebugLogger debug(__FUNCTION__, 2, steps, standOptions.rotateStep_);
     WAngles<angle_t> angles;
-    angles.aHalf_ = ((float)steps.aHalf_) * stand.rotateStep_;
-    angles.aQuart_ = ((float)steps.aQuart_) * stand.rotateStep_;
-    angles.bHalf_ = ((float)steps.bHalf_) * stand.rotateStep_;
-    angles.bQuart_ = ((float)steps.bQuart_) * stand.rotateStep_;
+    angles.aHalf_ = ((float)steps.aHalf_) * standOptions.rotateStep_;
+    angles.aQuart_ = ((float)steps.aQuart_) * standOptions.rotateStep_;
+    angles.bHalf_ = ((float)steps.bHalf_) * standOptions.rotateStep_;
+    angles.bQuart_ = ((float)steps.bQuart_) * standOptions.rotateStep_;
     return angles;
 }
 

@@ -1,4 +1,4 @@
-#include <mainwindow.h>
+﻿#include <mainwindow.h>
 #include <ui_mainwindow.h>
 #include <QSettings>
 #include <QVariant>
@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <conserial.h>
+#include <stdlib.h>
 using namespace std;
 
 
@@ -26,8 +27,11 @@ QString filename("/home/diana/QKDStand/PD.png");
 
 ui->widget->xAxis->setRange(0,180);
 ui->widget->yAxis->setRange(0,3000);
+ui->ScanAngles1->setVisible(false);
+ui->ScanAngles2->setVisible(false);
+ui->ScanAngles3->setVisible(false);
+ui->ScanAngles4->setVisible(false);
 }
-
 
 MainWindow::~MainWindow()
 {
@@ -42,6 +46,8 @@ ui->CommandConsole->append(text);
 //ui->CommandConsole->scroll()
 }
 
+
+//MyThread thread;
 
 void MainWindow::on_InitBut_clicked()
 {
@@ -505,8 +511,8 @@ void MainWindow::on_InitByButtons_clicked() //
         ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (response.startLightNoises_.h_));
         ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (response.startLightNoises_.v_));
 
-        ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.maxSignalLevels_.h_));
-        ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
+        ConsoleLog("Максимальный уровень сигнала на первом фотодетекторе: "+ QString::number (response.maxSignalLevels_.h_));
+        ConsoleLog("Максимальный уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
 
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
     }
@@ -618,7 +624,7 @@ void MainWindow::on_ScanAngles1_clicked()
     QString angles2 = ui ->Angles2 -> text();
     QString angles3 = ui ->Angles3 -> text();
     QString angles4 = ui ->Angles4 -> text();
-    float h = 0.3;
+    float h = ui ->Step_scan1-> text().toFloat();//значение шага
     float n = angles1.toFloat(); //начальный отступ от 0
     float angles = angles1.toDouble(); // значения для Sendmessage
     response_1 = stand_.GetLaserPower();
@@ -627,87 +633,87 @@ void MainWindow::on_ScanAngles1_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
-    for (angles; angles <= n+180;angles +=h)
-    {
-        response  = stand_.Sendmessage({angles,angles2.toFloat(),angles3.toFloat(),angles4.toFloat()},Power);
-        x.push_back(angles-n);
-        y1_ = response.currentSignalLevels_.h_;
-        y2_ = response.currentSignalLevels_.v_;
-        y1.push_back(y1_);
-        y2.push_back(y2_);
 
-        if(y1_ > y1_max){
-            y1_max =y1_;
-        }
-        if (y1_ < y1_min){
-            y1_min =y1_;
-        }
+   for (angles; angles <= n+180;angles +=h)
+        {
+            response  = stand_.Sendmessage({angles,angles2.toFloat(),angles3.toFloat(),angles4.toFloat()},Power);
+            x.push_back(angles-n);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-        if(y2_ > y2_max){
-            y2_max =y2_;
-        }
-        if (y2_ < y2_min){
-            y2_min =y2_;
-        }
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
 
-        PDH_max = QString::number(y1_max);
-        PDH_min = QString::number(y1_min);
-        PDV_max = QString::number(y2_max);
-        PDV_min = QString::number(y2_min);
-        ui ->PDH_max -> setText(PDH_max);
-        ui ->PDH_min -> setText(PDH_min);
-        ui ->PDV_max -> setText(PDV_max);
-        ui ->PDV_min -> setText(PDV_min);
-        ui ->Cur_PDH -> setText(QString::number(y1_));
-        ui ->Cur_PDV -> setText(QString::number(y2_));
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
 
-        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-        ui->widget->graph(0)->addData(x,y1);
-        ui->widget->graph(1)->addData(x,y2);
-        ui->widget->replot();
+            PDH_max = QString::number(y1_max);
+            PDH_min = QString::number(y1_min);
+            PDV_max = QString::number(y2_max);
+            PDV_min = QString::number(y2_min);
+            ui ->PDH_max -> setText(PDH_max);
+            ui ->PDH_min -> setText(PDH_min);
+            ui ->PDV_max -> setText(PDV_max);
+            ui ->PDV_min -> setText(PDV_min);
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
+
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->addData(x,y1);
+            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->replot();
     }
     api::WAnglesResponse response_2;
     response_2 = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
 
-    /*for (angles; angles <= n + 180;angles +=h)
-    {
-        x.push_back(angles-n);
-        y1.push_back(angles+50);
-        y2.push_back(angles+2);
-        y1_ = angles+50;
-        if(y1_ > y1_max){
-            y1_max =y1_;
-        }
-        if (y1_ < y1_min){
-            y1_min =y1_;
-        }
+            /*for (angles; angles <= n + 180;angles +=h)
+            {
+                x.push_back(angles-n);
+                y1.push_back(angles+50);
+                y2.push_back(angles+2);
+                y1_ = angles+50;
+                if(y1_ > y1_max){
+                    y1_max =y1_;
+                }
+                if (y1_ < y1_min){
+                    y1_min =y1_;
+                }
 
-        y2_ = angles+2;
-        if(y2_ > y2_max){
-            y2_max =y2_;
-        }
-        if (y2_ < y2_min){
-            y2_min =y2_;
-        }
+                y2_ = angles+2;
+                if(y2_ > y2_max){
+                    y2_max =y2_;
+                }
+                if (y2_ < y2_min){
+                    y2_min =y2_;
+                }
 
-        PDH_max = QString::number(y1_max);
-        PDH_min = QString::number(y1_min);
-        PDV_max = QString::number(y2_max);
-        PDV_min = QString::number(y2_min);
-        ui ->PDH_max -> setText(PDH_max);
-        ui ->PDH_min -> setText(PDH_min);
-        ui ->PDV_max -> setText(PDV_max);
-        ui ->PDV_min -> setText(PDV_min);
-        ui ->Cur_PDH -> setText(QString::number(y1_));
-        ui ->Cur_PDV -> setText(QString::number(y2_));
+                PDH_max = QString::number(y1_max);
+                PDH_min = QString::number(y1_min);
+                PDV_max = QString::number(y2_max);
+                PDV_min = QString::number(y2_min);
+                ui ->PDH_max -> setText(PDH_max);
+                ui ->PDH_min -> setText(PDH_min);
+                ui ->PDV_max -> setText(PDV_max);
+                ui ->PDV_min -> setText(PDV_min);
+                ui ->Cur_PDH -> setText(QString::number(y1_));
+                ui ->Cur_PDV -> setText(QString::number(y2_));
 
-        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-        ui->widget->graph(0)->addData(x,y1);
-        ui->widget->graph(1)->addData(x,y2);
-        ui->widget->replot();
-    }*/
+                if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+                else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+                ui->widget->graph(0)->addData(x,y1);
+                ui->widget->graph(1)->addData(x,y2);
+                ui->widget->replot();}*/
 }
 
 void MainWindow::on_ScanAngles2_clicked()
@@ -728,14 +734,13 @@ void MainWindow::on_ScanAngles2_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
-
     api::SendMessageResponse response;
     api::AdcResponse response_1;
     QString angles1 = ui ->Angles1 -> text();
     QString angles2 = ui ->Angles2 -> text();
     QString angles3 = ui ->Angles3 -> text();
     QString angles4 = ui ->Angles4 -> text();
-    float h = 0.3;
+    float h = (ui ->Step_scan2-> text()).toFloat();
     float n = angles2.toFloat();
     float angles = angles2.toDouble();
     response_1 = stand_.GetLaserPower();
@@ -744,45 +749,46 @@ void MainWindow::on_ScanAngles2_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
-    for (angles; angles <= n+180;angles +=h)
-    {
-        response  = stand_.Sendmessage({angles1.toFloat(),angles,angles3.toFloat(),angles4.toFloat()},Power);
-        x.push_back(angles-n);
-        y1_ = response.currentSignalLevels_.h_;
-        y2_ = response.currentSignalLevels_.v_;
-        y1.push_back(y1_);
-        y2.push_back(y2_);
 
-        if(y1_ > y1_max){
-            y1_max =y1_;
-        }
-        if (y1_ < y1_min){
-            y1_min =y1_;
-        }
+        for (angles; angles <= n+180;angles +=h)
+        {
+            response  = stand_.Sendmessage({angles1.toFloat(),angles,angles3.toFloat(),angles4.toFloat()},Power);
+            x.push_back(angles-n);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-        if(y2_ > y2_max){
-            y2_max =y2_;
-        }
-        if (y2_ < y2_min){
-            y2_min =y2_;
-        }
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
 
-        PDH_max = QString::number(y1_max);
-        PDH_min = QString::number(y1_min);
-        PDV_max = QString::number(y2_max);
-        PDV_min = QString::number(y2_min);
-        ui ->PDH_max -> setText(PDH_max);
-        ui ->PDH_min -> setText(PDH_min);
-        ui ->PDV_max -> setText(PDV_max);
-        ui ->PDV_min -> setText(PDV_min);
-        ui ->Cur_PDH -> setText(QString::number(y1_));
-        ui ->Cur_PDV -> setText(QString::number(y2_));
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
 
-        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-        ui->widget->graph(0)->addData(x,y1);
-        ui->widget->graph(1)->addData(x,y2);
-        ui->widget->replot();
+            PDH_max = QString::number(y1_max);
+            PDH_min = QString::number(y1_min);
+            PDV_max = QString::number(y2_max);
+            PDV_min = QString::number(y2_min);
+            ui ->PDH_max -> setText(PDH_max);
+            ui ->PDH_min -> setText(PDH_min);
+            ui ->PDV_max -> setText(PDV_max);
+            ui ->PDV_min -> setText(PDV_min);
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
+
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->addData(x,y1);
+            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->replot();
     }
     api::WAnglesResponse response_2;
     response_2 = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
@@ -812,7 +818,7 @@ void MainWindow::on_ScanAngles3_clicked()
     QString angles2 = ui ->Angles2 -> text();
     QString angles3 = ui ->Angles3 -> text();
     QString angles4 = ui ->Angles4 -> text();
-    float h = 0.3;
+    float h = (ui ->Step_scan3-> text()).toFloat();
     float n = angles3.toFloat();
     float angles = angles3.toDouble();
     response_1 = stand_.GetLaserPower();
@@ -821,45 +827,45 @@ void MainWindow::on_ScanAngles3_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
-    for (angles; angles <= n+180;angles +=h)
-    {
-        response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles,angles4.toFloat()},Power);
-        x.push_back(angles-n);
-        y1_ = response.currentSignalLevels_.h_;
-        y2_ = response.currentSignalLevels_.v_;
-        y1.push_back(y1_);
-        y2.push_back(y2_);
+        for (angles; angles <= n+180;angles +=h)
+        {
+            response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles,angles4.toFloat()},Power);
+            x.push_back(angles-n);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-        if(y1_ > y1_max){
-            y1_max =y1_;
-        }
-        if (y1_ < y1_min){
-            y1_min =y1_;
-        }
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
 
-        if(y2_ > y2_max){
-            y2_max =y2_;
-        }
-        if (y2_ < y2_min){
-            y2_min =y2_;
-        }
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
 
-        PDH_max = QString::number(y1_max);
-        PDH_min = QString::number(y1_min);
-        PDV_max = QString::number(y2_max);
-        PDV_min = QString::number(y2_min);
-        ui ->PDH_max -> setText(PDH_max);
-        ui ->PDH_min -> setText(PDH_min);
-        ui ->PDV_max -> setText(PDV_max);
-        ui ->PDV_min -> setText(PDV_min);
-        ui ->Cur_PDH -> setText(QString::number(y1_));
-        ui ->Cur_PDV -> setText(QString::number(y2_));
+            PDH_max = QString::number(y1_max);
+            PDH_min = QString::number(y1_min);
+            PDV_max = QString::number(y2_max);
+            PDV_min = QString::number(y2_min);
+            ui ->PDH_max -> setText(PDH_max);
+            ui ->PDH_min -> setText(PDH_min);
+            ui ->PDV_max -> setText(PDV_max);
+            ui ->PDV_min -> setText(PDV_min);
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
 
-        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-        ui->widget->graph(0)->addData(x,y1);
-        ui->widget->graph(1)->addData(x,y2);
-        ui->widget->replot();
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->addData(x,y1);
+            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->replot();
     }
     api::WAnglesResponse response_2;
     response_2 = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
@@ -883,14 +889,13 @@ void MainWindow::on_ScanAngles4_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
-
     api::SendMessageResponse response;
     api::AdcResponse response_1;
     QString angles1 = ui ->Angles1 -> text();
     QString angles2 = ui ->Angles2 -> text();
     QString angles3 = ui ->Angles3 -> text();
     QString angles4 = ui ->Angles4 -> text();
-    float h = 0.3;
+    float h = (ui ->Step_scan4-> text()).toFloat();
     float n = angles4.toFloat();
     float angles = angles4.toDouble();
     response_1 = stand_.GetLaserPower();
@@ -898,40 +903,40 @@ void MainWindow::on_ScanAngles4_clicked()
 
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
-    for (angles; angles <= n+180;angles +=h)
-    {
-        response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles3.toFloat(),angles},Power);
-        x.push_back(angles-n);
-        y1_ = response.currentSignalLevels_.h_;
-        y2_ = response.currentSignalLevels_.v_;
-        y1.push_back(y1_);
-        y2.push_back(y2_);
+        for (angles; angles <= n+180;angles +=h)
+         {
+            response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles3.toFloat(),angles},Power);
+            x.push_back(angles-n);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-        if(y1_ > y1_max){
-            y1_max =y1_;
-        }
-        if (y1_ < y1_min){
-            y1_min =y1_;
-        }
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
 
-        if(y2_ > y2_max){
-            y2_max =y2_;
-        }
-        if (y2_ < y2_min){
-            y2_min =y2_;
-        }
-        ui ->PDH_max -> setText(QString::number(y1_max));
-        ui ->PDH_min -> setText(QString::number(y1_min));
-        ui ->PDV_max -> setText(QString::number(y2_max));
-        ui ->PDV_min -> setText(QString::number(y2_min));
-        ui ->Cur_PDH -> setText(QString::number(y1_));
-        ui ->Cur_PDV -> setText(QString::number(y2_));
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
+            ui ->PDH_max -> setText(QString::number(y1_max));
+            ui ->PDH_min -> setText(QString::number(y1_min));
+            ui ->PDV_max -> setText(QString::number(y2_max));
+            ui ->PDV_min -> setText(QString::number(y2_min));
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
 
-        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-        ui->widget->graph(0)->addData(x,y1);
-        ui->widget->graph(1)->addData(x,y2);
-        ui->widget->replot();
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->addData(x,y1);
+            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->replot();
     }
     api::WAnglesResponse response_2;
     response_2 = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
@@ -1213,6 +1218,34 @@ QStringList MainWindow:: ConvertingArray (QString str){
     return list;
 }
 
+QString MainWindow:: ElectionPD_v2(int PDH, int PDV, int yh_, int yv_){
+
+    QString bit = "";
+    int MaxSig_h = stand_.standOptions.maxSignalLevels_.h_;
+    //int MaxSig_v = response_4.maxSignalLevels_.v_;
+    double val = rand();
+    double val_max = RAND_MAX;
+    double val_de = val/val_max;
+    double h_de = double(yh_)/double(MaxSig_h);
+    if( val_de <= h_de){
+        if(PDH == 0 & PDV == 1){
+            return bit='0';
+        }
+        else if(PDH == 1 & PDV == 0){
+            return bit='1';
+           }
+        else {ConsoleLog("Ошибка!!! Некорректно заполнены поля PH и PV");}
+    }
+    else{
+        if(PDH == 0 & PDV == 1){
+            return bit='1';
+        }
+        else if(PDH == 1 & PDV == 0){
+            return bit='0';
+           }
+        else {ConsoleLog("Ошибка!!! Некорректно заполнены поля PH и PV");}
+    }
+}
 QString MainWindow:: ElectionPD(int PDH, int PDV, int yh_, int yv_){
 
     QString bit = "";
@@ -1235,7 +1268,9 @@ QString MainWindow:: ElectionPD(int PDH, int PDV, int yh_, int yv_){
 
 void MainWindow::on_Start_protocol_clicked()
 {
-    unsigned int start_time =  clock();
+    QElapsedTimer timer;
+    timer.start();
+
 
     api::AngleResponse response_5;
     response_5 = stand_.GetRotateStep();
@@ -1300,105 +1335,137 @@ void MainWindow::on_Start_protocol_clicked()
     int yh_ = 0, yv_=0;
     QStringList bit;
 
+    //Переменные для вывода рзультата
+    QStringList Combit;
+    QStringList blankbit;
+    QStringList keybit;
+
     //Выполнение протокола
-    for(int i = 0; i<= AliceBit.size()-1;i++){
+   for(int i = 0; i<= AliceBit.size()-1;i++){
         if(AliceBit[i] == '0' && AliceBasis[i] == '0' && BobBit[i] == '0' && BobBasis[i] == '0'){
             response  = stand_.Sendmessage({aHalf_00, aQuart_00, bHalf_00, bQuart_00}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            //bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='0' && BobBit[i]=='0' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_01, aQuart_01, bHalf_00, bQuart_00}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            //bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='1' && BobBit[i]=='0' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_10, aQuart_10, bHalf_00, bQuart_00}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            //bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='1' && BobBit[i]=='0' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_11, aQuart_11, bHalf_00, bQuart_00}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            //bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+            bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='0' && BobBit[i]=='1' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_00, aQuart_00, bHalf_01, bQuart_01}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            //bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            bit << ElectionPD_v2(PDH_01, PDV_01, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='0' && BobBit[i]=='1' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_01, aQuart_01, bHalf_01, bQuart_01}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            //bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            bit << ElectionPD_v2(PDH_01, PDV_01, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='1' && BobBit[i]=='1' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_10, aQuart_10, bHalf_01, bQuart_01}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            //bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            bit << ElectionPD_v2(PDH_01, PDV_01, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]== '1' && BobBit[i]=='1' && BobBasis[i]=='0'){
             response  = stand_.Sendmessage({aHalf_11, aQuart_11, bHalf_01, bQuart_01}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            //bit << ElectionPD(PDH_01, PDV_01, yh_, yv_);
+            bit << ElectionPD_v2(PDH_01, PDV_01, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='0' && BobBit[i]=='0' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_00, aQuart_00, bHalf_10, bQuart_10}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            //bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            bit << ElectionPD_v2(PDH_10, PDV_10, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='0' && BobBit[i]=='0' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_01, aQuart_01, bHalf_10, bQuart_10}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            //bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            bit << ElectionPD_v2(PDH_10, PDV_10, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='1' && BobBit[i]=='0' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_10, aQuart_10, bHalf_10, bQuart_10}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            //bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            bit << ElectionPD_v2(PDH_10, PDV_10, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='1' && BobBit[i]=='0' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_11, aQuart_11, bHalf_10, bQuart_10}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            //bit << ElectionPD(PDH_10, PDV_10, yh_, yv_);
+            bit << ElectionPD_v2(PDH_10, PDV_10, yh_, yv_);
+
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='0' && BobBit[i]=='1' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_00, aQuart_00, bHalf_11, bQuart_11}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            //bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            bit << ElectionPD_v2(PDH_11, PDV_11, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='0' && BobBit[i]=='1' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_01, aQuart_01, bHalf_11, bQuart_11}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            //bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            bit << ElectionPD_v2(PDH_11, PDV_11, yh_, yv_);
         }
         else if(AliceBit[i]=='0' && AliceBasis[i]=='1' && BobBit[i]=='1' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_10, aQuart_10, bHalf_11, bQuart_11}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            //bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            bit << ElectionPD_v2(PDH_11, PDV_11, yh_, yv_);
         }
         else if(AliceBit[i]=='1' && AliceBasis[i]=='1' && BobBit[i]=='1' && BobBasis[i]=='1'){
             response  = stand_.Sendmessage({aHalf_11, aQuart_11, bHalf_11, bQuart_11}, Power);
             yh_ = response.currentSignalLevels_.h_;
             yv_ = response.currentSignalLevels_.v_;
-            bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            //bit << ElectionPD(PDH_11, PDV_11, yh_, yv_);
+            bit << ElectionPD_v2(PDH_11, PDV_11, yh_, yv_);
         }
          else {ConsoleLog("Ошибка!!! Некорректно заполнено поле");}
+
+        //Progress
+        ui->Progress->clear();
+        ui ->Progress->append(QString::number(i+1)+" из "+QString::number(AliceBit.size()));
+
+        //Вывод сырой строки
+        ui->RawLine->clear();
+        ui ->RawLine -> append(bit.join(""));
+       //thread.start(i,bit);
+
     }
     api::WAnglesResponse response_3;
     response_3 = stand_.SetPlatesAngles({0,0,0,0});
@@ -1407,65 +1474,59 @@ void MainWindow::on_Start_protocol_clicked()
             if(AliceBit[i]== '0' && AliceBasis[i]== '0' && BobBit[i]== '0' && BobBasis[i]== '0'){
                 yh_ = 100;
                 yv_ = 10;
-                bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+                bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
             }
             else if(AliceBit[i]== '1' && AliceBasis[i]== '0' && BobBit[i]== '0' && BobBasis[i]== '0'){
                 yh_ = 10;
                 yv_ = 100;
-                bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+                bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
             }
             else if(AliceBit[i]== '0' && AliceBasis[i]== '1' && BobBit[i]== '0' && BobBasis[i]== '0'){
                 yh_ = 100;
                 yv_ = 10;
-                bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+                bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
             }
             else if(AliceBit[i]== '1' && AliceBasis[i]== '1' && BobBit[i]== '0' && BobBasis[i]== '0'){
                 yh_ = 10;
                 yv_ = 100;
-                bit << ElectionPD(PDH_00, PDV_00, yh_, yv_);
+                bit << ElectionPD_v2(PDH_00, PDV_00, yh_, yv_);
             }
             else {ConsoleLog("Ошибка!!! Некорректно заполнено поле");}
     }*/
 
-    //Вывод сырой строки
-    ui ->RawLine -> setText(bit.join(""));
-
     //Сравнение базисов
-    QStringList Combit;
-    for(int i = 0; i<= AliceBasis.size()-1;i++){
-        if(AliceBasis[i] == BobBasis[i]){
-            Combit << bit[i];
+    for(int j = 0; j<= bit.size()-1;j++){
+        if(AliceBasis[j] == BobBasis[j]){
+            Combit << bit[j];
         }
         else {Combit << "X";}
     }
     ui ->Comparison -> setText(Combit.join(""));
 
     //чистая строка
-    QStringList blankbit;
-    for(int i = 0; i<= Combit.size()-1;i++){
-        if(Combit[i] == '1' || Combit[i] == '0'){
-            blankbit << Combit[i];
+    for(int a = 0; a<= Combit.size()-1;a++){
+        if(Combit[a] == '1' || Combit[a] == '0'){
+            blankbit << Combit[a];
         }
         else{blankbit << " ";}
     }
     ui ->BlankLine -> setText(blankbit.join(""));
 
     //Вывод ключа
-    QStringList keybit;
-    for(int i = 0; i<= blankbit.size()-1;i++){
-        if(blankbit[i] == '1' || blankbit[i] == '0'){
-            keybit << blankbit[i];
+    for(int v = 0; v<= blankbit.size()-1;v++){
+        if(blankbit[v] == '1' || blankbit[v] == '0'){
+            keybit << blankbit[v];
         }
         else{keybit << "";}
     }
     ui ->key -> setText(keybit.join(""));
     ui ->LengthKey->setText(QString::number(keybit.join("").size()));
 
-    unsigned int end_time = clock();
-    unsigned int search_time = end_time - start_time;
+    float end_time = timer.elapsed();
+    float search_time = end_time /1000;//CLOCKS_PER_SEC
     float speed = (AliceBasis.size()*1000)/(float)search_time;
-    ui ->Time->setText(QString::number(search_time/1000) + " с");
-    ui ->Speed->setText(QString::number(speed));
+    ui ->Time->setText(QString::number(search_time) + "с");
+    ui ->Speed->setText(QString::number(speed/1000));
 }
 
 int MainWindow:: randomBetween(int low, int high)
@@ -1666,3 +1727,322 @@ void MainWindow::on_RotateAngles_clicked()
         }
         else {ConsoleLog("Код ошибки: "+ QString::number (response_1.errorCode_));}
 }
+
+void MainWindow::on_MonitoringSend_clicked()
+{
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+    Flag_ = false;
+    int time = 0;
+    float y1_max = 0,y1_ = 0, y1_min =0, n1_;
+    float y2_max = 0,y2_ = 0, y2_min =0, n2_;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+    if(response.errorCode_ == 0){
+    while (Flag_ == false)
+    {
+        response  = stand_.Sendmessage({0,0,0,0},Power);
+        x.push_back(time++);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        n1_ = response.currentLightNoises_.h_;
+        n2_ = response.currentLightNoises_.v_;
+
+        x.push_back(time++);
+        y1.push_back(y1_- n1_);
+        y2.push_back(y2_- n2_);
+
+        if(y1_ > y1_max){
+            y1_max =y1_;
+        }
+        if (y1_ < y1_min){
+            y1_min =y1_;
+        }
+
+        if(y2_ > y2_max){
+            y2_max =y2_;
+        }
+        if (y2_ < y2_min){
+            y2_min =y2_;
+        }
+
+        PDH_max = QString::number(y1_max);
+        PDH_min = QString::number(y1_min);
+        PDV_max = QString::number(y2_max);
+        PDV_min = QString::number(y2_min);
+        ui ->PDH_max -> setText(PDH_max);
+        ui ->PDH_min -> setText(PDH_min);
+        ui ->PDV_max -> setText(PDV_max);
+        ui ->PDV_min -> setText(PDV_min);
+        ui ->Nos_PDH -> setText(QString::number (response.currentLightNoises_.h_));
+        ui ->Nos_PDV -> setText(QString::number (response.currentLightNoises_.v_));
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+
+        ui->widget->xAxis->setRange(0 ,time + 10);
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->replot();
+        QApplication::processEvents();
+        connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+    }
+    }
+    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
+}
+
+
+void MainWindow::on_MonitorNoises_clicked()
+{
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+    y3.clear();
+
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(2)->setPen(QPen(Qt::green));
+    ui->widget->graph(2)->setBrush(QBrush(QColor(0, 255, 0, 20)));
+
+    QString angles1,angles2,angles3, angles4;
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+    Flag_ = false;
+    int time = 0;
+    float y1_ = 0, n1_, y2_ = 0, n2_, y1_max = 0, y2_max = 0;
+    if(response.errorCode_ == 0){
+    while (Flag_ == false)
+    {
+        angles1 = ui ->Angles1 -> text();
+        angles2 = ui ->Angles2 -> text();
+        angles3 = ui ->Angles3 -> text();
+        angles4 = ui ->Angles4 -> text();
+        response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles3.toFloat(),angles4.toFloat()},Power);
+        x.push_back(time++);
+        y1_ = response.currentSignalLevels_.h_;
+        y2_ = response.currentSignalLevels_.v_;
+        n1_ = response.currentLightNoises_.h_;
+        n2_ = response.currentLightNoises_.v_;
+
+        if (ui->PD_Check->isChecked()) //выводятся значения PDH
+        {
+            x.push_back(time++);
+            y1.push_back(y1_- n1_);
+            y2.push_back(y1_);
+            y3.push_back(n1_);
+            ui ->Nos_PDH -> setText(QString::number (response.currentLightNoises_.h_));
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+        }
+        else // выводятся значения PDV
+        {
+            x.push_back(time++);
+            y1.push_back(y2_- n2_);
+            y2.push_back(y2_);
+            y3.push_back(n2_);
+            ui ->Nos_PDV -> setText(QString::number (response.currentLightNoises_.v_));
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+        }
+        if (time < 20){ui->widget->xAxis->setRange(0 ,20);}
+        else{ui->widget->xAxis->setRange(0 ,time);}
+
+        if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+        else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+
+        ui->widget->graph(0)->addData(x,y1);
+        ui->widget->graph(1)->addData(x,y2);
+        ui->widget->graph(2)->addData(x,y3);
+        ui->widget->replot();
+        QApplication::processEvents();
+        connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+    }
+    }
+    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));}
+}
+
+void MainWindow::on_Test_Oleg_clicked()
+{
+    QElapsedTimer timer;
+    timer.start();
+    ce::UartResponse pack;
+
+    float n = ui ->Test_-> text().toInt();
+    for(int i = 0; i <= n; i++){
+        //pack  = stand_.SendUart('/');
+    }
+    //unsigned int end_time = clock();
+    float end_time = timer.elapsed();
+    float search_time = end_time /1000;//CLOCKS_PER_SEC
+    float speed = (float)n/search_time;
+    ui ->Test_time->setText(QString::number(search_time) + "с");
+    ui ->Test_Speed->setText(QString::number(speed));
+}
+
+
+void MainWindow::on_Test_Speed_2_clicked()
+{
+    QElapsedTimer timer;
+    timer.start();
+
+     api::SendMessageResponse response;
+     api::AdcResponse response_2;
+     response_2 = stand_.GetLaserPower();
+     double Power = response_2.adcResponse_;
+
+    float n = ui ->Test_-> text().toInt();
+    for(int i = 0; i <= n; i++){
+        if(i%2 == 0){
+            response  = stand_.Sendmessage({0,0,0,0}, Power);
+            response  = stand_.Sendmessage({90,90,90,90}, Power);
+        }
+        else{
+        response  = stand_.Sendmessage({90,90,90,90}, Power);
+        response  = stand_.Sendmessage({0,0,0,0}, Power);
+        }
+    }
+    float end_time = timer.elapsed();
+    float search_time = end_time /1000;//CLOCKS_PER_SEC
+    float speed = (float)n/search_time;
+    ui ->Test_time->setText(QString::number(search_time) + "с");
+    ui ->Test_Speed->setText(QString::number(speed));
+}
+
+
+void MainWindow::on_Scan_step_clicked()
+{
+    QMessageBox msgBox;
+    //очистка предыдущего графика
+    ui->widget->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    ui->widget->xAxis->setRange(0,360);
+    ui->widget->yAxis->setRange(0,3000);
+    ui->widget->addGraph();
+    ui->widget->graph(0)->setPen(QPen(Qt::blue));
+    ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->widget->addGraph();
+    ui->widget->graph(1)->setPen(QPen(Qt::red));
+    ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+
+    float angles1 = ui ->Angles1 -> text().toFloat();
+    float angles2 = ui ->Angles2 -> text().toFloat();
+    float angles3 = ui ->Angles3 -> text().toFloat();
+    float angles4 = ui ->Angles4 -> text().toFloat();
+
+    float step1 = ui ->Step_scan1-> text().toFloat();//значение шага для 1
+    float step2 = ui ->Step_scan2-> text().toFloat();//значение шага для 2
+    float step3 = ui ->Step_scan3-> text().toFloat();//значение шага для 3
+    float step4 = ui ->Step_scan4-> text().toFloat();//значение шага для 4
+
+    response_1 = stand_.GetLaserPower();
+    double Power = response_1.adcResponse_;
+    float angles,h;
+    float n = angles1; //начальный отступ от 0
+    int y1_max = 0,y1_ = 0, y1_min = 100000;
+    int y2_max = 0,y2_ = 0, y2_min = 100000;
+    QString PDH_max,PDH_min, PDV_max,PDV_min;
+
+    int number = ui->comboBox->currentText().toInt();
+    if (number ==1 ){angles = angles1; h = step1; }
+    else if (number ==2 ){angles = angles2; h = step2; }
+    else if (number ==3 ){angles = angles3; h = step3; }
+    else if (number ==4 ){angles = angles4; h = step4; }
+
+    if(h == 0.0){
+        msgBox.setText(" Шаг выбранной пластины не может быть равен 0");
+        msgBox.exec();
+    }
+    else {
+    if(response_1.errorCode_ == 0){
+    for (angles; angles <= n+360;angles +=h)
+        {
+            response  = stand_.Sendmessage({angles1,angles2,angles3,angles4},Power);
+            x.push_back(angles-n);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
+
+            if(y1_ > y1_max){
+                y1_max =y1_;
+            }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
+
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
+
+            angles1+= step1;
+            angles2+= step2;
+            angles3+= step3;
+            angles4+= step4;
+
+            PDH_max = QString::number(y1_max);
+            PDH_min = QString::number(y1_min);
+            PDV_max = QString::number(y2_max);
+            PDV_min = QString::number(y2_min);
+            ui ->PDH_max -> setText(PDH_max);
+            ui ->PDH_min -> setText(PDH_min);
+            ui ->PDV_max -> setText(PDV_max);
+            ui ->PDV_min -> setText(PDV_min);
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
+
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->addData(x,y1);
+            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->replot();
+    }
+    api::WAnglesResponse response_2;
+    response_2 = stand_.SetPlatesAngles({ui ->Angles1 -> text().toFloat(), ui ->Angles2 -> text().toFloat(), ui ->Angles3 -> text().toFloat(), ui ->Angles4 -> text().toFloat()});
+    }
+    else {ConsoleLog("Код ошибки: "+ QString::number (response_1.errorCode_));}
+    }
+}
+

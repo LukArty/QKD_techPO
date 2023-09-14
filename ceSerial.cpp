@@ -228,7 +228,7 @@ ce::UartResponse ceSerial:: Read_com(unsigned int timeout){
             tcflush(fd_,TCIOFLUSH);
            return {0,0,3,{0,0,0,0,0,0,0,0,0,0}};}//конец таймаута
     }
-    array <uint16_t,11>  params  = {0,0,0,0,0,0,0,0,0,0,0};
+    array <uint16_t, 201>  params  = {0};
     if (startPackFlag_ == true){
         int count = 9;
         int paramCnt =1;
@@ -250,7 +250,7 @@ ce::UartResponse ceSerial:: Read_com(unsigned int timeout){
                     if (count>6){ p = p<<8; }
                     else{
                         paramCnt++;
-                        if (paramCnt> (int)params.size()+1){
+                        if (paramCnt > (int)params.size()+1){
                             tcflush(fd_,TCIOFLUSH);
                             return {0,0,3,{0,0,0,0,0,0,0,0,0,0}};
                         }
@@ -416,3 +416,4 @@ bool ceSerial::GetCD(bool& success) {
 }
 
 } // namespace ce
+

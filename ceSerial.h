@@ -19,8 +19,7 @@ struct UartResponse{
         uint8_t crc_= 0;
         uint8_t nameCommand_ = 0;
         uint8_t status_= 0;
-        uint16_t parameters_ [10] = {0,0,0,0,0,0,0,0,0,0};
-
+        uint16_t parameters_ [75] = {0};
     };
 
 class ceSerial {
@@ -104,3 +103,4 @@ public:
 };
 
 } // namespace ce
+

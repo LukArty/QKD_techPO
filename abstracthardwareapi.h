@@ -71,3 +71,4 @@ public:
 
 }
 #endif // ABSTRACTHARDWAREAPI_H
+
