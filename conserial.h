@@ -37,7 +37,14 @@ public:
     virtual api::WAnglesResponse SetPlatesAngles(WAngles<angle_t> angles);
     virtual api::AdcResponse GetLaserState();
     virtual api::AdcResponse GetLaserPower();
-    virtual api::InitResponse  GetInitParams();
+
+    api::InitResponse  GetInitParams();
+    virtual api::AdcResponse GetMaxLaserPower();
+    virtual api::WAnglesResponse GetStartPlatesAngles();
+    virtual api::SLevelsResponse GetStartLightNoises();
+    virtual api::SLevelsResponse GetMaxSignalLevels();
+    virtual api::AngleResponse SetPlateAngle(adc_t plateNumber, angle_t angle);
+
     virtual api::WAnglesResponse GetPlatesAngles();
     virtual api::SLevelsResponse GetSignalLevels();
     virtual api::AngleResponse GetRotateStep();
@@ -48,7 +55,10 @@ public:
     virtual api::WAnglesResponse ReadBaseAngles();
     virtual api::AdcResponse ReadEEPROM(uint8_t numberUnit_);
     virtual api::AdcResponse WriteEEPROM(uint8_t numberUnit_, uint16_t param_);
-    ce::UartResponse SendUart (char commandName);
+
+
+
+private:
     struct StandOptions{
         adc_t laserState_ = 0;
         adc_t laserPower_ = 0;
@@ -63,18 +73,26 @@ public:
         angle_t rotateStep_ = 0.3;
         adc_t maxLaserPower_ = 100;
     };
+
     Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
 
-private:
+    struct UartResponse{
+        uint8_t status_= 0;
+        uint8_t nameCommand_ = 0;
+        uint8_t crc_= 0;
+        uint16_t parameters_ [10] = {0,0,0,0,0,0,0,0,0,0};
+
+    };
     ce::ceSerial com_; // Обект класса для соединения с МК
 
     uint8_t Crc8(uint8_t *pcBlock, uint8_t len);
+    UartResponse ParsePackege(unsigned int timeout);
 
     uint16_t CalcStep(angle_t angle, angle_t rotateStep);
     WAngles<adc_t> CalcSteps(WAngles<angle_t> angles);
     WAngles<angle_t> CalcAngles(WAngles<adc_t> steps);
 
-    ce::UartResponse Twiting (char commandName, int N,... );
+    UartResponse Twiting (char commandName, int N,... );
     uint16_t SendUart (char comandName,int N,...);
     uint16_t SendUart (char commandName, uint16_t * params);
 

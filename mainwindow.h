@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <conserial.h>
 #include <QVector>
+#include <helpwindow.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -110,16 +111,23 @@ private slots:
 
     void on_Test_Speed_2_clicked();
 
-    void on_Scan_step_clicked();
+    void on_Evacheck_clicked();
+
+    void on_Protocol_test_clicked();
+
+    void on_Help_clicked();
 
 private:
     float AngleCheck (float angle, float step);
     QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
-    QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_);
+    QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig_h);
     QStringList ConvertingArray (QString str);
     int randomBetween(int low, int high);
+    QStringList Protocol (QStringList  AliceBit, QStringList  AliceBasis, QStringList  BobBit, QStringList  BobBasis);
+    QStringList Protocol_Eva (QStringList  AliceBit, QStringList  AliceBasis, QStringList EvaBasis, QStringList  BobBit, QStringList  BobBasis);
     QStringList Random(int n);
     Ui::MainWindow *ui;
+    HelpWindow *clc;
 
     hwe::Conserial stand_;
     bool Flag_;
