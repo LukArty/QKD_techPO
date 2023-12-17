@@ -22,6 +22,7 @@ SOURCES += \
     ceSerial.cpp \
     conserial.cpp \
     debuglogger.cpp \
+    helpwindow.cpp \
     main.cpp \
     mainwindow.cpp \
     qcustomplot.cpp
@@ -34,12 +35,14 @@ HEADERS += \
     ceSerial.h \
     conserial.h \
     debuglogger.h \
+    helpwindow.h \
     hwetypes.h \
     logictypes.h \
     mainwindow.h \
     qcustomplot.h
 
 FORMS += \
+    helpwindow.ui \
     mainwindow.ui
 
 
@@ -49,4 +52,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    PD.qrc
+    pictures.qrc
