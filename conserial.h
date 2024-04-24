@@ -9,69 +9,277 @@
 #include <abstracthardwareapi.h>
 #include <map>
 #include <ctime>
-#include <debuglogger.h>
 #include <string>
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <stdarg.h>
 
+#include <cstddef>
+#include <bitset>
+#include <chrono>
+
+
+//uncommit this define to disable logging for COM exchange
+//#define NO_SERIAL_LOG
+
+using namespace std;
 namespace hwe
 {
-
+struct versionFirmwareResponse{
+    uint16_t major_ = 0;
+    uint16_t minor_ = 0;
+    uint16_t micro_ = 0;
+    adc_t errorCode_ = 0;
+};
+struct versionProtocolResponse{
+    uint16_t version_ = 0;
+    uint16_t subversion_ = 0;
+    adc_t errorCode_ = 0;
+};
+/// @brief Интерфейс для взаимодействия с аппаратной платформой.
 class Conserial : public AbstractHardwareApi
 {
 public:
 
     Conserial();
     virtual ~Conserial();
-
+    /*!
+    @brief Функция инициализации стенда
+    Проверяет существует ли файл с начальными углами,
+    если существует то проводит инициализацию
+    по фотодетекторам InitByPD(), иначе по концевикам InitByButtons()
+    @return Углы поворота пластин, начальная засветка фотодетекторов, максимальный уровень сигнала на фотодетекторах и максимальную мощность лазера
+    */
     virtual api::InitResponse Init();
+    /*!
+    @brief Функция инициализации стенда по фотодетекторам
+    @return Углы поворота пластин, начальная засветка фотодетекторов, максимальный уровень сигнала на фотодетекторах и максимальную мощность лазера и код ошибки
+    */
     virtual api::InitResponse InitByPD();
+    /*!
+    @brief Функция инициализации стенда по фотодетекторам
+    @param  [in] angles - Начальные углы стенда
+    @return Углы поворота пластин, начальная засветка фотодетекторов, максимальный уровень сигнала на фотодетекторах и максимальную мощность лазера и код ошибки
+    */
     virtual api::InitResponse InitByButtons(WAngles<angle_t> angles);
-    virtual api::AdcResponse RunTest(adc_t testId = 0);
+
+    /*!
+    @brief Функция тестирования стенда
+    @return Статус выполнения теста и код ошибки
+    */
+    virtual api::AdcResponse RunTest();
+    /*!
+    @brief Функция отправки битовой последовательности
+    @param [in] angles - Углы поворотов волновых пластин для передачи сообщения.
+    @param [in] power - Мощность лазера для передачи сообщения.
+    @return Углы поворота пластин, начальная засветка фотодетекторов, максимальный уровень сигнала на фотодетекторах и максимальную мощность лазера и код ошибки
+    */
     virtual api::SendMessageResponse Sendmessage(WAngles<angle_t> angles, adc_t power);
+    /*!
+    @brief Функция установки времени ожидания ответа от аппаратной платформы
+    @param [in] timeout - Время ожидания в СЕКУНДАХ
+    @return Установленное время ожидания и код ошибки
+    */
     virtual api::AdcResponse SetTimeout(adc_t timeout);
+    /*!
+    @brief Функция включения и выключения лазера
+    @param [in] on - Состояние лазера (1\0)
+    @return Состояние лазера и код ошибки
+    */
     virtual api::AdcResponse SetLaserState(adc_t on);
+    /*!
+    @brief Функция установки мощности лазера
+    @param [in] power - Мощность лазера
+    @return Мощность лазера и код ошибки
+    */
     virtual api::AdcResponse SetLaserPower(adc_t power);
+    /*!
+    @brief Функция установки углов поворота пластин
+    @param [in] angles - Углы поворотов волновых пластин для передачи сообщения.
+    @return Установленные углы поворота пластин и код ошибки
+    */
     virtual api::WAnglesResponse SetPlatesAngles(WAngles<angle_t> angles);
+    /*!
+    @brief Функция получения состояния лазера
+    @return Состояние лазера и код ошибки
+    */
     virtual api::AdcResponse GetLaserState();
+    /*!
+    @brief Функция получения мощности лазера
+    @return Мощность лазера и код ошибки
+    */
     virtual api::AdcResponse GetLaserPower();
-
+    /*!
+    @brief Функция получения параметров, полученных при инициализации стенда по фотодетекторам
+    @return Углы поворота пластин, начальная засветка фотодетекторов, максимальный уровень сигнала на фотодетекторах и максимальную мощность лазера и код ошибки
+    */
     api::InitResponse  GetInitParams();
+    /*!
+    @brief Функция получения максимального значения мощности лазера
+    @return Максимальная мощность лазера и код ошибки
+    */
     virtual api::AdcResponse GetMaxLaserPower();
+    /*!
+    @brief Функция получения начальных углов поворота пластин
+    @return Углы поворота пластин и код ошибки
+    */
     virtual api::WAnglesResponse GetStartPlatesAngles();
+    /*!
+    @brief Функция получения засветки на фотодетекторах при инициализации
+    @return Засветка на фотодетекторах и код ошибки
+    */
     virtual api::SLevelsResponse GetStartLightNoises();
+    /*!
+    @brief Функция получения максимального значения на фотодетекторах при инициализации
+    @return Максимальное значение на фотодетекторах и код ошибки
+    */
     virtual api::SLevelsResponse GetMaxSignalLevels();
+    /*!
+    @brief Функция установки угла поворота пластины
+    @param [in] plateNumber - Номер пластины для поворота
+    @param [in] angle - Угол поворота волновой пластины № plateNumber
+    @return Установленные углы поворота пластин и код ошибки
+    */
     virtual api::AngleResponse SetPlateAngle(adc_t plateNumber, angle_t angle);
-
+    /*!
+    @brief Функция получения текущих углов поворота пластин
+    @return Углы поворота пластин и код ошибки
+    */
     virtual api::WAnglesResponse GetPlatesAngles();
+    /*!
+    @brief Функция получения текущих значений на фотодетекторах
+    @return Значения на фотодетекторах и код ошибки
+    */
     virtual api::SLevelsResponse GetSignalLevels();
+    /*!
+    @brief Функция получения угла при повороте двигателя на один шаг
+    @return Шаг двигателя (в углах) и код ошибки
+    */
     virtual api::AngleResponse GetRotateStep();
+    /*!
+    @brief Функция получения текущей засветки на фотодетекторах
+    @return Значения текущей засветки на фотодетекторах и код ошибки
+    */
     virtual api::SLevelsResponse GetLightNoises();
+    /*!
+    @brief Функция получения текущего состояния аппаратной платформы
+    @return Статус АП и код ошибки
+    */
+    api::AdcResponse GetHardwareState();
+    /*!
+    @brief Функция получения текущего состояния аппаратной платформы (Версия 1.0)
+    @return Статус АП и код ошибки
+    */
     virtual api::AdcResponse GetErrorCode();
+    /*!
+    @brief Функция получения времени ожидания ответа от аппаратной платформы
+    @return Время ожидания и код ошибки
+    */
     virtual api::AdcResponse GetTimeout();
+    /*!
+    @brief Функция обновления начальных углов в ПЗУ аппаратной платформы для инициализации по датчикам
+    @param [in] angles - Углы поворотов волновых пластин для передачи сообщения.
+    @return Углы поворотов пластин и код ошибки
+    */
     virtual api::WAnglesResponse UpdateBaseAngle(WAngles<angle_t> angles);
+    /*!
+    @brief Функция получения начальных углов из ПЗУ аппаратной платформы для инициализации по датчикам
+    @return Углы поворотов пластин и код ошибки
+    */
     virtual api::WAnglesResponse ReadBaseAngles();
+    /*!
+    @brief Функция получения данных из ПЗУ аппаратной платформы
+    @param [in] numberUnit_ - Номер ячейки памяти
+    @return Данные из ячейки памяти и код ошибки
+    */
     virtual api::AdcResponse ReadEEPROM(uint8_t numberUnit_);
+    /*!
+    @brief Функция получения данных из ПЗУ аппаратной платформы
+    @param [in] numberUnit_ - Номер ячейки памяти
+    @param [in] param_ - Данные для записи в ПЗУ
+    @return Данные из ячейки памяти и код ошибки
+    */
     virtual api::AdcResponse WriteEEPROM(uint8_t numberUnit_, uint16_t param_);
+    /*!
+    @brief Функция обновления прошивки аппаратной платформы
+    @param [in] path - Путь до файла прошивки
+    */
+    void FirmwareUpdate (string path);
+    /*!
+    @brief Функция задания пароля для входа в технологический режим
+    @param [in] passwd - Пароль для входа в тех. режим
+    @return Статус операции и код ошибки
+    */
+    api::AdcResponse CreateConfigSecret(string passwd);
+    /*!
+    @brief Функция входа в технологический режим
+    @param [in] passwd - Пароль для входа в тех. режим
+    @return Статус операции и код ошибки
+    */
+    api::AdcResponse OpenConfigMode(string passwd);
+    /*!
+    @brief Функция выхода из технологического режима
+    @return Статус операции и код ошибки
+    */
+    uint16_t CloseConfigMode();
+    /*!
+    @brief Функция получения текущего режима работы (технологический/штатный)
+    @return 0 - штатный режим, 1 - технологический
+    */
+    uint16_t GetCurrentMode();
 
-
+    /*!
+    @brief Функция получения текущей версии протокола общения
+    @return {X,Y,Z}
+    */
+    hwe::versionProtocolResponse GetProtocolVersion ();
+    /*!
+    @brief Функция получения текущей версии прошивки АП
+    @return {X,Y,Z}
+    */
+    hwe::versionFirmwareResponse GetCurrentFirmwareVersion();
+    /*!
+    @brief Функция получения максимального количества передаваемых байтов
+    @return Количество байт
+    */
+    uint16_t GetMaxPayloadSize();
+    ///@brief Получение порта подключения стенда
+    std::string GetComPortName()const;
+    ///@brief Установка порта подключения стенда
+    void SetComPortName(const char* port);
 
 private:
+    /// @brief Структура версии прошивки АП
+    struct versionFirmware{
+        uint16_t major = 0;
+        uint16_t minor = 0;
+        uint16_t micro = 0;
+    };
+    /// @brief Структура версии протокола
+    struct versionProtocol{
+        uint16_t version = 0;
+        uint16_t subversion = 0;
+    };
+
+    //Конфигурация
+    versionFirmware versionFirmware = {1,5,0};
+    versionProtocol versionProtocol = {1, 5};
+
     struct StandOptions{
+        adc_t premissions = 0;
         adc_t laserState_ = 0;
         adc_t laserPower_ = 0;
-        SLevels<hwe::adc_t> signalLevels_;
-        WAngles<angle_t>curAngles_;
-        SLevels<hwe::adc_t> lightNoises;
-
-        SLevels<hwe::adc_t> startLightNoises_;
-        WAngles<hwe::angle_t> startPlatesAngles_;
-        SLevels<hwe::adc_t> maxSignalLevels_;
-        adc_t timeoutTime_ = 1; //sec
+        SLevels<hwe::adc_t> signalLevels_ = {0,0};
+        WAngles<angle_t>curAngles_ = {0,0,0,0};
+        SLevels<hwe::adc_t> lightNoises = {0,0};
+        SLevels<hwe::adc_t> startLightNoises_= {0,0};
+        WAngles<hwe::angle_t> startPlatesAngles_ = {0,0,0,0};
+        SLevels<hwe::adc_t> maxSignalLevels_ = {0,0};
+        adc_t timeoutTime_ = 2; //sec
         angle_t rotateStep_ = 0.3;
         adc_t maxLaserPower_ = 100;
+        adc_t maxPayloadSize = 30;
     };
 
     Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
@@ -81,23 +289,53 @@ private:
         uint8_t nameCommand_ = 0;
         uint8_t crc_= 0;
         uint16_t parameters_ [10] = {0,0,0,0,0,0,0,0,0,0};
-
+        uint16_t payload = 0;
     };
+
     ce::ceSerial com_; // Обект класса для соединения с МК
-
+    /// @brief Подсчет CRC
     uint8_t Crc8(uint8_t *pcBlock, uint8_t len);
+    /// @brief Парсинг пакетов версии 1.2 и 1.5
     UartResponse ParsePackege(unsigned int timeout);
+    /// @brief Парсинг пакетов версии 1.0
+    UartResponse ParsePackege_1_0(unsigned int timeout);
 
+    /// @brief Подсчет из угла в шаг
     uint16_t CalcStep(angle_t angle, angle_t rotateStep);
+    /// @brief Подсчет из углов в шаги
     WAngles<adc_t> CalcSteps(WAngles<angle_t> angles);
+    /// @brief Подсчет из углов в шаги
     WAngles<angle_t> CalcAngles(WAngles<adc_t> steps);
-
+    /// @brief Отправка и получение ответов
+    /// @param [in] commandName - ID команды
+    /// @param [in] N - Количество передаваемых параметров
+    /// @param ... - Параметры
+    /// @return Распаршеный пакет
     UartResponse Twiting (char commandName, int N,... );
-    uint16_t SendUart (char comandName,int N,...);
-    uint16_t SendUart (char commandName, uint16_t * params);
-
+    /// @brief Отправка и получение ответов
+    /// @param [in] commandName - ID команды
+    /// @param [in] bytes - Массив передаваемых байтов
+    /// @param [in] length - Количество передаваемых байтов
+    /// @return Распаршеный пакет
+    UartResponse Twiting (char commandName, uint8_t * bytes, uint16_t length);
+    /// @brief Отправка запросов
+    /// @param [in] commandName - ID команды
+    /// @param [in] bytes - Массив передаваемых байтов
+    /// @param [in] N - Количество передаваемых байтов
+    /// @return Распаршеный пакет
+    uint16_t SendUart (char commandName, uint8_t * bytes, uint16_t N );
+    /// @brief Парсинг кодов ошибок с АП
+    /// @return Статус
     uint8_t CheckStatus(uint8_t status);
+    /// @brief Проверка подключения к АП
     bool StandIsConected ();
+
+    void FindProtocolVersion();
+    //Loging
+    std::ofstream out_;
+    void logOut(string str);
+    const string currentDateTime();
+    void logOutUart(const UartResponse &pack);
 
     //Таблица для подсчёта CRC
     const uint8_t Crc8Table[256] = {
@@ -138,27 +376,35 @@ private:
 
     //Мапа название команды -- ключ команды
     const std::map <std::string, char> dict_ = {
-        {"Init", 'A'},
-        {"SendMessage", 'B'},
-        {"SetLaserState", 'C'},
-        {"SetLaserPower", 'D'},
-        {"SetTimeout", 'F'},
-        {"GetErrorCode", 'G'},
-        {"GetLaserState", 'H'},
-        {"GetLaserPower", 'I'},
-        {"GetTimeout", 'J'},
-        {"GetInitParams", 'K'},
-        {"GetCurPlatesAngles", 'L'},
-        {"GetSignalLevel", 'M'},
-        {"GetRotateStep", 'N'},
-        {"GetLightNoises", 'P'},
-        {"RunSelfTest", 'S'},
-        {"InitByButtons", 'T'},
-        {"SetPlatesAngles", 'U'},
-        {"ReadEEPROM", 'V'},
-        {"WriteEEPROM", 'W'},
-        {"UpdateBaseAngles", 'X'},
-        {"ReadBaseAngles", 'Y'}
+        {"GetProtocolVersion", 0x10},
+        {"GetCurrentFirmwareVersion", 0x11},
+        {"GetMaxPayloadSize", 0x11},
+        {"CreateConfigSecret", 0x30},
+        {"OpenConfigMode", 0x31},
+        {"CloseConfigMode", 0x32},
+        {"GetCurrentMode", 0x33},
+        {"Init", 0x41 }, //A
+        {"SendMessage", 0x42 }, //B
+        {"SetLaserState", 0x43 }, //C
+        {"SetLaserPower", 0x44 }, //D
+        {"SetTimeout", 0x46 },    //F
+        {"GetHardwareState", 0x47 },  //G
+        {"GetErrorCode", 0x47},
+        {"GetLaserState",  0x48}, //H
+        {"GetLaserPower",  0x49}, //I
+        {"GetTimeout", 0x4A},     //J
+        {"GetInitParams", 0x4B},  //K
+        {"GetCurPlatesAngles", 0x4C}, //L
+        {"GetSignalLevel", 0x4D}, //M
+        {"GetRotateStep", 0x4E},  //N
+        {"GetLightNoises", 0x50}, //P
+        {"RunSelfTest", 0x53},  //S
+        {"InitByButtons", 0x54},  //T
+        {"SetPlatesAngles", 0x55}, //U
+        {"ReadEEPROM", 0x56}, //V
+        {"WriteEEPROM", 0x57}, //W
+        {"UpdateBaseAngles", 0x58}, //X
+        {"ReadBaseAngles", 0x59}  //Y
     };
 };
 

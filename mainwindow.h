@@ -117,6 +117,31 @@ private slots:
 
     void on_Help_clicked();
 
+    void on_PlateAngle_clicked();
+
+    void on_Eva_key_clicked();
+
+    void on_Error_key_clicked();
+
+    void on_Test_monitor_clicked();
+
+    void on_TestTimebut_clicked();
+
+    void on_CreateConfigSecret_clicked();
+
+    void on_SetComPortName_clicked();
+    void on_OpenConfigMode_clicked();
+    void on_CloseConfigMode_clicked();
+    void on_GetProtocolVersion_clicked();
+    void on_GetProtocolFirmwareVersion_clicked();
+    void on_GetCurrentMode_clicked();
+
+    void on_GetComPortName_clicked();
+
+    void on_GetMaxPayloadSize_clicked();
+
+    void on_FirmwareUpdate_clicked();
+
 private:
     float AngleCheck (float angle, float step);
     QString ElectionPD(int PDH, int PDV, int yh_, int yv_);

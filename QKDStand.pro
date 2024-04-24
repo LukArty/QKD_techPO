@@ -1,4 +1,4 @@
-QT       += core gui printsupport
+QT += core gui printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -21,7 +21,6 @@ INCLUDEPATH +=\
 SOURCES += \
     ceSerial.cpp \
     conserial.cpp \
-    debuglogger.cpp \
     helpwindow.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -34,7 +33,6 @@ HEADERS += \
     apitypes.h \
     ceSerial.h \
     conserial.h \
-    debuglogger.h \
     helpwindow.h \
     hwetypes.h \
     logictypes.h \
@@ -52,4 +50,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
+    PD.qrc \
     pictures.qrc
