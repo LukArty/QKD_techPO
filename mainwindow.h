@@ -53,18 +53,6 @@ private slots:
 
     void ConsoleLog(QString text);
 
-    //int SendUart(char NameComand, uint16_t Parametr);
-
-    //bool GetLaserState();
-
-    //uint16_t GetLaserPower();
-
-    //void SetLaserState(uint16_t LState);
-
-    //void GetSignalLevel(uint16_t* PLight1, uint16_t* PLight2);
-
-    //void SetLaserPower(uint16_t LPower);
-
     void on_WriteIni_clicked();
 
     void on_InitByButtons_clicked();
@@ -109,8 +97,6 @@ private slots:
 
     void on_MonitorNoises_clicked();
 
-    void on_Test_Oleg_clicked();
-
     void on_Test_Speed_2_clicked();
 
     void on_Evacheck_clicked();
@@ -132,10 +118,15 @@ private slots:
     void on_CreateConfigSecret_clicked();
 
     void on_SetComPortName_clicked();
+
     void on_OpenConfigMode_clicked();
+
     void on_CloseConfigMode_clicked();
+
     void on_GetProtocolVersion_clicked();
+
     void on_GetProtocolFirmwareVersion_clicked();
+
     void on_GetCurrentMode_clicked();
 
     void on_GetComPortName_clicked();
@@ -145,7 +136,12 @@ private slots:
     void on_FirmwareUpdate_clicked();
 
     void on_StopLaser2_clicked();
+
     void slotTimerAlarm();
+
+    void on_radio_admin_clicked();
+
+    void on_histogram_clicked();
 
 private:
     QTimer *timer;
@@ -157,6 +153,7 @@ private:
     QStringList Protocol (QStringList  AliceBit, QStringList  AliceBasis, QStringList  BobBit, QStringList  BobBasis);
     QStringList Protocol_Eva (QStringList  AliceBit, QStringList  AliceBasis, QStringList EvaBasis, QStringList  BobBit, QStringList  BobBasis);
     QStringList Random(int n);
+    void ParamAngles();
     Ui::MainWindow *ui;
     HelpWindow *clc;
 

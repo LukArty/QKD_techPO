@@ -14,6 +14,7 @@
 #ifndef CESERIAL_H
 #define CESERIAL_H
 #include <string>
+#include <stdint.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
