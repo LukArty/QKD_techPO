@@ -66,7 +66,7 @@ api:: InitResponse Conserial:: Init()
         string angle4_ = temp_;
 
         if (angle1_.length() > 4 && angle2_.length() > 4 && angle3_.length() > 4 && angle4_.length() > 4){ //Если в файл записаны углы
-            WAngles<angle_t> anglesIni_;
+            WAngles <angle_t> anglesIni_{};
             anglesIni_.aHalf_= stof (angle1_) ;
             anglesIni_.aQuart_= stof (angle2_);
             anglesIni_.bHalf_= stof (angle3_);
@@ -106,19 +106,22 @@ api::InitResponse Conserial::InitByPD()
 
     response.maxLaserPower_ = pack.parameters_[8];
     response.errorCode_ = pack.status_;
-
-    standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
-    standOptions.curAngles_ = standOptions.startPlatesAngles_;
-    standOptions.startLightNoises_ = response.startLightNoises_;
-    standOptions.maxSignalLevels_ = response.maxSignalLevels_;
-    standOptions.maxLaserPower_ = response.maxLaserPower_;
-    standOptions.timeoutTime_ = tempData;
+    if(version_protocol != VersionProtocol::protocol_1_0 && version_protocol != VersionProtocol::unknown){
+        standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
+        standOptions.curAngles_ = standOptions.startPlatesAngles_;
+        standOptions.startLightNoises_ = response.startLightNoises_;
+        standOptions.maxSignalLevels_ = response.maxSignalLevels_;
+        standOptions.maxLaserPower_ = response.maxLaserPower_;
+        standOptions.timeoutTime_ = tempData;
+    }
     return response; // Возвращаем сформированный ответ
 }
 
 api::InitResponse Conserial::InitByButtons(WAngles<angle_t> angles)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(angles.aHalf_)+ to_string(angles.aQuart_)
+           + to_string(angles.bHalf_)+ to_string(angles.bQuart_));
     api::InitResponse response; // Структура для формирования ответа
 
     WAngles<adc_t> steps = CalcSteps(angles);
@@ -172,6 +175,8 @@ api::AdcResponse Conserial::RunTest()
 api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t power)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(angles.aHalf_)+ to_string(angles.aQuart_)
+           + to_string(angles.bHalf_)+ to_string(angles.bQuart_) + to_string(power));
     api::SendMessageResponse response; // Структура для формирования ответа
 
     WAngles<adc_t> steps = CalcSteps(angles);
@@ -205,14 +210,15 @@ api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t p
 api::AdcResponse Conserial::SetTimeout(adc_t timeout)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(timeout));
     api::AdcResponse response; // Поле типа adc_t c ответом и код ошибки команды
     if(standOptions.premissions!=1){
-        response = {0,0};
+        response = {0,257};
         return response;
     }
 
     if (timeout <= 0){
-        response.errorCode_ = 2; // Принят некорректный входной параметр
+        response.errorCode_ = 256; // Принят некорректный входной параметр
         return response;
     }
     else if (timeout >= 900){timeout = 900;}
@@ -233,11 +239,12 @@ api::AdcResponse Conserial::SetTimeout(adc_t timeout)
 api::AdcResponse Conserial::SetLaserState(adc_t on)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(on));
     api::AdcResponse response; // Структура для формирования ответа
 
     if(on != 1 && on != 0)
     {
-        response.errorCode_ = 2; // Принят некорректный входной параметр
+        response.errorCode_ = 256; // Принят некорректный входной параметр
         return response;
     }
 
@@ -255,11 +262,12 @@ api::AdcResponse Conserial::SetLaserState(adc_t on)
 api::AdcResponse Conserial::SetLaserPower(adc_t power)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(power));
     api::AdcResponse response; // Структура для формирования ответа
 
-  if (power > standOptions.maxLaserPower_)
+    if (power > standOptions.maxLaserPower_)
     {
-        response.errorCode_ = 2; // Принят некорректный входной параметр
+        response.errorCode_ = 256; // Принят некорректный входной параметр
         return response;
     }
 
@@ -279,6 +287,8 @@ api::AdcResponse Conserial::SetLaserPower(adc_t power)
 api::WAnglesResponse Conserial::SetPlatesAngles(WAngles<angle_t> angles)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(angles.aHalf_)+ to_string(angles.aQuart_)
+           + to_string(angles.bHalf_)+ to_string(angles.bQuart_));
     api::WAnglesResponse response; // Структура для формирования ответа
 
     WAngles<adc_t> steps = CalcSteps(angles);
@@ -301,10 +311,12 @@ api::WAnglesResponse Conserial::SetPlatesAngles(WAngles<angle_t> angles)
 api::WAnglesResponse Conserial::UpdateBaseAngle(WAngles<angle_t> angles)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(angles.aHalf_)+ to_string(angles.aQuart_)
+           + to_string(angles.bHalf_)+ to_string(angles.bQuart_));
     api::WAnglesResponse response; // Структура для формирования ответа
 
     if(standOptions.premissions!=1){
-        response = {{0,0,0,0},0};
+        response = {{0,0,0,0}, 257};
         return response;
     }
 
@@ -349,7 +361,7 @@ api::AdcResponse Conserial::ReadEEPROM(uint8_t numberUnit_)
     api::AdcResponse response; // Структура для формирования ответа
 
     if(standOptions.premissions!=1){
-        response = {0,0};
+        response = {0, 257};
         return response;
     }
 
@@ -371,7 +383,7 @@ api::AdcResponse Conserial::WriteEEPROM(uint8_t numberUnit_, uint16_t param_)
     api::AdcResponse response; // Структура для формирования ответа
 
     if(standOptions.premissions!=1){
-        response = {0,0};
+        response = {0, 257};
         return response;
     }
 
@@ -517,7 +529,7 @@ api::AdcResponse Conserial::GetHardwareState(){
     response.errorCode_ = pack.status_;
 
     return response;
-};
+}
 
 api::AdcResponse Conserial::GetErrorCode()
 {
@@ -588,7 +600,7 @@ api::InitResponse Conserial::GetInitParams(){
 
     return response; // Возвращаем сформированный ответ
 
-};
+}
 
 api::SLevelsResponse Conserial::GetStartLightNoises()
 {
@@ -604,13 +616,14 @@ api::SLevelsResponse Conserial::GetStartLightNoises()
 api::AngleResponse Conserial::SetPlateAngle(adc_t plateNumber, angle_t angle)
 {
     logOut(__FUNCTION__);
+    logOut("Параметры: " + to_string(angle));
     api::AngleResponse response; // Структура для формирования ответа
     api::WAnglesResponse tempResponse;
-    WAngles<angle_t> angles;
+    WAngles <angle_t> angles {};
 
     if(plateNumber < 1 || plateNumber > 4)
     {
-        response.errorCode_ = 2; // // Принят некорректный входной параметр
+        response.errorCode_ = 256; // // Принят некорректный входной параметр
         return response;
     }
 
@@ -678,7 +691,8 @@ api::AdcResponse Conserial::GetMaxLaserPower()
 
 api::WAnglesResponse Conserial::GetStartPlatesAngles()
 {
-    logOut(__FUNCTION__);
+
+    logOut(__FUNCTION__ );
     api::WAnglesResponse response; // Структура для формирования ответа
 
     // Записываем полученное в структуру
@@ -704,22 +718,22 @@ api::AdcResponse Conserial::CreateConfigSecret(string passwd){
     api::AdcResponse response;
 
     if(standOptions.premissions!=1){
-        response = {0,0};
+        response = {0, 257};
         return response;
     }
 
 
 
-    int str_length = size(passwd);
+    int str_length = passwd.size();
     if(str_length>20)
     {
-        response.errorCode_ = 5; // Принят некорректный входной параметр
+        response.errorCode_ = 256; // Принят некорректный входной параметр
         return response;
     }
     //Старшие байты добиваются нулями в случае короткого пароля
     while (str_length<20 ){
         passwd=(char) 0x00 + passwd;
-        str_length = size(passwd);
+        str_length = passwd.size();
     }
 
 
@@ -739,7 +753,7 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd){
     logOut(__FUNCTION__);
     api::AdcResponse response;
 
-    int str_length = size(passwd);
+    int str_length = passwd.size();
     if(str_length>20)
     {
         response.errorCode_ = 5; // Принят некорректный входной параметр
@@ -747,7 +761,7 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd){
     }
     while (str_length<20 ){
         passwd=(char) 0x00 + passwd;
-        str_length = size(passwd);
+        str_length = passwd.size();
     }
 
     UartResponse pack;
@@ -820,22 +834,22 @@ hwe::Conserial::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
         uint8_t *bytes = {new uint8_t[N]};
         ParamToBytes(bytes, N);
         UartResponse pack = Twiting(dict_.find("GetCurrentFirmwareVersion")->second, bytes, N);
-         response.major_ = pack.parameters_[0];
-         response.minor_ = pack.parameters_[1];
-         response.micro_ = pack.parameters_[2];
-         response.errorCode_ = pack.status_;
-         versionFirmware  = {response.major_,response.minor_,response.micro_};
+        response.major_ = pack.parameters_[0];
+        response.minor_ = pack.parameters_[1];
+        response.micro_ = pack.parameters_[2];
+        response.errorCode_ = pack.status_;
+        versionFirmware  = {response.major_,response.minor_,response.micro_};
         response = {versionFirmware.major,versionFirmware.minor,versionFirmware.micro};
         break;
     }
     default:
         if(version_protocol == VersionProtocol::protocol_1_0){
-        response = {1,0,0};
+            response = {1,0,0};
         }
         break;
     }
     return response;
-};
+}
 
 void Conserial::FirmwareUpdate (string path){
     logOut(__FUNCTION__);
@@ -843,12 +857,13 @@ void Conserial::FirmwareUpdate (string path){
     const char * mainCommand= command.c_str();
     if(system(mainCommand)){
         FindProtocolVersion();
-    };
+    }
+    logOut("\n");
 }
 
 
 void Conserial::FindProtocolVersion(){
-    //logOut("\t  **** START " + __FUNCTION__+ " ****");
+    logOut("\t  **** START " + (string) __FUNCTION__+ " ****");
     int notFound = 1;
 
     while(notFound !=0 && !(version_protocol == VersionProtocol::unknown)){
@@ -867,7 +882,21 @@ void Conserial::FindProtocolVersion(){
             }
         }
     }
-   // logOut("\t **** END " + __FUNCTION__ + " ****");
+    switch (version_protocol) {
+    case VersionProtocol::protocol_1_5:
+        logOut("Version: 1.5");
+        break;
+    case VersionProtocol::protocol_1_2:
+        logOut("Version: 1.2");
+        break;
+    case VersionProtocol::protocol_1_0:
+        logOut("Version: 1.0");
+        break;
+    default:
+        logOut("Version: unknown");
+        break;
+    }
+    logOut("\t **** END " + (string)__FUNCTION__ + " **** \n");
 }
 
 //          ****** ТРАНСПРОТ ******
@@ -877,7 +906,7 @@ Conserial::UartResponse Conserial::Twiting (char commandName, uint8_t * bytes, u
     // Проверка соединения
     if (!StandIsConected())
     {
-        pack.status_= 17;
+        pack.status_= 0;
     }else {
 
         int count = 0;
@@ -910,10 +939,10 @@ void Conserial::ParamToBytes(uint8_t * bytes,  int &quantityP, ...){
         bytes[i] = (params[j]>>8);
         bytes[i+1] = params[j];
         j++;
-    };
+    }
 
     delete [] params;
-};
+}
 
 uint16_t Conserial:: SendPacket (char commandName, uint8_t * bytes, uint16_t N){
 
@@ -931,7 +960,7 @@ uint16_t Conserial:: SendPacket (char commandName, uint8_t * bytes, uint16_t N){
         temp_[2] = commandName;
         for (int i = 3; i <=  N+2; i++){
             temp_[i] = bytes[i-3];
-        };
+        }
         crc = Crc8((uint8_t *) &temp_, N+4);//bytes +pld0+pld1+ cN +solt
 
         packingMessage[0] = 0xFF; //st0
@@ -952,7 +981,7 @@ uint16_t Conserial:: SendPacket (char commandName, uint8_t * bytes, uint16_t N){
     case VersionProtocol::protocol_1_2:{
         for (int i = 1; i <=  N; i++){
             temp_[i] = bytes[i-1];
-        };
+        }
         crc = Crc8((uint8_t *) &temp_, N+2);//bytes + cN +solt
 
         packingMessage[0] = 0xFF; //st0
@@ -972,7 +1001,7 @@ uint16_t Conserial:: SendPacket (char commandName, uint8_t * bytes, uint16_t N){
     case VersionProtocol::protocol_1_0:{
         for (int i = 1; i <=  N; i++){
             temp_[i] = bytes[i-1];
-        };
+        }
         crc = Crc8((uint8_t *) &temp_, N+2);//bytes + cN +solt
 
         packingMessage[0] = 0xFF; //st0
@@ -1005,7 +1034,7 @@ uint16_t Conserial:: SendPacket (char commandName, uint8_t * bytes, uint16_t N){
     }
     //delete [] packingMessage;
     return 1;
-};
+}
 
 int Conserial::ReadPacket(uint8_t *readBytes, int N ){
 
@@ -1155,50 +1184,44 @@ bool Conserial::StandIsConected (){
         com_.Open();
         if(!com_.IsOpened())
             return 0;
+        else{
+            FindProtocolVersion();
+        }
     }
     return 1;
 };
 
-uint8_t Conserial::CheckStatus(uint8_t status){
-    uint8_t errorCode = 3;
+uint16_t Conserial::CheckStatus(uint16_t status){
+    uint16_t errorCode = status;
 
     if (status == 1){
         errorCode = 0;
     }else
     {
-        if ( (status ^ 2) == 0 ){
-            cout<<"Количество принятых параметров превышает допустимый предел"<<endl;
-            errorCode = 3;
-        }
+        if ( !(status ^ 2) ){
+            logOut("Количество принятых параметров превышает допустимый предел");}
+        if ( !(status ^ 4) ){
+            logOut("Необнаружена метка конца пакета");}
+        if ( !(status ^ 16) ){
+            logOut("Несоответствие CRC");}
+        if ( !(status ^ 32) ){
+            logOut("Не удалось выполнить команду");}
+        if ( !(status ^ 64) ){
+            logOut("Аппаратная платформа в аварийном состоянии");}
 
-        if ( (status ^ 4) == 0 ){
-            cout<<"Необнаружена метка конца пакета"<<endl;
-            errorCode = 3;
+        if ( !(status ^ 0)){
+            errorCode = 1;
+            logOut("Проблема с подключением");
         }
-
-        if ( (status ^ 16) == 0 ){
-            cout<<"Несоответствие CRC"<<endl;
-            errorCode = 3;
+        if ( !(status ^ 256)){
+            logOut("Переданы неверные параметры на вход библиотечной функции ");
         }
-
-        if ( (status ^ 17) == 0 ){
-            errorCode = 1; //Проблема с подключением
-        }
-
-        if ( (status ^ 18) == 0 ){
-            errorCode = 2; //Переданы неверные параметры на вход библиотечной функции
-        }
-        if ( (status ^ 32) == 0 ){
-            cout<<"Не удалось выполнить команду"<<endl;
-            errorCode = 3;
-        }
-
-        if ( (status ^ 64) == 0 ){
-            cout<<"Аппаратная платформа в аварийном состоянии"<<endl;
-            errorCode = 3;
+        if ( !(status ^ 257)){
+            logOut("Отказано в доступе (недостаточно прав)");
         }
     }
 
+    logOut("-> Код ошибки: " + to_string(errorCode));
     return errorCode;
 }
 
@@ -1262,8 +1285,6 @@ const std::string Conserial::currentDateTime() {
     struct tm  tstruct;
     char       buf[80];
     tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
     strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
 
     return buf;

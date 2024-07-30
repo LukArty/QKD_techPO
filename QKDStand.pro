@@ -20,8 +20,11 @@ INCLUDEPATH +=\
 
 SOURCES += \
     ceSerial.cpp \
+    ceSerial_w.cpp \
     conserial.cpp \
     helpwindow.cpp \
+    histogram.cpp \
+    histogrameva.cpp \
     main.cpp \
     mainwindow.cpp \
     qcustomplot.cpp
@@ -34,6 +37,8 @@ HEADERS += \
     ceSerial.h \
     conserial.h \
     helpwindow.h \
+    histogram.h \
+    histogrameva.h \
     hwetypes.h \
     logictypes.h \
     mainwindow.h \
@@ -41,6 +46,8 @@ HEADERS += \
 
 FORMS += \
     helpwindow.ui \
+    histogram.ui \
+    histogrameva.ui \
     mainwindow.ui
 
 

@@ -5,6 +5,8 @@
 #include <conserial.h>
 #include <QVector>
 #include <helpwindow.h>
+#include <histogram.h>
+#include <histogrameva.h>
 #include <QTimer>
 #include <QTime>
 
@@ -52,6 +54,8 @@ private slots:
     void on_SendMessageBut_clicked();
 
     void ConsoleLog(QString text);
+
+    void ConsoleLog(QString text, bool bad);
 
     void on_WriteIni_clicked();
 
@@ -143,6 +147,9 @@ private slots:
 
     void on_histogram_clicked();
 
+    void on_radio_ElectionPD_v2_clicked();
+
+
 private:
     QTimer *timer;
     float AngleCheck (float angle, float step);
@@ -158,7 +165,10 @@ private:
     HelpWindow *clc;
 
     hwe::Conserial stand_;
+    Histogram hst;
+    HistogramEva eva;
     bool Flag_;
     QVector<double> x,y1,y2,y3;
+    QShortcut       *keyEnter;    // объект горячей клавиши Enter
 };
 #endif // MAINWINDOW_H

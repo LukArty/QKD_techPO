@@ -334,7 +334,7 @@ private:
     uint16_t SendPacket (char commandName, uint8_t * bytes, uint16_t N );
     /// @brief Парсинг кодов ошибок с АП
     /// @return Статус
-    uint8_t CheckStatus(uint8_t status);
+    uint16_t CheckStatus(uint16_t status);
     /// @brief Проверка подключения к АП
     bool StandIsConected ();
 

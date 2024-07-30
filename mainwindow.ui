@@ -50,8 +50,11 @@
       <height>700</height>
      </size>
     </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -466,6 +469,11 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <font>
         <bold>false</bold>
        </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: #7CFC00;
+color: black;
+</string>
       </property>
       <property name="text">
        <string>Иниц. по Фд</string>
@@ -2768,6 +2776,21 @@ li.checked::marker { content: &quot;\2612&quot;; }
          <height>23</height>
         </rect>
        </property>
+       <property name="styleSheet">
+        <string notr="true">QProgressBar {
+	border: 1px solid grey;
+	background-color: rgba(0, 0, 0, 0);
+	text-align: center;
+
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(spread:reflect, x1:0.533, y1:0.006, x2:0.533, y2:0.545455, stop:0.670051 rgba(0, 0, 0, 0), stop:0.959391 rgba(124, 252, 0, 255));
+}
+
+
+</string>
+       </property>
        <property name="value">
         <number>100</number>
        </property>
@@ -3263,10 +3286,146 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <customwidget>
    <class>QCustomPlot</class>
    <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
+   <header>../../qcustomplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>CommandConsole</tabstop>
+  <tabstop>SetLaserStateBut</tabstop>
+  <tabstop>LaserState</tabstop>
+  <tabstop>GetLaserStateBut</tabstop>
+  <tabstop>GetErrorCodeBut</tabstop>
+  <tabstop>SetLaserPowerBut</tabstop>
+  <tabstop>LaserPowerValue</tabstop>
+  <tabstop>GetLaserPowerBut</tabstop>
+  <tabstop>PulseLaser</tabstop>
+  <tabstop>StopLaser</tabstop>
+  <tabstop>SetTimeoutBut</tabstop>
+  <tabstop>TimeoutValue</tabstop>
+  <tabstop>GetTimeoutBut</tabstop>
+  <tabstop>GetSignalLevelBut</tabstop>
+  <tabstop>GetLightNoisesBut</tabstop>
+  <tabstop>InitByPD</tabstop>
+  <tabstop>InitBut</tabstop>
+  <tabstop>InitByButtons</tabstop>
+  <tabstop>GetInitParams</tabstop>
+  <tabstop>SendMessageBut</tabstop>
+  <tabstop>RunSelfTestBut</tabstop>
+  <tabstop>InitAngles1</tabstop>
+  <tabstop>InitAngles2</tabstop>
+  <tabstop>InitAngles3</tabstop>
+  <tabstop>InitAngles4</tabstop>
+  <tabstop>SetPlateAngleBut</tabstop>
+  <tabstop>NumberAngle</tabstop>
+  <tabstop>PlateAngle</tabstop>
+  <tabstop>WriteIni</tabstop>
+  <tabstop>ReadIni</tabstop>
+  <tabstop>GetCurPlatesAnglesBut</tabstop>
+  <tabstop>GetRotateStepBut</tabstop>
+  <tabstop>PDRatio</tabstop>
+  <tabstop>QuantityTest</tabstop>
+  <tabstop>Test_Speed_2</tabstop>
+  <tabstop>Test_Speed</tabstop>
+  <tabstop>TestTimebut</tabstop>
+  <tabstop>Test_time</tabstop>
+  <tabstop>LaserTest</tabstop>
+  <tabstop>Help</tabstop>
+  <tabstop>radio_admin</tabstop>
+  <tabstop>Angles1</tabstop>
+  <tabstop>Angles2</tabstop>
+  <tabstop>Angles3</tabstop>
+  <tabstop>Angles4</tabstop>
+  <tabstop>Interval</tabstop>
+  <tabstop>Step_scan</tabstop>
+  <tabstop>ScanAngles1</tabstop>
+  <tabstop>ScanAngles2</tabstop>
+  <tabstop>ScanAngles3</tabstop>
+  <tabstop>ScanAngles4</tabstop>
+  <tabstop>RotateAngles</tabstop>
+  <tabstop>MonitoringSend</tabstop>
+  <tabstop>MonitorNoises</tabstop>
+  <tabstop>MonitoringPD</tabstop>
+  <tabstop>Stop_monitoring</tabstop>
+  <tabstop>PDH_max</tabstop>
+  <tabstop>PDH_min</tabstop>
+  <tabstop>Cur_PDH</tabstop>
+  <tabstop>PDV_max</tabstop>
+  <tabstop>PDV_min</tabstop>
+  <tabstop>Cur_PDV</tabstop>
+  <tabstop>Nos_PDH</tabstop>
+  <tabstop>Nos_PDV</tabstop>
+  <tabstop>PD_Check</tabstop>
+  <tabstop>timer</tabstop>
+  <tabstop>Test_monitor</tabstop>
+  <tabstop>StopLaser2</tabstop>
+  <tabstop>aHalf_00</tabstop>
+  <tabstop>aQuart_00</tabstop>
+  <tabstop>aHalf_01</tabstop>
+  <tabstop>aQuart_01</tabstop>
+  <tabstop>aHalf_10</tabstop>
+  <tabstop>aQuart_10</tabstop>
+  <tabstop>aHalf_11</tabstop>
+  <tabstop>aQuart_11</tabstop>
+  <tabstop>bHalf_00</tabstop>
+  <tabstop>bQuart_00</tabstop>
+  <tabstop>bHalf_01</tabstop>
+  <tabstop>bQuart_01</tabstop>
+  <tabstop>bHalf_10</tabstop>
+  <tabstop>bQuart_10</tabstop>
+  <tabstop>bHalf_11</tabstop>
+  <tabstop>bQuart_11</tabstop>
+  <tabstop>PH_00</tabstop>
+  <tabstop>PV_00</tabstop>
+  <tabstop>PH_01</tabstop>
+  <tabstop>PV_01</tabstop>
+  <tabstop>PH_10</tabstop>
+  <tabstop>PV_10</tabstop>
+  <tabstop>PH_11</tabstop>
+  <tabstop>PV_11</tabstop>
+  <tabstop>AliceBit</tabstop>
+  <tabstop>AliceBasis</tabstop>
+  <tabstop>BobBit</tabstop>
+  <tabstop>BobBasis</tabstop>
+  <tabstop>AutoLine</tabstop>
+  <tabstop>Auto_Filing</tabstop>
+  <tabstop>TestLine</tabstop>
+  <tabstop>Start_protocol</tabstop>
+  <tabstop>Delete</tabstop>
+  <tabstop>Evacheck</tabstop>
+  <tabstop>Protocol_test</tabstop>
+  <tabstop>radio_ElectionPD</tabstop>
+  <tabstop>radio_ElectionPD_v2</tabstop>
+  <tabstop>Error_key</tabstop>
+  <tabstop>Eva_key</tabstop>
+  <tabstop>EvaBasis</tabstop>
+  <tabstop>EvaBit</tabstop>
+  <tabstop>RawLine</tabstop>
+  <tabstop>Comparison</tabstop>
+  <tabstop>BlankLine</tabstop>
+  <tabstop>key</tabstop>
+  <tabstop>Progress</tabstop>
+  <tabstop>LengthKey</tabstop>
+  <tabstop>error_pr</tabstop>
+  <tabstop>Time</tabstop>
+  <tabstop>Speed</tabstop>
+  <tabstop>histogram</tabstop>
+  <tabstop>CreateConfigSecret</tabstop>
+  <tabstop>password</tabstop>
+  <tabstop>OpenConfigMode</tabstop>
+  <tabstop>CloseConfigMode</tabstop>
+  <tabstop>Console_2</tabstop>
+  <tabstop>GetCurrentMode</tabstop>
+  <tabstop>GetProtocolVersion</tabstop>
+  <tabstop>FirmwareUpdate</tabstop>
+  <tabstop>GetProtocolFirmwareVersion</tabstop>
+  <tabstop>GetMaxPayloadSize</tabstop>
+  <tabstop>GetComPortName</tabstop>
+  <tabstop>SetComPortName</tabstop>
+  <tabstop>Port</tabstop>
+  <tabstop>File_path</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

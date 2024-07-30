@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/resourses">
+        <file>img/2023-11-16_00-21-02.png</file>
+        <file>img/image_2023-11-16_00-22-29.png</file>
+        <file>img/image_2023-11-16_00-22-47.png</file>
+    </qresource>
+    <qresource prefix="/t"/>
+</RCC>
