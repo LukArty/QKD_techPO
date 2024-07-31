@@ -54,7 +54,7 @@
      <string notr="true"/>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -2723,22 +2723,6 @@ color: black;
         <string>Выполнено:</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="Progress">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>20</y>
-         <width>121</width>
-         <height>27</height>
-        </rect>
-       </property>
-       <property name="inputMethodHints">
-        <set>Qt::ImhMultiLine</set>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOn</enum>
-       </property>
-      </widget>
       <widget class="QLineEdit" name="error_pr">
        <property name="geometry">
         <rect>
@@ -2795,6 +2779,16 @@ QProgressBar::chunk {
         <number>100</number>
        </property>
       </widget>
+      <widget class="QLineEdit" name="Progress">
+       <property name="geometry">
+        <rect>
+         <x>140</x>
+         <y>20</y>
+         <width>121</width>
+         <height>23</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
      <widget class="QPushButton" name="TestLine">
       <property name="geometry">
@@ -2835,26 +2829,6 @@ QProgressBar::chunk {
       </property>
       <property name="text">
        <string>Ключ:</string>
-      </property>
-     </widget>
-     <widget class="QTextEdit" name="key">
-      <property name="geometry">
-       <rect>
-        <x>160</x>
-        <y>560</y>
-        <width>711</width>
-        <height>27</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QTextEdit" name="RawLine">
-      <property name="geometry">
-       <rect>
-        <x>160</x>
-        <y>460</y>
-        <width>711</width>
-        <height>27</height>
-       </rect>
       </property>
      </widget>
      <widget class="QLineEdit" name="EvaBasis">
@@ -2928,7 +2902,7 @@ QProgressBar::chunk {
        </font>
       </property>
       <property name="text">
-       <string>Ева (выбор бита)</string>
+       <string>Ева (полученные биты)</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Protocol_test">
@@ -3020,6 +2994,26 @@ QProgressBar::chunk {
       </property>
       <property name="text">
        <string>Гистограммы</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="RawLine">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>470</y>
+        <width>711</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="key">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>560</y>
+        <width>711</width>
+        <height>23</height>
+       </rect>
       </property>
      </widget>
     </widget>
@@ -3401,11 +3395,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <tabstop>Eva_key</tabstop>
   <tabstop>EvaBasis</tabstop>
   <tabstop>EvaBit</tabstop>
-  <tabstop>RawLine</tabstop>
   <tabstop>Comparison</tabstop>
   <tabstop>BlankLine</tabstop>
-  <tabstop>key</tabstop>
-  <tabstop>Progress</tabstop>
   <tabstop>LengthKey</tabstop>
   <tabstop>error_pr</tabstop>
   <tabstop>Time</tabstop>

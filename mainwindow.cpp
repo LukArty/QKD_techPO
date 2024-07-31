@@ -1526,12 +1526,12 @@ QStringList MainWindow:: Protocol (QStringList  AliceBit,QStringList  AliceBasis
 
         //Progress
         ui->Progress->clear();
-        ui ->Progress->append(QString::number(i+1)+" из "+QString::number(AliceBit.size()));
+        ui ->Progress->setText(QString::number(i+1)+" из "+QString::number(AliceBit.size()));
         ui->progressBar->setValue(((i+1)*100)/AliceBit.size());
 
         //Вывод сырой строки
         ui->RawLine->clear();
-        ui ->RawLine -> append(bit.join(""));
+        ui ->RawLine -> setText(bit.join(""));
         setUpdatesEnabled(true);
         repaint();
         setUpdatesEnabled(false);
@@ -1686,13 +1686,14 @@ QStringList MainWindow:: Protocol_Eva (QStringList  AliceBit,QStringList  AliceB
 
         //Progress
         ui->Progress->clear();
-        ui ->Progress->append(QString::number(i+1)+" из "+QString::number(AliceBit.size()));
+        ui ->Progress->setText(QString::number(i+1)+" из "+QString::number(AliceBit.size()));
         ui->progressBar->setValue(((i+1)*100)/AliceBit.size());
 
         //Вывод сырой строки
         ui->RawLine->clear();
         ui ->EvaBit -> setText(bit_e.join(""));
-        ui ->RawLine -> append(bit.join(""));
+        ui ->RawLine -> setText(bit.join(""));
+
         setUpdatesEnabled(true);
         repaint();
         setUpdatesEnabled(false);
@@ -1728,6 +1729,7 @@ void MainWindow::on_Start_protocol_clicked()
         ui ->Time->clear();
         ui ->Speed->clear();
         ui ->error_pr->clear();
+        ui ->Progress->clear();
 
 
         float step = stand_.GetRotateStep().angle_; //шаг двигателя
@@ -1785,7 +1787,15 @@ void MainWindow::on_Start_protocol_clicked()
         //Определение алгоритма протокола
         if (ui->Evacheck->isChecked())
         {
-            bit = Protocol_Eva(AliceBit, AliceBasis, EvaBasis, BobBit, BobBasis);
+            if((ui ->EvaBasis -> text()) == ""){
+                QMessageBox::information(this,
+                                         "Ошибка!",
+                                         "Не все поля заполнены!",
+                                         QMessageBox::Ok);
+            }
+            else{
+                bit = Protocol_Eva(AliceBit, AliceBasis, EvaBasis, BobBit, BobBasis);
+            }
         }
         else
         {

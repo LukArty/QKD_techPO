@@ -7,11 +7,15 @@ HistogramEva::HistogramEva(QWidget *parent)
     , ui(new Ui::HistogramEva)
 {
     ui->setupUi(this);
+    ui->horizontalScrollBar->setRange(800, 1600);
+
+    // инициализируем диапазон осей
     ui->histogram_AE->xAxis->setRange(0,16);
     ui->histogram_AE->yAxis->setRange(0,1);
     ui->histogram_EB->xAxis->setRange(0,16);
     ui->histogram_EB->yAxis->setRange(0,1);
 
+    //создаем соединение между осями и полосой прокрутки
     connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
     connect(ui->histogram_AE->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
     connect(ui->histogram_EB->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
@@ -24,22 +28,19 @@ HistogramEva::~HistogramEva()
 
 void HistogramEva::horzScrollBarChanged(int value)
 {
-    if (qAbs(ui->histogram_AE->xAxis->range().size()-value/100.0) > 0.01) //пользователь перетаскивает график
+    if (qAbs(ui->histogram_AE->xAxis->range().center()-value/100.0) > 0.01)
     {
-        ui->histogram_AE->xAxis->setRange(value/100.0, ui->histogram_AE->xAxis->range().size(), Qt::AlignLeft);
+        ui->histogram_AE->xAxis->setRange(value/100.0, ui->histogram_AE->xAxis->range().size(), Qt::AlignCenter);
         ui->histogram_AE->replot();
-    }
-    if (qAbs(ui->histogram_EB->xAxis->range().size()-value/100.0) > 0.01) //пользователь перетаскивает график
-    {
-        ui->histogram_EB->xAxis->setRange(value/100.0, ui->histogram_EB->xAxis->range().size(), Qt::AlignLeft);
+        ui->histogram_EB->xAxis->setRange(value/100.0, ui->histogram_EB->xAxis->range().size(), Qt::AlignCenter);
         ui->histogram_EB->replot();
     }
 }
 
 void HistogramEva::xAxisChanged(QCPRange range)
 {
-    //ui->horizontalScrollBar->setValue(qRound(range.center() *100.0)); // отрегулировать положение ползунка
-    ui->horizontalScrollBar->setPageStep(qRound(range.size()*100.0)); // настроить размер ползунка полосы прокрутки
+    ui->horizontalScrollBar->setValue(qRound(range.center()*100.0)); /// отрегулировать положение ползунка
+    ui->horizontalScrollBar->setPageStep(qRound(range.size()*100.0)); /// настроить размер ползунка полосы прокрутки
 }
 
 void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QStringList pdheb, QStringList pdveb){
@@ -88,6 +89,7 @@ void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QString
     ui->histogram_EB->graph(1)->setAntialiased(false);
     ui->histogram_EB->graph(1)->setLineStyle(QCPGraph::lsImpulse);
 
+    ui->horizontalScrollBar->setRange(800,(pdvae.size()-8)*100); //граници для скролла от 0 до кол-во битов в массиве
     double probaH, probaV;
     double summa;
 
@@ -97,17 +99,15 @@ void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QString
         probaH = (pdhae[i].toDouble())/summa;
         probaV = (pdvae[i].toDouble())/summa;
 
-        x1.push_back(i+1);
-        x2.push_back(i+1.3);
+        x1.push_back(i+0.1);
+        x2.push_back(i+0.4);
         y1.push_back(probaH);
         y2.push_back(probaV);
 
-        ui->histogram_AE->yAxis->setRange(0 ,1);
-        ui->histogram_AE->xAxis->setRange(0 ,pdhae.size()+1);
-        ui->histogram_AE->graph(0)->addData(x1,y1);
-        ui->histogram_AE->graph(1)->addData(x2,y2);
+        ui->histogram_AE->graph(0)->setData(x1,y1);
+        ui->histogram_AE->graph(1)->setData(x2,y2);
         ui->histogram_AE->axisRect()->setupFullAxesBox(true);
-        ui->histogram_AE->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+        ui->histogram_AE->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);//возможность перемещать график по горизонтальной оси и возможность удаление/приближение
         ui->histogram_AE->replot();
 
         //Для графика Ева - Боб
@@ -118,12 +118,10 @@ void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QString
         y3.push_back(probaH);
         y4.push_back(probaV);
 
-        ui->histogram_EB->yAxis->setRange(0 ,1);
-        ui->histogram_EB->xAxis->setRange(0 ,pdheb.size()+1);
-        ui->histogram_EB->graph(0)->addData(x1,y3);
-        ui->histogram_EB->graph(1)->addData(x2,y4);
+        ui->histogram_EB->graph(0)->setData(x1,y3);
+        ui->histogram_EB->graph(1)->setData(x2,y4);
         ui->histogram_EB->axisRect()->setupFullAxesBox(true);
-        ui->histogram_EB->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+        ui->histogram_EB->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);//возможность перемещать график по горизонтальной оси и возможность удаление/приближение
         ui->histogram_EB->replot();
     }
 
