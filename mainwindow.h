@@ -5,6 +5,7 @@
 #include <conserial.h>
 #include <QVector>
 #include <helpwindow.h>
+#include <adminlogin.h>
 #include <histogram.h>
 #include <histogrameva.h>
 #include <QTimer>
@@ -21,6 +22,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+     void Flag_admin();
 
 private slots:
     void on_InitBut_clicked();
@@ -149,9 +151,12 @@ private slots:
 
     void on_radio_ElectionPD_v2_clicked();
 
+    void slotShortcutCtrl1();  void slotShortcutCtrl2();  void slotShortcutCtrl3();  void slotShortcutCtrl4();
+
 
 private:
-    QTimer *timer;
+    QTimer *timer, *timer2;
+    int m,s;
     float AngleCheck (float angle, float step);
     QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
     QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig_h);
@@ -165,10 +170,11 @@ private:
     HelpWindow *clc;
 
     hwe::Conserial stand_;
+    Adminlogin *adm;
     Histogram hst;
     HistogramEva eva;
     bool Flag_;
     QVector<double> x,y1,y2,y3;
-    QShortcut       *keyEnter;    // объект горячей клавиши Enter
+    QShortcut       *keyCNTR1, *keyCNTR2, *keyCNTR3, *keyCNTR4;    // объект горячей клавиши Enter
 };
 #endif // MAINWINDOW_H

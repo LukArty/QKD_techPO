@@ -19,6 +19,7 @@ INCLUDEPATH +=\
     ./
 
 SOURCES += \
+    adminlogin.cpp \
     ceSerial.cpp \
     ceSerial_w.cpp \
     conserial.cpp \
@@ -33,6 +34,7 @@ SOURCES += \
 
 HEADERS += \
     abstracthardwareapi.h \
+    adminlogin.h \
     apitypes.h \
     ceSerial.h \
     conserial.h \
@@ -45,6 +47,7 @@ HEADERS += \
     qcustomplot.h
 
 FORMS += \
+    adminlogin.ui \
     helpwindow.ui \
     histogram.ui \
     histogrameva.ui \

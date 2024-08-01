@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tabWidget->setTabEnabled(3,false);
     ui ->Interval -> setText("180"); //интервал по-умолчанию
     ui->progressBar->setValue(0);
+    ui->Timer_->setText("00 : 00");
 
     ParamAngles();
 
@@ -39,10 +40,47 @@ MainWindow::MainWindow(QWidget *parent)
     ui->Protocol_test->hide();
     ui->Test_monitor->hide();
 
-    //Запуск функций через Enter
+    ///Запуск функций через Enter
     connect(ui->LaserPowerValue, SIGNAL(returnPressed()), this, SLOT(on_SetLaserPowerBut_clicked()));
     connect(ui->AutoLine, SIGNAL(returnPressed()), this, SLOT(on_Auto_Filing_clicked()));
     connect(ui->TimeoutValue, SIGNAL(returnPressed()), this, SLOT(on_SetTimeoutBut_clicked()));
+    connect(ui->Port, SIGNAL(returnPressed()), this, SLOT(on_SetComPortName_clicked()));
+
+    ///Переключения между вкладками
+    // Инициализируем объект
+    keyCNTR1 = new QShortcut(this);
+    keyCNTR2 = new QShortcut(this);
+    keyCNTR3 = new QShortcut(this);
+    keyCNTR4 = new QShortcut(this);
+    // Устанавливаем сочетание клавиш
+    keyCNTR1->setKey(Qt::CTRL + Qt::Key_1);
+    keyCNTR2->setKey(Qt::CTRL + Qt::Key_2);
+    keyCNTR3->setKey(Qt::CTRL + Qt::Key_3);
+    keyCNTR4->setKey(Qt::CTRL + Qt::Key_4);
+    //обработчик нажатия клавиши
+    connect(keyCNTR1, SIGNAL(activated()), this, SLOT(slotShortcutCtrl1()));
+    connect(keyCNTR2, SIGNAL(activated()), this, SLOT(slotShortcutCtrl2()));
+    connect(keyCNTR3, SIGNAL(activated()), this, SLOT(slotShortcutCtrl3()));
+    connect(keyCNTR4, SIGNAL(activated()), this, SLOT(slotShortcutCtrl4()));
+
+}
+/// @brief обработчик нажатия клавиши
+void MainWindow::slotShortcutCtrl1()
+{
+    ui->tabWidget->setCurrentIndex(0);
+}
+void MainWindow::slotShortcutCtrl2()
+{
+    ui->tabWidget->setCurrentIndex(1);
+}
+void MainWindow::slotShortcutCtrl3()
+{
+    ui->tabWidget->setCurrentIndex(2);
+}
+void MainWindow::slotShortcutCtrl4()
+{
+    if(ui->radio_admin->isChecked()){
+        ui->tabWidget->setCurrentIndex(3); }
 }
 
 
@@ -57,7 +95,6 @@ MainWindow::~MainWindow()
 void MainWindow::ConsoleLog(QString text)
 {
 ui->CommandConsole->append(text);
-//ui->CommandConsole->scroll()
 }
 
 void MainWindow::ConsoleLog(QString text, bool bad)
@@ -572,7 +609,7 @@ void MainWindow::on_PulseLaser_clicked()
     Flag_ = false; // флаг для остваноки
     api::AdcResponse response;
     api::SLevelsResponse response1;
-    int time = 0;
+    int cout = 0;
     int y1_max = 0,y1_ = 0, y1_min = 1000000;
     int y2_max = 0,y2_ = 0, y2_min = 1000000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
@@ -580,11 +617,11 @@ void MainWindow::on_PulseLaser_clicked()
         while (Flag_ == false)
         {
             // вкл/выкл лазера
-            if(time%2){response = stand_.SetLaserState(1); QThread::msleep(200);}
+            if(cout%2){response = stand_.SetLaserState(1); QThread::msleep(200);}
             else{response = stand_.SetLaserState(0);}
             QThread::msleep(200);
             response1 = stand_.GetSignalLevels();
-            x.push_back(time++);
+            x.push_back(cout++);
             y1_ = response1.signal_.h_;
             y2_ = response1.signal_.v_;
             y1.push_back(y1_);
@@ -619,7 +656,7 @@ void MainWindow::on_PulseLaser_clicked()
 
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 1);}
-            ui->widget->xAxis->setRange(0 ,time + 10);
+            ui->widget->xAxis->setRange(0 ,cout + 10);
             ui->widget->graph(0)->addData(x,y1);
             ui->widget->graph(1)->addData(x,y2);
             ui->widget->replot();
@@ -1062,21 +1099,29 @@ void MainWindow::on_MonitoringPD_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
-    ui->timer->setText(QTime::currentTime().toString("hh:mm:ss"));
+    ui->Timer_->setText("00 : 00");
+    timer2 = new QTimer(this);
+    connect(timer2, &QTimer::timeout, this, &MainWindow::slotTimerAlarm);
+    timer2->start(1000);
+
     api::SLevelsResponse response;
     api::AdcResponse response_1;
     //double Power;
     api::AdcResponse response_2;
     Flag_ = false;
-    int time = 0;
+    m = 0; s = 0;
+    int cout = 0;
     float y1_max = 0,y1_ = 0, y1_min =100000, pdh=0;
     float y2_max = 0,y2_ = 0, y2_min =100000, pdv=0;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
     if(response.errorCode_ == 0){
+        timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, this, &MainWindow::killLoop);
+        timer->start(60000);
     while (Flag_ == false)
     {
         response = stand_.GetSignalLevels();
-        x.push_back(time++);
+        x.push_back(cout++);
         y1_ = response.signal_.h_;
         y2_ = response.signal_.v_;
         y1.push_back(y1_);
@@ -1133,28 +1178,39 @@ void MainWindow::on_MonitoringPD_clicked()
         if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
         else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
-        ui->widget->xAxis->setRange(0 ,time + 10);
+        ui->widget->xAxis->setRange(0 ,cout + 10);
         ui->widget->graph(0)->addData(x,y1);
         ui->widget->graph(1)->addData(x,y2);
         ui->widget->replot();
+       //ui->Timer->setText(timer.toString("hh:mm:ss"));
         QApplication::processEvents();
         connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-
-        timer = new QTimer();
-        timer->setInterval(10000);
-        connect(timer, SIGNAL(timeout()), this, SLOT(slotTimerAlarm()));
-        timer->start();
     }
-    ConsoleLog("Среднее знаение для PDH:" + QString::number (pdh/time));
-    ConsoleLog("Отклонение от максимума PDH: " + QString::number (((y1_max-(pdh/time))*100)/(pdh/time))+ " %");
-    ConsoleLog("Отклонение от минимума PDH: " + QString::number ((((pdh/time)-y1_min)*100)/(pdh/time))+ " %");
-    ConsoleLog("Среднее знаение для PDV:" + QString::number (pdv/time));
-    ConsoleLog("Отклонение от максимума PDV: " + QString::number (((y2_max-(pdv/time))*100)/(pdv/time))+ " %");
-    ConsoleLog("Отклонение от минимума PDV: " + QString::number ((((pdv/time)-y2_min)*100)/(pdv/time))+ " %");
+    timer->stop();
+    timer2->stop();
+    ConsoleLog("Среднее знаение для PDH:" + QString::number (pdh/cout));
+    ConsoleLog("Отклонение от максимума PDH: " + QString::number (((y1_max-(pdh/cout))*100)/(pdh/cout))+ " %");
+    ConsoleLog("Отклонение от минимума PDH: " + QString::number ((((pdh/cout)-y1_min)*100)/(pdh/cout))+ " %");
+    ConsoleLog("Среднее знаение для PDV:" + QString::number (pdv/cout));
+    ConsoleLog("Отклонение от максимума PDV: " + QString::number (((y2_max-(pdv/cout))*100)/(pdv/cout))+ " %");
+    ConsoleLog("Отклонение от минимума PDV: " + QString::number ((((pdv/cout)-y2_min)*100)/(pdv/cout))+ " %");
     }
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
-
 }
+/// @brief обновление таймера
+void MainWindow::slotTimerAlarm()
+{
+    s++;
+    if(s>=60){
+        s=0;
+        m++;
+    }
+    if(s<10){
+        ui->Timer_->setText("0"+QString::number(m) +" : "+"0"+QString::number(s));
+    }
+    else{ ui->Timer_->setText("0"+QString::number(m) +" : "+QString::number(s));}
+}
+
 
 /// @brief параметры после инициализации
 void MainWindow::on_GetInitParams_clicked()
@@ -2105,7 +2161,7 @@ void MainWindow::on_MonitoringSend_clicked()
     response_1 = stand_.GetLaserPower();
     double Power = response_1.adcResponse_;
     Flag_ = false;
-    int time = 0;
+    int cout = 0;
     float y1_max = 0,y1_ = 0, y1_min =0, n1_;
     float y2_max = 0,y2_ = 0, y2_min =0, n2_;
     //float pdh=0, pdv=0;
@@ -2114,7 +2170,7 @@ void MainWindow::on_MonitoringSend_clicked()
         while (Flag_ == false)
         {
             response  = stand_.Sendmessage({0,0,0,0},Power);
-            x.push_back(time++);
+            x.push_back(cout++);
             //снятие показателей сигналов
             y1_ = response.currentSignalLevels_.h_;
             y2_ = response.currentSignalLevels_.v_;
@@ -2127,7 +2183,7 @@ void MainWindow::on_MonitoringSend_clicked()
             //pdv =+(y2_- n2_);
 
             //построение графика без засветки
-            x.push_back(time++);
+            x.push_back(cout++);
             y1.push_back(y1_- n1_);
             y2.push_back(y2_- n2_);
 
@@ -2159,7 +2215,7 @@ void MainWindow::on_MonitoringSend_clicked()
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
-            ui->widget->xAxis->setRange(0 ,time + 10);
+            ui->widget->xAxis->setRange(0 ,cout + 10);
             ui->widget->graph(0)->addData(x,y1);
             ui->widget->graph(1)->addData(x,y2);
             ui->widget->replot();
@@ -2168,13 +2224,6 @@ void MainWindow::on_MonitoringSend_clicked()
         }
     }
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
-}
-
-/// @brief обновление таймера
-void MainWindow::slotTimerAlarm()
-{
-
-    ui->timer->setText(QTime::currentTime().toString());
 }
 
 /// @brief Мониториг уровня засветки
@@ -2205,7 +2254,7 @@ void MainWindow::on_MonitorNoises_clicked()
     response_1 = stand_.GetLaserPower();
     double Power = response_1.adcResponse_;
     Flag_ = false;
-    int time = 0;
+    int cout = 0;
     float y1_ = 0, n1_, y2_ = 0, n2_, y1_max = 0, y2_max = 0;
     if(response.errorCode_ == 0){
         while (Flag_ == false)
@@ -2215,7 +2264,7 @@ void MainWindow::on_MonitorNoises_clicked()
             angles3 = ui ->Angles3 -> text();
             angles4 = ui ->Angles4 -> text();
             response  = stand_.Sendmessage({angles1.toFloat(),angles2.toFloat(),angles3.toFloat(),angles4.toFloat()},Power);
-            x.push_back(time++);
+            x.push_back(cout++);
             y1_ = response.currentSignalLevels_.h_;
             y2_ = response.currentSignalLevels_.v_;
             n1_ = response.currentLightNoises_.h_;
@@ -2223,7 +2272,7 @@ void MainWindow::on_MonitorNoises_clicked()
 
             if (ui->PD_Check->isChecked()) //выводятся значения PDH
             {
-                x.push_back(time++);
+                x.push_back(cout++);
                 y1.push_back(y1_- n1_);
                 y2.push_back(y1_);
                 y3.push_back(n1_);
@@ -2237,7 +2286,7 @@ void MainWindow::on_MonitorNoises_clicked()
             }
             else // выводятся значения PDV
             {
-                x.push_back(time++);
+                x.push_back(cout++);
                 y1.push_back(y2_- n2_);
                 y2.push_back(y2_);
                 y3.push_back(n2_);
@@ -2249,8 +2298,8 @@ void MainWindow::on_MonitorNoises_clicked()
                     y2_max =y2_;
                 }
             }
-            if (time < 20){ui->widget->xAxis->setRange(0 ,20);}
-            else{ui->widget->xAxis->setRange(0 ,time);}
+            if (cout < 20){ui->widget->xAxis->setRange(0 ,20);}
+            else{ui->widget->xAxis->setRange(0 ,cout);}
 
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
@@ -2711,13 +2760,13 @@ void MainWindow::on_Test_monitor_clicked()
     response_1 = stand_.GetLaserPower();
     double Power = response_1.adcResponse_; //запись значения мощность
     Flag_ = false;
-    int time = 0;
+    int cout = 0;
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
 
         while(Flag_ == false){
             response  = stand_.Sendmessage({angles1,angles2,angles3,angles4},Power);
-            x.push_back(time++);
+            x.push_back(cout++);
             y1_ = response.currentSignalLevels_.h_;
             y2_ = response.currentSignalLevels_.v_;
             y1.push_back(y1_);
@@ -2743,7 +2792,7 @@ void MainWindow::on_Test_monitor_clicked()
             ui ->Cur_PDH -> setText(QString::number(y1_));
             ui ->Cur_PDV -> setText(QString::number(y2_));
 
-            ui->widget->xAxis->setRange(0 ,time + 10);
+            ui->widget->xAxis->setRange(0 ,cout + 10);
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
             ui->widget->graph(0)->addData(x,y1);
@@ -2866,9 +2915,16 @@ void MainWindow::on_StopLaser2_clicked()
 /// @brief Переход в режим администратора
 void MainWindow::on_radio_admin_clicked()
 {
+    // Инициализируем окно Adminlogin
+    adm = new Adminlogin();
     if (ui->radio_admin->isChecked()){
-        ui->tabWidget->setTabEnabled(3,true);}
-    else{ ui->tabWidget->setTabEnabled(3,false);}
+        adm->show();
+        connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
+    }
+    else{ui->tabWidget->setTabEnabled(3,false);}
+}
+void MainWindow::Flag_admin(){
+    ui->tabWidget->setTabEnabled(3,true);
 }
 
 /// @brief Открытие окна с гистограммами
