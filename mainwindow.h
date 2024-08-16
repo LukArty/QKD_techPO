@@ -8,8 +8,11 @@
 #include <adminlogin.h>
 #include <histogram.h>
 #include <histogrameva.h>
+ #include <QProcess>
 #include <QTimer>
 #include <QTime>
+#include <QThread>
+#include <streamwork.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,6 +28,17 @@ public:
      void Flag_admin();
 
 private slots:
+
+    void update(int i, int size,QStringList bit, QStringList Combit, QStringList blankbit, QStringList keybit, double error);
+    void update(int i, int size,QStringList bit,QStringList bit_e, QStringList Combit, QStringList blankbit, QStringList keybit, double error);
+    void Date_time_hist(float,float,QStringList,QStringList);
+    void Date_time_hist(float search_time,float speed,QStringList signalH_AE,QStringList signalV_AE, QStringList signalH_EB, QStringList signalV_EB);
+    void Output_bit();
+    /// @brief инициализация по ФД
+    void InitByPD(api::InitResponse response);
+    void LaserTest(float,float,int);
+
+    void on_timer_check_clicked();
     void on_InitBut_clicked();
 
     void on_RunSelfTestBut_clicked();
@@ -71,7 +85,7 @@ private slots:
 
     void on_StopLaser_clicked();
 
-    void killLoop() { Flag_ = true; }
+    void killLoop() { Flag_ = true;  number =0; }
 
     void on_ScanAngles1_clicked();
 
@@ -141,8 +155,6 @@ private slots:
 
     void on_FirmwareUpdate_clicked();
 
-    void on_StopLaser2_clicked();
-
     void slotTimerAlarm();
 
     void on_radio_admin_clicked();
@@ -151,30 +163,29 @@ private slots:
 
     void on_radio_ElectionPD_v2_clicked();
 
-    void slotShortcutCtrl1();  void slotShortcutCtrl2();  void slotShortcutCtrl3();  void slotShortcutCtrl4();
+    void slotShortcutCtrl1();  void slotShortcutCtrl2();  void slotShortcutCtrl3();  void slotShortcutCtrl4(); void slotShortcutAdmin(); void slotShortcutGameMod();
+
 
 
 private:
     QTimer *timer, *timer2;
-    int m,s;
+    int m,s, number=0;
     float AngleCheck (float angle, float step);
-    QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
-    QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig_h);
-    QStringList ConvertingArray (QString str);
+
     int randomBetween(int low, int high);
-    QStringList Protocol (QStringList  AliceBit, QStringList  AliceBasis, QStringList  BobBit, QStringList  BobBasis);
-    QStringList Protocol_Eva (QStringList  AliceBit, QStringList  AliceBasis, QStringList EvaBasis, QStringList  BobBit, QStringList  BobBasis);
     QStringList Random(int n);
     void ParamAngles();
     Ui::MainWindow *ui;
     HelpWindow *clc;
-
+    float y1_max,y2_max,y1_min, y2_min;
     hwe::Conserial stand_;
     Adminlogin *adm;
     Histogram hst;
     HistogramEva eva;
     bool Flag_;
     QVector<double> x,y1,y2,y3;
-    QShortcut       *keyCNTR1, *keyCNTR2, *keyCNTR3, *keyCNTR4;    // объект горячей клавиши Enter
+    QShortcut       *keyCNTR1, *keyCNTR2, *keyCNTR3, *keyCNTR4, *keyAdmin, *keyGameMod;    // объект горячей клавиши
+    QThread pMyThread, pMyThread2;
+    StreamWork *pStreamWork;
 };
 #endif // MAINWINDOW_H

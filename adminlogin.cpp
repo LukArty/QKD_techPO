@@ -28,7 +28,7 @@ void Adminlogin::on_Login_clicked()
             emit firstWindow();
             close();
         }
-        else{                 QMessageBox::information(this,"Ошибка!",
+        else{                 QMessageBox::critical(this,"Ошибка!",
                                      "Неверный пароль!",
                                      QMessageBox::Ok);
         }
@@ -40,7 +40,7 @@ void Adminlogin::on_Login_clicked()
                 emit firstWindow();
                 close();
             }
-            else{                 QMessageBox::information(this,"Ошибка!",
+            else{                 QMessageBox::critical(this,"Ошибка!",
                                          "Неверный пароль!",
                                          QMessageBox::Ok);
             }

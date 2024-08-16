@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>530</width>
-    <height>300</height>
+    <width>400</width>
+    <height>180</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>530</width>
-    <height>300</height>
+    <width>400</width>
+    <height>180</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>530</width>
-    <height>300</height>
+    <width>400</width>
+    <height>180</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -29,9 +29,9 @@
    <widget class="QPushButton" name="Login">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>190</y>
-      <width>91</width>
+      <x>150</x>
+      <y>110</y>
+      <width>100</width>
       <height>31</height>
      </rect>
     </property>
@@ -42,22 +42,22 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>90</y>
-      <width>66</width>
+      <x>10</x>
+      <y>20</y>
+      <width>121</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Пароль:</string>
+     <string>Введите пароль:</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="Password">
     <property name="geometry">
      <rect>
-      <x>90</x>
-      <y>90</y>
-      <width>411</width>
+      <x>10</x>
+      <y>60</y>
+      <width>380</width>
       <height>30</height>
      </rect>
     </property>
@@ -71,7 +71,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>530</width>
+     <width>400</width>
      <height>23</height>
     </rect>
    </property>

@@ -28,7 +28,8 @@ SOURCES += \
     histogrameva.cpp \
     main.cpp \
     mainwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    streamwork.cpp
 
 
 
@@ -44,7 +45,8 @@ HEADERS += \
     hwetypes.h \
     logictypes.h \
     mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    streamwork.h
 
 FORMS += \
     adminlogin.ui \

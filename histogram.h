@@ -17,7 +17,6 @@ public:
     explicit Histogram(QWidget *parent = nullptr);
     ~Histogram();
     void BiuldHistogram (QStringList pdh, QStringList pdv);
-    void setupPlot();
 
 private slots:
     void horzScrollBarChanged(int value);

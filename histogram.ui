@@ -57,10 +57,10 @@
   <widget class="QScrollBar" name="horizontalScrollBar">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>10</x>
      <y>400</y>
-     <width>1241</width>
-     <height>16</height>
+     <width>1251</width>
+     <height>15</height>
     </rect>
    </property>
    <property name="orientation">

@@ -125,7 +125,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="RunSelfTestBut">
       <property name="geometry">
        <rect>
-        <x>370</x>
+        <x>380</x>
         <y>270</y>
         <width>141</width>
         <height>26</height>
@@ -151,8 +151,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetRotateStepBut">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>420</y>
+        <x>380</x>
+        <y>437</y>
         <width>141</width>
         <height>26</height>
        </rect>
@@ -164,7 +164,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="SetLaserStateBut">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>20</x>
         <y>20</y>
         <width>125</width>
         <height>26</height>
@@ -190,7 +190,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetErrorCodeBut">
       <property name="geometry">
        <rect>
-        <x>410</x>
+        <x>420</x>
         <y>20</y>
         <width>125</width>
         <height>26</height>
@@ -200,25 +200,12 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Код ошибки</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="SetTimeoutBut">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>140</y>
-        <width>151</width>
-        <height>26</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Установ. тайм-аут</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="InitByButtons">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>220</y>
-        <width>141</width>
+        <x>380</x>
+        <y>170</y>
+        <width>150</width>
         <height>26</height>
        </rect>
       </property>
@@ -255,9 +242,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetSignalLevelBut">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>180</y>
-        <width>141</width>
+        <x>120</x>
+        <y>220</y>
+        <width>140</width>
         <height>26</height>
        </rect>
       </property>
@@ -265,41 +252,12 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Текущ. знач. с Фд</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="TimeoutValue">
-      <property name="geometry">
-       <rect>
-        <x>200</x>
-        <y>140</y>
-        <width>113</width>
-        <height>26</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>0</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="GetTimeoutBut">
-      <property name="geometry">
-       <rect>
-        <x>330</x>
-        <y>140</y>
-        <width>151</width>
-        <height>26</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Значения тайм-аута</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="GetLightNoisesBut">
       <property name="geometry">
        <rect>
-        <x>260</x>
-        <y>180</y>
-        <width>141</width>
+        <x>305</x>
+        <y>220</y>
+        <width>140</width>
         <height>26</height>
        </rect>
       </property>
@@ -337,7 +295,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>200</x>
-        <y>420</y>
+        <y>437</y>
         <width>141</width>
         <height>26</height>
        </rect>
@@ -349,7 +307,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetLaserStateBut">
       <property name="geometry">
        <rect>
-        <x>250</x>
+        <x>255</x>
         <y>20</y>
         <width>141</width>
         <height>26</height>
@@ -362,9 +320,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QLineEdit" name="LaserPowerValue">
       <property name="geometry">
        <rect>
-        <x>200</x>
-        <y>60</y>
-        <width>113</width>
+        <x>210</x>
+        <y>70</y>
+        <width>141</width>
         <height>26</height>
        </rect>
       </property>
@@ -379,7 +337,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>200</x>
-        <y>370</y>
+        <y>379</y>
         <width>141</width>
         <height>26</height>
        </rect>
@@ -391,9 +349,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetLaserPowerBut">
       <property name="geometry">
        <rect>
-        <x>330</x>
-        <y>60</y>
-        <width>151</width>
+        <x>380</x>
+        <y>70</y>
+        <width>150</width>
         <height>26</height>
        </rect>
       </property>
@@ -404,7 +362,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QCheckBox" name="LaserState">
       <property name="geometry">
        <rect>
-        <x>150</x>
+        <x>155</x>
         <y>20</y>
         <width>92</width>
         <height>26</height>
@@ -420,8 +378,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="GetCurPlatesAnglesBut">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>370</y>
+        <x>380</x>
+        <y>378</y>
         <width>141</width>
         <height>26</height>
        </rect>
@@ -433,9 +391,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="SetLaserPowerBut">
       <property name="geometry">
        <rect>
-        <x>30</x>
-        <y>60</y>
-        <width>151</width>
+        <x>31</x>
+        <y>70</y>
+        <width>150</width>
         <height>26</height>
        </rect>
       </property>
@@ -446,8 +404,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="InitBut">
       <property name="geometry">
        <rect>
-        <x>200</x>
-        <y>220</y>
+        <x>210</x>
+        <y>170</y>
         <width>141</width>
         <height>26</height>
        </rect>
@@ -459,9 +417,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="InitByPD">
       <property name="geometry">
        <rect>
-        <x>30</x>
-        <y>220</y>
-        <width>141</width>
+        <x>31</x>
+        <y>170</y>
+        <width>150</width>
         <height>26</height>
        </rect>
       </property>
@@ -482,9 +440,9 @@ color: black;
      <widget class="QPushButton" name="PulseLaser">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>100</y>
-        <width>141</width>
+        <x>120</x>
+        <y>120</y>
+        <width>140</width>
         <height>26</height>
        </rect>
       </property>
@@ -495,9 +453,9 @@ color: black;
      <widget class="QPushButton" name="StopLaser">
       <property name="geometry">
        <rect>
-        <x>260</x>
-        <y>100</y>
-        <width>141</width>
+        <x>305</x>
+        <y>120</y>
+        <width>140</width>
         <height>26</height>
        </rect>
       </property>
@@ -580,7 +538,7 @@ color: black;
      <widget class="QPushButton" name="GetInitParams">
       <property name="geometry">
        <rect>
-        <x>30</x>
+        <x>20</x>
         <y>270</y>
         <width>141</width>
         <height>26</height>
@@ -594,7 +552,7 @@ color: black;
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>320</y>
+        <y>318</y>
         <width>151</width>
         <height>26</height>
        </rect>
@@ -794,7 +752,7 @@ color: black;
      <widget class="QPushButton" name="PlateAngle">
       <property name="geometry">
        <rect>
-        <x>370</x>
+        <x>380</x>
         <y>320</y>
         <width>141</width>
         <height>26</height>
@@ -1104,7 +1062,7 @@ color: black;
         <x>0</x>
         <y>180</y>
         <width>1171</width>
-        <height>391</height>
+        <height>381</height>
        </rect>
       </property>
       <widget class="QLabel" name="imageLabel">
@@ -1499,20 +1457,20 @@ color: black;
      <widget class="QLineEdit" name="Nos_PDH">
       <property name="geometry">
        <rect>
-        <x>90</x>
+        <x>91</x>
         <y>140</y>
         <width>71</width>
-        <height>31</height>
+        <height>26</height>
        </rect>
       </property>
      </widget>
      <widget class="QLineEdit" name="Nos_PDV">
       <property name="geometry">
        <rect>
-        <x>250</x>
+        <x>251</x>
         <y>140</y>
         <width>71</width>
-        <height>31</height>
+        <height>26</height>
        </rect>
       </property>
      </widget>
@@ -1522,7 +1480,7 @@ color: black;
         <x>10</x>
         <y>140</y>
         <width>81</width>
-        <height>31</height>
+        <height>26</height>
        </rect>
       </property>
       <property name="font">
@@ -1613,14 +1571,14 @@ color: black;
      <widget class="QPushButton" name="Test_monitor">
       <property name="geometry">
        <rect>
-        <x>970</x>
-        <y>580</y>
-        <width>89</width>
+        <x>10</x>
+        <y>610</y>
+        <width>151</width>
         <height>25</height>
        </rect>
       </property>
       <property name="text">
-       <string>Тест</string>
+       <string>Снять показатели</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_24">
@@ -1629,7 +1587,7 @@ color: black;
         <x>170</x>
         <y>140</y>
         <width>81</width>
-        <height>31</height>
+        <height>26</height>
        </rect>
       </property>
       <property name="font">
@@ -1680,24 +1638,11 @@ color: black;
        <string>Диапазон</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="StopLaser2">
-      <property name="geometry">
-       <rect>
-        <x>1080</x>
-        <y>580</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string> Стоп</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_27">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>580</y>
+        <y>570</y>
         <width>81</width>
         <height>26</height>
        </rect>
@@ -1815,11 +1760,188 @@ color: black;
       <property name="geometry">
        <rect>
         <x>70</x>
-        <y>580</y>
+        <y>570</y>
         <width>81</width>
         <height>26</height>
        </rect>
       </property>
+     </widget>
+     <widget class="QCheckBox" name="timer_check">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>570</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Вкл/Выкл</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_6">
+      <property name="geometry">
+       <rect>
+        <x>610</x>
+        <y>560</y>
+        <width>561</width>
+        <height>80</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Текущие параметры:</string>
+      </property>
+      <widget class="QLabel" name="label_32">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>25</y>
+         <width>191</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Отклонение для PDH (%):</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_33">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>25</y>
+         <width>181</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Отклонение для PDV (%):</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_34">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>60</y>
+         <width>61</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>от макс.</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_35">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>60</y>
+         <width>61</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>от макс.</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_36">
+       <property name="geometry">
+        <rect>
+         <x>145</x>
+         <y>60</y>
+         <width>51</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>от мин.</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_37">
+       <property name="geometry">
+        <rect>
+         <x>428</x>
+         <y>60</y>
+         <width>51</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>от мин.</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="max_PDH">
+       <property name="geometry">
+        <rect>
+         <x>70</x>
+         <y>60</y>
+         <width>71</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="min_PDH">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>60</y>
+         <width>71</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="min_PDV">
+       <property name="geometry">
+        <rect>
+         <x>483</x>
+         <y>60</y>
+         <width>71</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="max_PDV">
+       <property name="geometry">
+        <rect>
+         <x>350</x>
+         <y>60</y>
+         <width>71</width>
+         <height>18</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="Line" name="line_5">
+       <property name="geometry">
+        <rect>
+         <x>280</x>
+         <y>22</y>
+         <width>3</width>
+         <height>61</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_3">
@@ -3215,7 +3337,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>200</y>
+        <y>240</y>
         <width>151</width>
         <height>30</height>
        </rect>
@@ -3241,7 +3363,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>240</y>
+        <y>280</y>
         <width>151</width>
         <height>31</height>
        </rect>
@@ -3290,10 +3412,70 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>170</x>
-        <y>200</y>
+        <y>240</y>
         <width>321</width>
         <height>30</height>
        </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="GetTimeoutBut">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>180</y>
+        <width>151</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Значения тайм-аута</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="SetTimeoutBut">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>180</y>
+        <width>151</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Установ. тайм-аут</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="TimeoutValue">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>180</y>
+        <width>151</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>0</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_75">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>220</y>
+        <width>41</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Путь:</string>
       </property>
      </widget>
     </widget>
@@ -3331,14 +3513,11 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <tabstop>GetLaserPowerBut</tabstop>
   <tabstop>PulseLaser</tabstop>
   <tabstop>StopLaser</tabstop>
-  <tabstop>SetTimeoutBut</tabstop>
-  <tabstop>TimeoutValue</tabstop>
-  <tabstop>GetTimeoutBut</tabstop>
-  <tabstop>GetSignalLevelBut</tabstop>
-  <tabstop>GetLightNoisesBut</tabstop>
   <tabstop>InitByPD</tabstop>
   <tabstop>InitBut</tabstop>
   <tabstop>InitByButtons</tabstop>
+  <tabstop>GetSignalLevelBut</tabstop>
+  <tabstop>GetLightNoisesBut</tabstop>
   <tabstop>GetInitParams</tabstop>
   <tabstop>SendMessageBut</tabstop>
   <tabstop>RunSelfTestBut</tabstop>
@@ -3387,7 +3566,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <tabstop>Nos_PDV</tabstop>
   <tabstop>PD_Check</tabstop>
   <tabstop>Test_monitor</tabstop>
-  <tabstop>StopLaser2</tabstop>
   <tabstop>aHalf_00</tabstop>
   <tabstop>aQuart_00</tabstop>
   <tabstop>aHalf_01</tabstop>
@@ -3454,6 +3632,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <tabstop>FirmwareUpdate</tabstop>
   <tabstop>GetMaxPayloadSize</tabstop>
   <tabstop>Timer_</tabstop>
+  <tabstop>GetTimeoutBut</tabstop>
+  <tabstop>SetTimeoutBut</tabstop>
+  <tabstop>TimeoutValue</tabstop>
  </tabstops>
  <resources/>
  <connections/>
