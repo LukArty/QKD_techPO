@@ -24,13 +24,14 @@ public slots:
     QStringList ConvertingArray (QString str);
     void InitByPD();
     void LaserTest();
+    void killLoop() { flag = false;}
 signals:
     void emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double);
     void emitdate(int,int,QStringList,QStringList,QStringList,QStringList, QStringList, double);
     void emitdate(float,float,QStringList,QStringList); //сигнал для передачи времени, скорости и значений для гистограммы
     void emitdate_eva(float,float,QStringList,QStringList,QStringList,QStringList); //сигнал для передачи времени, скорости и значений для гистограммы
     void finished();    // Сигнал, по которому будем завершать поток
-    void finished1(api::InitResponse);
+    void finished1(float, float, float,float, int, int, int, int, int, int);
     void emitdate(float,float, int);
 private slots:
 
@@ -41,6 +42,7 @@ private:
     hwe::Conserial stand_;
     Histogram hst;
     HistogramEva eva;
+    bool flag = true;
 };
 
 #endif // STREAMWORK_H

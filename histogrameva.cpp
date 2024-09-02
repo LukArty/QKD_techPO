@@ -71,6 +71,14 @@ void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QString
     ui->histogram_AE->graph(1)->setAntialiased(false);
     ui->histogram_AE->graph(1)->setLineStyle(QCPGraph::lsImpulse);
 
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->histogram_AE->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(1.0); // шаг тика должен быть 1,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+
+    ui->histogram_AE->xAxis->setLabel("Номер посылки");
+    ui->histogram_AE->yAxis->setLabel("Вероятность");
+
     //отрисовка графика Ева - Боб
     ui->histogram_EB->addGraph();
     ui->histogram_EB->graph(0)->setPen(QPen(Qt::blue));
@@ -89,7 +97,14 @@ void HistogramEva::BiuldHistogram (QStringList pdhae, QStringList pdvae, QString
     ui->histogram_EB->graph(1)->setAntialiased(false);
     ui->histogram_EB->graph(1)->setLineStyle(QCPGraph::lsImpulse);
 
-    ui->horizontalScrollBar->setRange(800,(pdvae.size()-8)*100); //граници для скролла от 0 до кол-во битов в массиве
+    ui->histogram_EB->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(1.0); // шаг тика должен быть 1,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+
+    ui->histogram_EB->xAxis->setLabel("Номер посылки");
+    ui->histogram_EB->yAxis->setLabel("Вероятность");
+
+    ui->horizontalScrollBar->setRange(800,(pdvae.size()-7)*100); //граници для скролла от 0 до кол-во битов в массиве
     double probaH, probaV;
     double summa;
 

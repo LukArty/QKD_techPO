@@ -38,6 +38,15 @@ void Histogram::BiuldHistogram (QStringList pdh, QStringList pdv){
     y2.clear();
 
     ui->histogram->yAxis->setRange(0, 1);
+
+    ui->histogram->xAxis->setLabel("Номер посылки");
+    ui->histogram->yAxis->setLabel("Вероятность");
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->histogram->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(1.0); // шаг тика должен быть 1,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+
     //отрисовка графика
     ui->histogram->addGraph();
     ui->histogram->graph(0)->setPen(QPen(Qt::blue));
@@ -56,9 +65,6 @@ void Histogram::BiuldHistogram (QStringList pdh, QStringList pdv){
     ui->histogram->axisRect()->setRangeDrag(Qt::Horizontal);   //перетаскивание только по горизонтальной оси
     ui->histogram->axisRect()->setRangeZoom(Qt::Horizontal);   //удаление/приближение только по горизонтальной оси
 
-
-
-
     double probaH, probaV;
     double summa;
 
@@ -67,12 +73,12 @@ void Histogram::BiuldHistogram (QStringList pdh, QStringList pdv){
         probaH = (pdh[i].toDouble())/summa;
         probaV = (pdv[i].toDouble())/summa;
 
-        x1.push_back(i+0.1);
-        x2.push_back(i+0.4);
+        x1.push_back(i+1);
+        x2.push_back(i+1.3);
         y1.push_back(probaH);
         y2.push_back(probaV);
 
-        ui->horizontalScrollBar->setRange(800,(pdh.size()-8)*100); //граници для скролла от 0 до кол-во битов в массиве
+        ui->horizontalScrollBar->setRange(800,(pdh.size()-7)*100); //граници для скролла от 0 до кол-во битов в массиве
         ui->histogram->graph(0)->setData(x1,y1);
         ui->histogram->graph(1)->setData(x2,y2);
         ui->histogram->axisRect()->setupFullAxesBox(true);

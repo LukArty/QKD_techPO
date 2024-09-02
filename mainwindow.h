@@ -34,8 +34,10 @@ private slots:
     void Date_time_hist(float,float,QStringList,QStringList);
     void Date_time_hist(float search_time,float speed,QStringList signalH_AE,QStringList signalV_AE, QStringList signalH_EB, QStringList signalV_EB);
     void Output_bit();
+    void Output_bit_write();
+    void Output_bit_write_eva();
     /// @brief инициализация по ФД
-    void InitByPD(api::InitResponse response);
+    void InitByPD(float, float, float,float, int, int, int, int, int, int);
     void LaserTest(float,float,int);
 
     void on_timer_check_clicked();
@@ -83,9 +85,7 @@ private slots:
 
     void on_PulseLaser_clicked();
 
-    void on_StopLaser_clicked();
-
-    void killLoop() { Flag_ = true;  number =0; }
+    void killLoop() { Flag_ = true;  number =0; ui ->MonitoringPD->setEnabled(true); ui ->timer_check->setEnabled(true);}
 
     void on_ScanAngles1_clicked();
 
@@ -165,14 +165,14 @@ private slots:
 
     void slotShortcutCtrl1();  void slotShortcutCtrl2();  void slotShortcutCtrl3();  void slotShortcutCtrl4(); void slotShortcutAdmin(); void slotShortcutGameMod();
 
-
+    void on_Stop_protocol_clicked();
 
 private:
+    QFile test_protocol;
     QTimer *timer, *timer2;
     int m,s, number=0;
     float AngleCheck (float angle, float step);
 
-    int randomBetween(int low, int high);
     QStringList Random(int n);
     void ParamAngles();
     Ui::MainWindow *ui;
@@ -182,10 +182,11 @@ private:
     Adminlogin *adm;
     Histogram hst;
     HistogramEva eva;
-    bool Flag_;
+    bool Flag_, Flag_1, protocol = false;
     QVector<double> x,y1,y2,y3;
     QShortcut       *keyCNTR1, *keyCNTR2, *keyCNTR3, *keyCNTR4, *keyAdmin, *keyGameMod;    // объект горячей клавиши
     QThread pMyThread, pMyThread2;
     StreamWork *pStreamWork;
+
 };
 #endif // MAINWINDOW_H

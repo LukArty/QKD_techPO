@@ -9,19 +9,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1190</width>
     <height>707</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>1200</width>
+    <width>1190</width>
     <height>707</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1200</width>
+    <width>1190</width>
     <height>707</height>
    </size>
   </property>
@@ -30,6 +30,9 @@
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
@@ -40,7 +43,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>1191</width>
+      <width>1190</width>
       <height>681</height>
      </rect>
     </property>
@@ -575,6 +578,9 @@ color: black;
         <height>151</height>
        </rect>
       </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
       <property name="title">
        <string>Тестирование</string>
       </property>
@@ -1059,9 +1065,9 @@ color: black;
      <widget class="QCustomPlot" name="widget" native="true">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>10</x>
         <y>180</y>
-        <width>1171</width>
+        <width>1161</width>
         <height>381</height>
        </rect>
       </property>
@@ -1081,7 +1087,7 @@ color: black;
       <widget class="QLabel" name="label_8">
        <property name="geometry">
         <rect>
-         <x>1090</x>
+         <x>1080</x>
          <y>0</y>
          <width>81</width>
          <height>41</height>
@@ -1404,9 +1410,9 @@ color: black;
       <widget class="Line" name="line_4">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>10</x>
          <y>90</y>
-         <width>331</width>
+         <width>361</width>
          <height>20</height>
         </rect>
        </property>
@@ -2558,7 +2564,7 @@ color: black;
       <property name="geometry">
        <rect>
         <x>680</x>
-        <y>78</y>
+        <y>106</y>
         <width>101</width>
         <height>30</height>
        </rect>
@@ -2770,7 +2776,7 @@ color: black;
       <property name="geometry">
        <rect>
         <x>890</x>
-        <y>240</y>
+        <y>237</y>
         <width>281</width>
         <height>231</height>
        </rect>
@@ -2782,7 +2788,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>140</x>
-         <y>170</y>
+         <y>164</y>
          <width>121</width>
          <height>23</height>
         </rect>
@@ -2792,7 +2798,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>170</y>
+         <y>164</y>
          <width>141</width>
          <height>23</height>
         </rect>
@@ -2838,7 +2844,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>90</y>
+         <y>92</y>
          <width>101</width>
          <height>23</height>
         </rect>
@@ -2856,7 +2862,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>140</x>
-         <y>90</y>
+         <y>92</y>
          <width>121</width>
          <height>23</height>
         </rect>
@@ -2884,7 +2890,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>140</x>
-         <y>130</y>
+         <y>128</y>
          <width>121</width>
          <height>23</height>
         </rect>
@@ -2894,7 +2900,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>130</y>
+         <y>128</y>
          <width>121</width>
          <height>23</height>
         </rect>
@@ -2912,7 +2918,7 @@ color: black;
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>60</y>
+         <y>56</y>
          <width>251</width>
          <height>23</height>
         </rect>
@@ -2951,7 +2957,7 @@ QProgressBar::chunk {
       <property name="geometry">
        <rect>
         <x>680</x>
-        <y>134</y>
+        <y>148</y>
         <width>101</width>
         <height>30</height>
        </rect>
@@ -2966,7 +2972,7 @@ QProgressBar::chunk {
         <x>790</x>
         <y>190</y>
         <width>111</width>
-        <height>31</height>
+        <height>30</height>
        </rect>
       </property>
      </widget>
@@ -3022,7 +3028,7 @@ QProgressBar::chunk {
         <x>790</x>
         <y>22</y>
         <width>101</width>
-        <height>31</height>
+        <height>30</height>
        </rect>
       </property>
       <property name="font">
@@ -3170,6 +3176,29 @@ QProgressBar::chunk {
         <y>560</y>
         <width>711</width>
         <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="Stop_protocol">
+      <property name="geometry">
+       <rect>
+        <x>680</x>
+        <y>64</y>
+        <width>101</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Стоп</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="Quantity_test">
+      <property name="geometry">
+       <rect>
+        <x>970</x>
+        <y>570</y>
+        <width>61</width>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -3486,7 +3515,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1200</width>
+     <width>1190</width>
      <height>23</height>
     </rect>
    </property>

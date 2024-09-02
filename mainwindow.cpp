@@ -6,7 +6,7 @@
 #include <ctime>
 #include <QFileInfo>
 #include <QTextStream>
-#include <iostream>
+//#include <iostream>
 #include <string>
 #include <unistd.h>
 #include <conserial.h>
@@ -21,29 +21,33 @@ MainWindow::MainWindow(QWidget *parent)
 : QMainWindow(parent)
 , ui(new Ui::MainWindow)
 {
-    //Интерфейс
     ui->setupUi(this);
-    ui->tabWidget->setTabEnabled(3,false);
-    ui ->Interval -> setText("180"); //интервал по-умолчанию
-    ui->progressBar->setValue(0);
-    ui->Timer_->setInputMask("00:00");
-    ui->Timer_->setText("01:00");
 
+    ///Начальные параметры
     ParamAngles();
 
-    ui->widget->xAxis->setRange(0,180);
-    ui->widget->yAxis->setRange(0,3000);
+    ///Неактивные кнопки, вкладки и текстовые поля
     ui ->EvaBasis->setEnabled(false);
     ui ->EvaBit->setEnabled(false);
     ui ->InitByButtons->setEnabled(false);
     ui ->InitBut->setEnabled(false);
     ui ->Timer_->setEnabled(false);
+    ui->tabWidget->setTabEnabled(3,false);
+
+    ///Значения по умолчанию
     ui->radio_ElectionPD->setDown(true);
-    //скрытие кнопок
+    ui ->Interval -> setText("180"); //интервал по-умолчанию
+    ui->widget->xAxis->setRange(0,180);
+    ui->widget->yAxis->setRange(0,3000);
+    ui->progressBar->setValue(0);
+    ui->Timer_->setInputMask("00:00");
+    ui->Timer_->setText("01:00");
+
+    ///скрытие кнопок и текстовые поля
     ui->Error_key->hide();
     ui->Eva_key->hide();
     ui->Protocol_test->hide();
-
+    ui->Quantity_test->hide();
 
     ///Запуск функций через Enter
     connect(ui->LaserPowerValue, SIGNAL(returnPressed()), this, SLOT(on_SetLaserPowerBut_clicked()));
@@ -74,8 +78,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(keyAdmin, SIGNAL(activated()), this, SLOT(slotShortcutAdmin()));
     connect(keyGameMod, SIGNAL(activated()), this, SLOT(slotShortcutGameMod()));
 
-
+    this->test_protocol.setFileName("./test_protocol.txt");
 }
+
 /// @brief обработчик нажатия клавишиae
 void MainWindow::slotShortcutCtrl1()
 {
@@ -122,14 +127,14 @@ void MainWindow::ConsoleLog(QString text)
 void MainWindow::ConsoleLog(QString text, bool bad)
 {
     if(bad){
-    QTextCharFormat default_format = ui->CommandConsole->currentCharFormat();
-    QTextCharFormat bad_format = ui->CommandConsole->currentCharFormat();
-    bad_format.setForeground(QBrush(Qt::red));
-    ui->CommandConsole->setCurrentCharFormat(bad_format);
-    ui->CommandConsole->append(text);
-    ui->CommandConsole->setCurrentCharFormat(default_format);
-    }else ui->CommandConsole->append(text);
-    //ui->CommandConsole->scroll()
+        QTextCharFormat default_format = ui->CommandConsole->currentCharFormat();
+        QTextCharFormat bad_format = ui->CommandConsole->currentCharFormat();
+        bad_format.setForeground(QBrush(Qt::red));
+        ui->CommandConsole->setCurrentCharFormat(bad_format);
+        ui->CommandConsole->append(text);
+        ui->CommandConsole->setCurrentCharFormat(default_format);
+    }
+    else ui->CommandConsole->append(text);
 }
 
 
@@ -152,7 +157,7 @@ void MainWindow:: ParamAngles(){
 }
 
 /// @brief Функция выполняет инициализацию по концовикам если есть ini-файл, иначе инициализацию по ФД
-void MainWindow::on_InitBut_clicked() //инициализация по концовикам
+void MainWindow::on_InitBut_clicked()
 {
      QFile fileOut("./Angles.ini");
      QString angles1,angles2, angles3, angles4;
@@ -183,8 +188,8 @@ void MainWindow::on_InitBut_clicked() //инициализация по конц
         response = stand_.InitByButtons({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
         fileOut.close();
 
-        ConsoleLog("Выполнена команда Init.");
         if (response.errorCode_ == 0){
+            ConsoleLog("Выполнена команда Init.");
             ConsoleLog("Установленны значения:");
             ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
             ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
@@ -199,13 +204,16 @@ void MainWindow::on_InitBut_clicked() //инициализация по конц
 
             ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {
+            ConsoleLog("Команда Init не выполена");
+            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        }
     }
     else{
         api::InitResponse response;
         response = stand_.InitByPD();
-        ConsoleLog("Выполнена команда Init.");
         if (response.errorCode_ == 0){
+            ConsoleLog("Выполнена команда Init.");
             ConsoleLog("Установленны значения:");
             ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
             ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
@@ -221,7 +229,10 @@ void MainWindow::on_InitBut_clicked() //инициализация по конц
             ConsoleLog("Максимальная мощность лазера: "+ QString::number (response.maxLaserPower_));
             ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {
+            ConsoleLog("Команда Init не выполена");
+            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        }
     }
 }
 
@@ -238,7 +249,6 @@ void MainWindow::on_GetErrorCodeBut_clicked()
     response = stand_.GetErrorCode();
     ConsoleLog("Выполнена команда GetErrorCode");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
         ConsoleLog("Значение: "+ QString::number (response.adcResponse_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
@@ -250,15 +260,18 @@ void MainWindow::on_GetLaserStateBut_clicked()
 {
     api::AdcResponse response;
     response = stand_.GetLaserState();
-    ConsoleLog("Выполнена команда GetLaserState");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда GetLaserState");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Состояние лазера: "+ QString::number (response.adcResponse_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         if(response.adcResponse_ == 1){ui->laser_st->setText("ВКЛ");}
         else{ ui->laser_st->setText("ВЫКЛ");}
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetLaserState не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция включения и выключения лазера
@@ -275,13 +288,14 @@ void MainWindow::on_SetLaserStateBut_clicked()
         response = stand_.SetLaserState(0);
         ui->laser_st->setText("ВЫКЛ");
     }
-    ConsoleLog("Выполнена команда SetLaserState");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда SetLaserState");
+        ConsoleLog("Установленные значения:");
         ConsoleLog("Состояние лазера: "+ QString::number (response.adcResponse_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
     else {
+        ConsoleLog("Команда SetLaserState не выполнена");
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
         ui->laser_st->setText("ВЫКЛ");
     }
@@ -293,14 +307,17 @@ void MainWindow::on_SetLaserPowerBut_clicked()
     api::AdcResponse response;
     QString value_ = ui ->LaserPowerValue -> text();
     response = stand_.SetLaserPower(value_.toUInt());
-    ConsoleLog("Выполнена команда SetLaserPower");
     if (response.errorCode_ == 0){
         ui->laser_pw->setText(QString::number (response.adcResponse_));
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда SetLaserPower");
+        ConsoleLog("Установленные значения:");
         ConsoleLog("Значение: "+ QString::number (response.adcResponse_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда SetLaserPower не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция получения текущего значения мощности лазера
@@ -308,14 +325,17 @@ void MainWindow::on_GetLaserPowerBut_clicked()
 {
     api::AdcResponse response;
     response = stand_.GetLaserPower();
-    ConsoleLog("Выполнена команда GetLaserPower");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда GetLaserPower");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Мощность лазера: "+ QString::number (response.adcResponse_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         ui->laser_pw->setText(QString::number (response.adcResponse_));
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetLaserPower не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief определения значения минимального шага двигателя
@@ -323,13 +343,16 @@ void MainWindow::on_GetRotateStepBut_clicked()
 {
     api::AngleResponse response;
     response = stand_.GetRotateStep();
-    ConsoleLog("Выполнена команда GetRotateStep");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда GetRotateStep");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Значение шага: "+ QString::number (response.angle_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetRotateStep не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция установка значений углов пластин поворота
@@ -341,9 +364,10 @@ void MainWindow::on_SetPlateAngleBut_clicked()
         QString angles3 = ui ->InitAngles3 -> text();
         QString angles4 = ui ->InitAngles4 -> text();
         response = stand_.SetPlatesAngles({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
-        ConsoleLog("Выполнена команда SetPlatesAngles");
+
         if (response.errorCode_ == 0){
-            ConsoleLog("Установленны значения:");
+            ConsoleLog("Выполнена команда SetPlatesAngles");
+            ConsoleLog("Установленные значения:");
             ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.angles_.aHalf_));
             ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
             ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
@@ -351,7 +375,10 @@ void MainWindow::on_SetPlateAngleBut_clicked()
             ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
             ParamAngles();
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {
+            ConsoleLog("Команда SetPlatesAngles не выполнена");
+            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        }
 }
 
 /// @brief Функция получения текущих значений углов пластин поворота
@@ -359,9 +386,9 @@ void MainWindow::on_GetCurPlatesAnglesBut_clicked()
 {
     api::WAnglesResponse response;
     response = stand_.GetPlatesAngles();
-    ConsoleLog("Выполнена команда GetPlatesAngles");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда GetPlatesAngles");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.angles_.aHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
@@ -369,7 +396,10 @@ void MainWindow::on_GetCurPlatesAnglesBut_clicked()
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         ParamAngles();
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetPlatesAngles не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция установка значения таймаута
@@ -378,13 +408,16 @@ void MainWindow::on_SetTimeoutBut_clicked()
     api::AdcResponse response;
     QString value_ = ui -> TimeoutValue-> text();
     response = stand_.SetTimeout(value_.toUInt());
-    ui->Console_2->append("Выполнена команда SetTimeout");
-    ui->Console_2->append("Установленны значения:");
     if(response.errorCode_ == 0){
+        ui->Console_2->append("Выполнена команда SetTimeout");
+        ui->Console_2->append("Установленные значения:");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
         ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));}
+    else {
+        ui->Console_2->append("Команда SetTimeout не выполнена");
+        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+    }
 }
 
 /// @brief  получения текущее значение таймаута
@@ -392,13 +425,16 @@ void MainWindow::on_GetTimeoutBut_clicked()
 {
     api::AdcResponse response;
     response = stand_.GetTimeout();
-    ui->Console_2->append("Выполнена команда GetTimeout");
-    ui->Console_2->append("Установленны значения:");
     if(response.errorCode_ == 0){
+        ui->Console_2->append("Выполнена команда GetTimeout");
+        ui->Console_2->append("Полученные значения:");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
         ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));}
+    else {
+        ui->Console_2->append("Команда GetTimeout не выполнена");
+        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+    }
 }
 
 /// @brief Функция получения текущих значений на фотодетекторах
@@ -406,14 +442,17 @@ void MainWindow::on_GetSignalLevelBut_clicked()
 {
     api::SLevelsResponse response;
     response = stand_.GetSignalLevels();
-    ConsoleLog("Выполнена команда GetSignalLevel");
-    ConsoleLog("Установленны значения:");
     if(response.errorCode_ == 0){
+        ConsoleLog("Выполнена команда GetSignalLevel");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.signal_.h_));
         ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.signal_.v_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetSignalLevel не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция получения текущей засветки на фотодетекторах
@@ -421,14 +460,17 @@ void MainWindow::on_GetLightNoisesBut_clicked()
 {
     api::SLevelsResponse response;
     response = stand_.GetLightNoises();
-    ConsoleLog("Выполнена команда GetLightNoises");
-    ConsoleLog("Установленны значения:");
     if(response.errorCode_ == 0){
+        ConsoleLog("Выполнена команда GetLightNoises");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (response.signal_.h_));
         ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (response.signal_.v_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetLightNoises не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief Функция отправки битовой последовательности
@@ -436,9 +478,9 @@ void MainWindow::on_SendMessageBut_clicked()
 {
     api::SendMessageResponse response;
     response  = stand_.Sendmessage({0,0,0,0},60);
-    ConsoleLog("Выполнена команда SendMessage");
-    ConsoleLog("Установленны значения:");
     if(response.errorCode_ == 0){
+        ConsoleLog("Выполнена команда SendMessage");
+        ConsoleLog("Установленные значения:");
         ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.newPlatesAngles_.aHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.newPlatesAngles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.newPlatesAngles_.bHalf_));
@@ -452,9 +494,10 @@ void MainWindow::on_SendMessageBut_clicked()
 
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         ParamAngles();
-
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда SendMessage не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
 }
 
 /// @brief запись углов ini-файл
@@ -466,29 +509,29 @@ void MainWindow::on_WriteIni_clicked()
     QString angles3 = ui ->InitAngles3 -> text();
     QString angles4 = ui ->InitAngles4 -> text();
 
-        QFile fileOut("./Angles.ini");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
+    QFile fileOut("./Angles.ini");
+    fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
 
-        angles1 += "\n";
-        while(angles1.length() <= 5){ angles1  = "0" + angles1; }
-        QTextStream writeStream (&fileOut);
-        writeStream << angles1;
+    angles1 += "\n";
+    while(angles1.length() <= 5){ angles1  = "0" + angles1; }
+    QTextStream writeStream (&fileOut);
+    writeStream << angles1;
 
-        angles2 += "\n";
-        while(angles2.length() <= 5){ angles2  = "0" + angles2; }
-        QTextStream writeStream2 (&fileOut);
-        writeStream2 << angles2;
+    angles2 += "\n";
+    while(angles2.length() <= 5){ angles2  = "0" + angles2; }
+    QTextStream writeStream2 (&fileOut);
+    writeStream2 << angles2;
 
-        angles3 += "\n";
-        while(angles3.length() <= 5){ angles3  = "0" + angles3; }
-        QTextStream writeStream3 (&fileOut);
-        writeStream3 << angles3;
+    angles3 += "\n";
+    while(angles3.length() <= 5){ angles3  = "0" + angles3; }
+    QTextStream writeStream3 (&fileOut);
+    writeStream3 << angles3;
 
-        angles4 += "\n";
-        while(angles4.length() <= 5){ angles4  = "0" + angles4; }
-        QTextStream writeStream4 (&fileOut);
-        writeStream4 << angles4;
-        fileOut.close();
+    angles4 += "\n";
+    while(angles4.length() <= 5){ angles4  = "0" + angles4; }
+    QTextStream writeStream4 (&fileOut);
+    writeStream4 << angles4;
+    fileOut.close();
 }
 
 /// @brief инициализация по датчикам
@@ -505,7 +548,6 @@ void MainWindow::on_InitByButtons_clicked()
         while(!stream.atEnd())
         {
             angles << stream.readLine();
-
         }
         float i = angles[0].toFloat();
         angles1 = QString::number(i);
@@ -523,16 +565,16 @@ void MainWindow::on_InitByButtons_clicked()
         fileOut.close();
     }
     else{
-       angles1 = "0";
-       angles2 = "0";
-       angles3 = "0";
-       angles4 = "0";
-       response = stand_.InitByButtons({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
+        angles1 = "0";
+        angles2 = "0";
+        angles3 = "0";
+        angles4 = "0";
+        response = stand_.InitByButtons({angles1.toFloat(), angles2.toFloat(), angles3.toFloat(), angles4.toFloat()});
     }
 
-    ConsoleLog("Выполнена команда InitByButtons");
     if(response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда InitByButtons");
+        ConsoleLog("Установленные значения:");
         ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.startPlatesAngles_.bHalf_));
@@ -547,7 +589,10 @@ void MainWindow::on_InitByButtons_clicked()
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
         ParamAngles();
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда InitByButtons не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief считывание углов из ini-файла
@@ -580,44 +625,48 @@ void MainWindow::on_ReadIni_clicked()
 }
 
 /// @brief инициализация по ФД
-void MainWindow::InitByPD(api::InitResponse response){
+void MainWindow::InitByPD(float aHalf_, float aQuart_, float bHalf_, float bQuart_, int h_, int v_, int h_max, int v_max, int Power, int errorCode_){
     api::AdcResponse response_1;
+    response_1 = stand_.GetLaserPower();
     ConsoleLog("Выполнена команда InitByPD");
-    if(response.errorCode_ == 0){
+    ConsoleLog("Установленные значения:");
+    ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (aHalf_));
+    ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (aQuart_));
+    ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(bHalf_));
+    ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (bQuart_));
 
-        ConsoleLog("Установленны значения:");
-        ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
-        ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
-        ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.startPlatesAngles_.bHalf_));
-        ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.startPlatesAngles_.bQuart_));
+    ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (h_));
+    ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (v_));
 
-        ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (response.startLightNoises_.h_));
-        ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (response.startLightNoises_.v_));
+    ConsoleLog("Уровень максимального сигнала на первом фотодетекторе: "+ QString::number (h_max));
+    ConsoleLog("Уровень максимального сигнала на втором фотодетекторе: "+ QString::number (v_max));
 
-        ConsoleLog("Уровень максимального сигнала на первом фотодетекторе: "+ QString::number (response.maxSignalLevels_.h_));
-        ConsoleLog("Уровень максимального сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
+    ConsoleLog("Максимальная мощность лазера: "+ QString::number (Power));
 
-        ConsoleLog("Максимальная мощность лазера: "+ QString::number (response.maxLaserPower_));
-
-        response_1 = stand_.GetLaserPower();
-        ConsoleLog("Мощность лазера: "+ QString::number (response_1.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
-        ParamAngles();
-    }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    response_1 = stand_.GetLaserPower();
+    ConsoleLog("Мощность лазера: "+ QString::number (response_1.adcResponse_));
+    ConsoleLog("Код ошибки: "+ QString::number (errorCode_));
+    ParamAngles();
 }
 void MainWindow::on_InitByPD_clicked()
 {
-    pStreamWork = new StreamWork(ui);
-    pStreamWork->moveToThread(&pMyThread);
+    api::AdcResponse response;
+    response = stand_.GetErrorCode();
+    if(response.errorCode_ == 0){
+        pStreamWork = new StreamWork(ui);
+        pStreamWork->moveToThread(&pMyThread);
 
-    connect(&pMyThread,SIGNAL(started()),pStreamWork,SLOT(InitByPD())); //выполнение протокола
-    connect(pStreamWork,SIGNAL(finished1(api::InitResponse)),this,SLOT(InitByPD(api::InitResponse)));
+        connect(&pMyThread,SIGNAL(started()),pStreamWork,SLOT(InitByPD())); //выполнение протокола
+        connect(pStreamWork,SIGNAL(finished1(float, float, float,float, int, int, int, int, int, int)),this,SLOT(InitByPD(float, float, float,float, int, int, int, int, int, int)));
 
-    connect(pStreamWork, &StreamWork::finished1, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
-    connect(pStreamWork, SIGNAL(finished1(api::InitResponse)), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
-    connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
-    pMyThread.start();
+        connect(pStreamWork, &StreamWork::finished1, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+        connect(pStreamWork, SIGNAL(finished1(float, float, float,float, int, int, int, int, int, int)), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+        connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+        pMyThread.start();
+    }
+    else {
+        ConsoleLog("Команда InitByPD не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
 }
 
 /// @brief импульсный режим
@@ -637,6 +686,8 @@ void MainWindow::on_PulseLaser_clicked()
     ui->widget->addGraph();
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+    ui->widget->xAxis->setLabel(" ");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
 
     Flag_ = false; // флаг для остваноки
     api::AdcResponse response;
@@ -645,7 +696,7 @@ void MainWindow::on_PulseLaser_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 1000000;
     int y2_max = 0,y2_ = 0, y2_min = 1000000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
-        if(response.errorCode_ == 0){
+    if(response.errorCode_ == 0){
         while (Flag_ == false)
         {
             // вкл/выкл лазера
@@ -686,11 +737,11 @@ void MainWindow::on_PulseLaser_clicked()
             ui ->Cur_PDH -> setText(QString::number(y1_));
             ui ->Cur_PDV -> setText(QString::number(y2_));
 
-            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-            else{ui->widget->yAxis->setRange(0 ,y2_max + 1);}
+            if (y1_max>y2_max) {ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ ui->widget->yAxis->setRange(0 ,y2_max + 1);}
             ui->widget->xAxis->setRange(0 ,cout+10);
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
             ui->widget->replot();
 
             //остановка цикла по кнопке
@@ -699,14 +750,8 @@ void MainWindow::on_PulseLaser_clicked()
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
         }
         response = stand_.SetLaserState(1);
-        }
+    }
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
-}
-
-/// @brief Остановка импульсного режима лазера на вкладке API
-void MainWindow::on_StopLaser_clicked()
-{
-
 }
 
 /// @brief Сканирование по 1 пластине
@@ -722,16 +767,23 @@ void MainWindow::on_ScanAngles1_clicked()
     int interval = ui ->Interval-> text().toInt();
     ui->widget->xAxis->setRange(0,interval);
     ui->widget->yAxis->setRange(0,3000);
+    ui->widget->xAxis->setLabel("Угол повората пластины");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
     ui->widget->addGraph();
     ui->widget->graph(0)->setPen(QPen(Qt::blue));
     ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-
     ui->widget->addGraph();
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
-    api::SendMessageResponse response;
-    api::AdcResponse response_1;
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->widget->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+
+    api::SendMessageResponse response; //для проведния SendMessage
+    api::AdcResponse response_1; //для определения мощности лазера
     //считывание углов и проверка кратности
     float step = stand_.GetRotateStep().angle_;
     float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
@@ -751,20 +803,19 @@ void MainWindow::on_ScanAngles1_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
-    QFile fileOut("./test1.txt");
+    QFile fileOut("./ScanAngles1.txt");
     fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream writeStream (&fileOut);
 
     for (float angles=0; angles <= interval;angles +=h)
-        {
-             if( Flag_ == false){
+    {
+        if( Flag_ == false){
             response = stand_.Sendmessage({angles,angles2,angles3,angles4},Power);
             x.push_back(angles);
             y1_ = response.currentSignalLevels_.h_;
             y2_ = response.currentSignalLevels_.v_;
             y1.push_back(y1_);
             y2.push_back(y2_);
-
 
             writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
             writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
@@ -797,14 +848,14 @@ void MainWindow::on_ScanAngles1_clicked()
 
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
             ui->widget->replot();
 
             QApplication::processEvents();
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-            }
         }
+    }
     api::SLevelsResponse response_3;
     stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
     response_3 = stand_.GetSignalLevels();
@@ -825,13 +876,20 @@ void MainWindow::on_ScanAngles2_clicked()
     int interval = ui ->Interval-> text().toInt();
     ui->widget->xAxis->setRange(0,interval);
     ui->widget->yAxis->setRange(0,3000);
+    ui->widget->xAxis->setLabel("Угол повората пластины");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
     ui->widget->addGraph();
     ui->widget->graph(0)->setPen(QPen(Qt::blue));
     ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-
     ui->widget->addGraph();
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->widget->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
 
     api::SendMessageResponse response;
     api::AdcResponse response_1;
@@ -854,14 +912,13 @@ void MainWindow::on_ScanAngles2_clicked()
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
 
-        QFile fileOut("./test2.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
+    QFile fileOut("./ScanAngles2.txt");
+    fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream writeStream (&fileOut);
 
-        for (float angles=0; angles <=interval;angles +=h)
-        {
-
-            if( Flag_ == false){
+    for (float angles=0; angles <=interval;angles +=h)
+    {
+        if( Flag_ == false){
             response  = stand_.Sendmessage({angles1,angles,angles3,angles4},Power);
             x.push_back(angles);
             y1_ = response.currentSignalLevels_.h_;
@@ -900,12 +957,12 @@ void MainWindow::on_ScanAngles2_clicked()
 
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
             ui->widget->replot();
             QApplication::processEvents();
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-            }
+        }
     }
     api::SLevelsResponse response_3;
     stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
@@ -927,6 +984,9 @@ void MainWindow::on_ScanAngles3_clicked()
     int interval = ui ->Interval-> text().toInt();
     ui->widget->xAxis->setRange(0,interval);
     ui->widget->yAxis->setRange(0,3000);
+    ui->widget->xAxis->setLabel("Угол повората пластины");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
     ui->widget->addGraph();
     ui->widget->graph(0)->setPen(QPen(Qt::blue));
     ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
@@ -934,6 +994,11 @@ void MainWindow::on_ScanAngles3_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->widget->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
 
     api::SendMessageResponse response;
     api::AdcResponse response_1;
@@ -947,7 +1012,6 @@ void MainWindow::on_ScanAngles3_clicked()
     float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
     ui ->Angles4 -> setValue(angles4);
 
-
     double h = (ui ->Step_scan-> value());//значение шага
     response_1 = stand_.GetLaserPower();
     double Power = response_1.adcResponse_;
@@ -957,58 +1021,58 @@ void MainWindow::on_ScanAngles3_clicked()
     int y2_max = 0,y2_ = 0, y2_min = 100000;
     QString PDH_max,PDH_min, PDV_max,PDV_min;
 
-    QFile fileOut("./test3.txt");
+    QFile fileOut("./ScanAngles3.txt");
     fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream writeStream (&fileOut);
 
-        for (float angles=0; angles <= interval;angles +=h)
-        {
-            if( Flag_ == false){
-                response  = stand_.Sendmessage({angles1,angles2,angles,angles4},Power);
-                x.push_back(angles);
-                y1_ = response.currentSignalLevels_.h_;
-                y2_ = response.currentSignalLevels_.v_;
-                y1.push_back(y1_);
-                y2.push_back(y2_);
+    for (float angles=0; angles <= interval;angles +=h)
+    {
+        if( Flag_ == false){
+            response  = stand_.Sendmessage({angles1,angles2,angles,angles4},Power);
+            x.push_back(angles);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-                writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
+            writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
+            writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
+            writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
 
-                if(y1_ > y1_max){
-                    y1_max =y1_;
-                }
-                if (y1_ < y1_min){
-                    y1_min =y1_;
-                }
-
-                if(y2_ > y2_max){
-                    y2_max =y2_;
-                }
-                if (y2_ < y2_min){
-                    y2_min =y2_;
-                }
-
-                PDH_max = QString::number(y1_max);
-                PDH_min = QString::number(y1_min);
-                PDV_max = QString::number(y2_max);
-                PDV_min = QString::number(y2_min);
-                ui ->PDH_max -> setText(PDH_max);
-                ui ->PDH_min -> setText(PDH_min);
-                ui ->PDV_max -> setText(PDV_max);
-                ui ->PDV_min -> setText(PDV_min);
-                ui ->Cur_PDH -> setText(QString::number(y1_));
-                ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-                else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-                ui->widget->graph(0)->addData(x,y1);
-                ui->widget->graph(1)->addData(x,y2);
-                ui->widget->replot();
-                QApplication::processEvents();
-                connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+            if(y1_ > y1_max){
+                y1_max =y1_;
             }
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
+
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
+
+            PDH_max = QString::number(y1_max);
+            PDH_min = QString::number(y1_min);
+            PDV_max = QString::number(y2_max);
+            PDV_min = QString::number(y2_min);
+            ui ->PDH_max -> setText(PDH_max);
+            ui ->PDH_min -> setText(PDH_min);
+            ui ->PDV_max -> setText(PDV_max);
+            ui ->PDV_min -> setText(PDV_min);
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
+
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
+            ui->widget->replot();
+            QApplication::processEvents();
+            connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
         }
+    }
     api::SLevelsResponse response_3;
     stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
     response_3 = stand_.GetSignalLevels();
@@ -1029,13 +1093,20 @@ void MainWindow::on_ScanAngles4_clicked()
     int interval = ui ->Interval-> text().toInt();
     ui->widget->xAxis->setRange(0,interval);
     ui->widget->yAxis->setRange(0,3000);
+    ui->widget->xAxis->setLabel("Угол повората пластины");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
     ui->widget->addGraph();
     ui->widget->graph(0)->setPen(QPen(Qt::blue));
     ui->widget->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-
     ui->widget->addGraph();
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->widget->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
 
     api::SendMessageResponse response;
     api::AdcResponse response_1;
@@ -1049,7 +1120,6 @@ void MainWindow::on_ScanAngles4_clicked()
     float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
     ui ->Angles4 -> setValue(angles4);
 
-
     double h = (ui ->Step_scan-> value());//значение шага
     response_1 = stand_.GetLaserPower();
     double Power = response_1.adcResponse_;
@@ -1058,60 +1128,60 @@ void MainWindow::on_ScanAngles4_clicked()
     int y1_max = 0,y1_ = 0, y1_min = 100000;
     int y2_max = 0,y2_ = 0, y2_min = 100000;
 
-    QFile fileOut("./test4.txt");
+    QFile fileOut("./ScanAngles4.txt");
     fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-
     QTextStream writeStream (&fileOut);
 
-        for (float angles = 0; angles <= interval;angles +=h)
-         {
-            if(Flag_ == false){
-                response  = stand_.Sendmessage({angles1,angles2,angles3,angles},Power);
-                x.push_back(angles);
-                y1_ = response.currentSignalLevels_.h_;
-                y2_ = response.currentSignalLevels_.v_;
-                y1.push_back(y1_);
-                y2.push_back(y2_);
+    for (float angles = 0; angles <= interval;angles +=h)
+    {
+        if(Flag_ == false){
+            response  = stand_.Sendmessage({angles1,angles2,angles3,angles},Power);
+            x.push_back(angles);
+            y1_ = response.currentSignalLevels_.h_;
+            y2_ = response.currentSignalLevels_.v_;
+            y1.push_back(y1_);
+            y2.push_back(y2_);
 
-                writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
+            writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
+            writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
+            writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
 
-                if(y1_ > y1_max){
-                    y1_max =y1_;
-                }
-                if (y1_ < y1_min){
-                    y1_min =y1_;
-                }
-
-                if(y2_ > y2_max){
-                    y2_max =y2_;
-                }
-                if (y2_ < y2_min){
-                    y2_min =y2_;
-                }
-                ui ->PDH_max -> setText(QString::number(y1_max));
-                ui ->PDH_min -> setText(QString::number(y1_min));
-                ui ->PDV_max -> setText(QString::number(y2_max));
-                ui ->PDV_min -> setText(QString::number(y2_min));
-                ui ->Cur_PDH -> setText(QString::number(y1_));
-                ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
-                else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
-                ui->widget->graph(0)->addData(x,y1);
-                ui->widget->graph(1)->addData(x,y2);
-                ui->widget->replot();
-                QApplication::processEvents();
-                connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+            if(y1_ > y1_max){
+                y1_max =y1_;
             }
-            else{break;}
+            if (y1_ < y1_min){
+                y1_min =y1_;
+            }
+
+            if(y2_ > y2_max){
+                y2_max =y2_;
+            }
+            if (y2_ < y2_min){
+                y2_min =y2_;
+            }
+            ui ->PDH_max -> setText(QString::number(y1_max));
+            ui ->PDH_min -> setText(QString::number(y1_min));
+            ui ->PDV_max -> setText(QString::number(y2_max));
+            ui ->PDV_min -> setText(QString::number(y2_min));
+            ui ->Cur_PDH -> setText(QString::number(y1_));
+            ui ->Cur_PDV -> setText(QString::number(y2_));
+
+            if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
+            else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
+            ui->widget->replot();
+            QApplication::processEvents();
+            connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
         }
+        else{break; fixedTicker.clear();}
+    }
     api::SLevelsResponse response_3;
     stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
     response_3 = stand_.GetSignalLevels();
     ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
     ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
+    fixedTicker.clear();
     ParamAngles();
 }
 
@@ -1134,9 +1204,15 @@ void MainWindow::on_MonitoringPD_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
+    ui->widget->xAxis->setLabel("");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
+    QSharedPointer<QCPAxisTicker> autoTicker(new QCPAxisTicker);
+    ui->widget->xAxis->setTicker(autoTicker);
+
     QString time = ui -> Timer_-> text();
     QString per;
-    //m = 1; s = 0;
+
     for(int i = 0; i<time.size();i++){
         if(i==0|| i==1){
             per += time[i];
@@ -1163,6 +1239,8 @@ void MainWindow::on_MonitoringPD_clicked()
             timer->start(((m*60)+s)*1000);
             connect(timer2, &QTimer::timeout, this, &MainWindow::slotTimerAlarm);
             timer2->start(1000);
+            ui ->MonitoringPD->setEnabled(false);
+            ui ->timer_check->setEnabled(false);
         }
         while (Flag_ == false)
         {
@@ -1173,26 +1251,18 @@ void MainWindow::on_MonitoringPD_clicked()
             y1.push_back(y1_);
             y2.push_back(y2_);
 
+            if(y1_ == 0 || y2_ == 0){
+                response = stand_.GetSignalLevels();
+                y1_ = response.signal_.h_;
+                y2_ = response.signal_.v_;
+                y1.push_back(y1_);
+                y2.push_back(y2_);
+            }
+
             pdh=pdh+response.signal_.h_;;
             pdv=pdv+response.signal_.v_;
 
             response_1 = stand_.GetLaserPower();
-            /*if (((y1_*100)/y1_max) > 101 && y1_max !=0 ) {
-                response_2 = stand_.SetLaserPower(Power-1);
-                ConsoleLog(QString::number(Power-1));
-            }
-            else if (((y2_*100)/y2_max)> 101 && y2_max !=0) {
-                response_2 = stand_.SetLaserPower(Power-1);
-                ConsoleLog(QString::number(Power-1));
-            }
-            else if(((y1_*100)/y1_min) < 99 && Power < 100 && y1_min !=100000){
-                response_2 = stand_.SetLaserPower(Power+1);
-                ConsoleLog(QString::number(Power+1));
-            }
-            else if(((y2_*100)/y2_min)< 99 && Power < 100 && y2_min !=100000){
-                response_2 = stand_.SetLaserPower(Power+1);
-                ConsoleLog(QString::number(Power+1));
-            }*/
 
             if(y1_ > y1_max){
                 y1_max =y1_;
@@ -1223,8 +1293,8 @@ void MainWindow::on_MonitoringPD_clicked()
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
             ui->widget->xAxis->setRange(0 ,cout + 10);
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
             ui->widget->replot();
             ui->max_PDH->setText(QString::number (((y1_max-(pdh/cout))*100)/(pdh/cout)));
             ui->min_PDH->setText(QString::number ((((pdh/cout)-y1_min)*100)/(pdh/cout)));
@@ -1232,6 +1302,7 @@ void MainWindow::on_MonitoringPD_clicked()
             ui->min_PDV->setText(QString::number ((((pdv/cout)-y2_min)*100)/(pdv/cout)));
             QApplication::processEvents();
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
+            connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
         }
         if(ui->timer_check->isChecked()){
             timer->stop();
@@ -1261,16 +1332,15 @@ void MainWindow::slotTimerAlarm()
     else{ui->Timer_->setText(QString::number(m) +":"+QString::number(s));}
 }
 
-
 /// @brief параметры после инициализации
 void MainWindow::on_GetInitParams_clicked()
 {
-   api::InitResponse response;
+    api::InitResponse response;
     response = stand_.GetInitParams();
 
-    ConsoleLog("Выполнена команда GetInitParams:");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда GetInitParams:");
+        ConsoleLog("Полученные значения:");
         ConsoleLog("Угол на полуволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.startPlatesAngles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.startPlatesAngles_.bHalf_));
@@ -1285,7 +1355,9 @@ void MainWindow::on_GetInitParams_clicked()
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
         ParamAngles();
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда GetInitParams не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
 }
 
 /// @brief Тестирование светоделителя
@@ -1334,6 +1406,7 @@ void MainWindow::on_PDRatio_clicked()
     else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
 }
 
+/// @brief тестирование лазера
 void MainWindow::LaserTest(float y1_, float y2_,int Power)
 {
     ui->laser_pw->setText(QString::number (Power));
@@ -1367,8 +1440,8 @@ void MainWindow::LaserTest(float y1_, float y2_,int Power)
     else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
     ui->widget->xAxis->setRange(0 ,Power);
-    ui->widget->graph(0)->addData(x,y1);
-    ui->widget->graph(1)->addData(x,y2);
+    ui->widget->graph(0)->setData(x,y1);
+    ui->widget->graph(1)->setData(x,y2);
     ui->widget->replot();
     if(Power == 100){ConsoleLog("Тестирование закончено!");}
 }
@@ -1390,11 +1463,20 @@ void MainWindow::on_LaserTest_clicked()
     ui->widget->addGraph();
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+    ui->widget->xAxis->setLabel("Мощность лазера");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
+    ui->widget->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(5.0); // шаг тика должен быть 1,0
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
 
     y1_max = 0, y1_min =100000;
     y2_max = 0, y2_min =100000;
     pStreamWork = new StreamWork(ui);
     pStreamWork->moveToThread(&pMyThread);
+    stand_.SetLaserState(1);
+    ui->laser_st->setText("ВКЛ");
 
     api::AdcResponse response;
     response = stand_.GetErrorCode();
@@ -1416,11 +1498,12 @@ float MainWindow:: AngleCheck (float angle, float step)
    int an = angle;
    int h = step*10;
     if(an % h != 0){
-       while (an % h != 0) {
+        while (an % h != 0) {
            an += 1;
            angle +=1;
-       }
-       return angle/10;}
+        }
+        return angle/10;
+    }
    else{return angle/10;}
 }
 
@@ -1480,6 +1563,9 @@ void MainWindow::Output_bit(){
     response = stand_.SetPlatesAngles({0,0,0,0});
     setUpdatesEnabled(true);
     ParamAngles();
+    ui ->TestLine->setEnabled(true);
+    ui ->Auto_Filing->setEnabled(true);
+    protocol=false;
 }
 
 /// @brief Методы для вывода значения времени, скорости, а также для передачи данных в метод BiuldHistogram
@@ -1487,11 +1573,19 @@ void MainWindow::Date_time_hist(float search_time,float speed,QStringList signal
     ui ->Time->setText(QString::number(search_time) + "с"); //вывод времени
     ui ->Speed->setText(QString::number(speed/1000)); //вывод скорости
     hst.BiuldHistogram(signalH, signalV);
+    if(Flag_1 == true){
+        ui ->Time->clear();
+        ui ->Speed->clear();
+    }
 }
 void MainWindow::Date_time_hist(float search_time,float speed,QStringList signalH_AE,QStringList signalV_AE, QStringList signalH_EB, QStringList signalV_EB){
     ui ->Time->setText(QString::number(search_time) + "с"); //вывод времени
     ui ->Speed->setText(QString::number(speed/1000)); //вывод скорости
     eva.BiuldHistogram(signalH_AE, signalV_AE, signalH_EB, signalV_EB);
+    if(Flag_1 == true){
+        ui ->Time->clear();
+        ui ->Speed->clear();
+    }
 }
 
 /// @brief Запуск выполнения протокола
@@ -1510,17 +1604,22 @@ void MainWindow::on_Start_protocol_clicked()
     ui ->error_pr->clear();
     ui ->Progress->clear();
 
-    //pMyThread = new QThread;
+    protocol = true;
+    Flag_1 = false;
+
     pStreamWork = new StreamWork(ui);
     pStreamWork->moveToThread(&pMyThread);
 
-
+    ui ->TestLine->setEnabled(false);
+    ui ->Auto_Filing->setEnabled(false);
 
     if((ui ->AliceBit -> text()) == "" || (ui ->AliceBasis -> text()) == "" ||(ui ->BobBit -> text()) == "" || (ui ->BobBasis -> text()) == "" ){
         QMessageBox::critical(this,
                                  "Ошибка!",
                                  "Не все поля заполнены!",
                                  QMessageBox::Ok);
+        ui ->TestLine->setEnabled(true);
+        ui ->Auto_Filing->setEnabled(true);
     }
     else{
         float step = stand_.GetRotateStep().angle_; //шаг двигателя
@@ -1572,6 +1671,8 @@ void MainWindow::on_Start_protocol_clicked()
                                          "Ошибка!",
                                          "Не все поля заполнены!",
                                          QMessageBox::Ok);
+                ui ->TestLine->setEnabled(true);
+                ui ->Auto_Filing->setEnabled(true);
             }
             else{
                 connect(pStreamWork,SIGNAL(emitdate_eva(float,float,QStringList,QStringList, QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList, QStringList, QStringList))); //время, скорость, гистограммы
@@ -1600,12 +1701,6 @@ void MainWindow::on_Start_protocol_clicked()
     }
 }
 
-/// @brief рандом числа
-int MainWindow:: randomBetween(int low, int high)
-{
-    return (rand() % ((high + 1) - low) + low);
-}
-
 /// @brief рандом битовой последовательности
 QStringList MainWindow:: Random(int n) {
     QStringList Line;
@@ -1613,9 +1708,9 @@ QStringList MainWindow:: Random(int n) {
     mt19937 gen(rd());
     uniform_int_distribution<int> dist(0,1);
     for (int i = 0; i < n; ++i)
-        {
-            Line << QString::number(dist(gen));
-        }
+    {
+        Line << QString::number(dist(gen));
+    }
     return Line;
 }
 
@@ -1697,6 +1792,8 @@ void MainWindow::on_Auto_Filing_clicked()
 /// @brief очистка полей во вкладке Протокол
 void MainWindow::on_Delete_clicked()
 {
+    if(protocol == true){on_Stop_protocol_clicked(); Flag_1=true;}
+
     ui->aHalf_00->clear();
     ui->aHalf_01->clear();
     ui->aHalf_10->clear();
@@ -1818,26 +1915,29 @@ void MainWindow::on_TestLine_clicked()
 /// @brief поворот пластин на указаные углы во вкладке Мониторинг
 void MainWindow::on_RotateAngles_clicked()
 {
-        api::SendMessageResponse response;
-        api::AdcResponse response_1;
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-        response_1 = stand_.GetLaserPower();
-        if (response_1.errorCode_ == 0){
-           int Power = response_1.adcResponse_;
-           response  = stand_.Sendmessage({angles1,angles2,angles3,angles4},Power);
-           ui ->Cur_PDH -> setText(QString::number(response.currentSignalLevels_.h_));
-           ui ->Cur_PDV -> setText(QString::number(response.currentSignalLevels_.v_));
-        }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response_1.errorCode_), 1);}
-        ParamAngles();
+    api::SendMessageResponse response;
+    api::AdcResponse response_1;
+    float step = stand_.GetRotateStep().angle_;
+    float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
+    ui ->Angles1 -> setValue(angles1);
+    float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
+    ui ->Angles2 -> setValue(angles2);
+    float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
+    ui ->Angles3 -> setValue(angles3);
+    float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
+    ui ->Angles4 -> setValue(angles4);
+    response_1 = stand_.GetLaserPower();
+    if (response_1.errorCode_ == 0){
+        int Power = response_1.adcResponse_;
+        response  = stand_.Sendmessage({angles1,angles2,angles3,angles4},Power);
+        ui ->Cur_PDH -> setText(QString::number(response.currentSignalLevels_.h_));
+        ui ->Cur_PDV -> setText(QString::number(response.currentSignalLevels_.v_));
+    }
+    else {
+        ConsoleLog("Команда RotateAngles не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response_1.errorCode_), 1);
+    }
+    ParamAngles();
 }
 
 /// @brief Мониторинг посылки
@@ -1857,6 +1957,10 @@ void MainWindow::on_MonitoringSend_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
+    ui->widget->xAxis->setLabel("Номер посылки");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+    QSharedPointer<QCPAxisTicker> autoTicker(new QCPAxisTicker);
+    ui->widget->xAxis->setTicker(autoTicker);
 
     api::SendMessageResponse response;
     api::AdcResponse response_1;
@@ -1918,8 +2022,8 @@ void MainWindow::on_MonitoringSend_clicked()
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
             ui->widget->xAxis->setRange(0 ,cout + 10);
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
             ui->widget->replot();
             QApplication::processEvents();
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
@@ -1949,6 +2053,11 @@ void MainWindow::on_MonitorNoises_clicked()
     ui->widget->addGraph();
     ui->widget->graph(2)->setPen(QPen(Qt::green));
     ui->widget->graph(2)->setBrush(QBrush(QColor(0, 255, 0, 20)));
+
+    ui->widget->xAxis->setLabel(" ");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+    QSharedPointer<QCPAxisTicker> autoTicker(new QCPAxisTicker);
+    ui->widget->xAxis->setTicker(autoTicker);
 
     QString angles1,angles2,angles3, angles4;
 
@@ -2007,9 +2116,9 @@ void MainWindow::on_MonitorNoises_clicked()
             if (y1_max>y2_max){ui->widget->yAxis->setRange(0 ,y1_max + 10);}
             else{ui->widget->yAxis->setRange(0 ,y2_max + 10);}
 
-            ui->widget->graph(0)->addData(x,y1);
-            ui->widget->graph(1)->addData(x,y2);
-            ui->widget->graph(2)->addData(x,y3);
+            ui->widget->graph(0)->setData(x,y1);
+            ui->widget->graph(1)->setData(x,y2);
+            ui->widget->graph(2)->setData(x,y3);
             ui->widget->replot();
             QApplication::processEvents();
             connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
@@ -2025,20 +2134,20 @@ void MainWindow::on_Test_Speed_2_clicked()
     QElapsedTimer timer;
     timer.start();
 
-     api::SendMessageResponse response;
-     api::AdcResponse response_2;
-     response_2 = stand_.GetLaserPower();
-     double Power = response_2.adcResponse_;
+    api::SendMessageResponse response;
+    api::AdcResponse response_2;
+    response_2 = stand_.GetLaserPower();
+    double Power = response_2.adcResponse_;
 
-    float n = ui ->QuantityTest-> text().toInt(); //
+    float n = ui ->QuantityTest-> text().toInt(); //кол-во тестов
     for(int i = 0; i <= n; i++){
         if(i%2 == 0){
             response  = stand_.Sendmessage({0,0,0,0}, Power);
             response  = stand_.Sendmessage({90,90,90,90}, Power);
         }
         else{
-        response  = stand_.Sendmessage({90,90,90,90}, Power);
-        response  = stand_.Sendmessage({0,0,0,0}, Power);
+            response  = stand_.Sendmessage({90,90,90,90}, Power);
+            response  = stand_.Sendmessage({0,0,0,0}, Power);
         }
     }
     float end_time = timer.elapsed();
@@ -2053,13 +2162,71 @@ void MainWindow::on_Evacheck_clicked()
 {
     if (ui->Evacheck->isChecked()){
         ui ->EvaBasis->setEnabled(true);
-        ui ->EvaBit->setEnabled(true);}
+        ui ->EvaBit->setEnabled(true);
+    }
     else{
         ui ->EvaBasis->setEnabled(false);
-        ui ->EvaBit->setEnabled(false);}
+        ui ->EvaBit->setEnabled(false);
+    }
 }
 
-/// @brief Тестовое выполнение протокола (кол-во битов равно 1024)
+/// @brief Действия после выполнения протокола, запись результатов в файл
+void MainWindow::Output_bit_write(){
+
+    this->test_protocol.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream writeStream (&this->test_protocol);
+
+    writeStream << ("Алиса базис: " + ui->AliceBasis -> text()+ "\n");
+    writeStream << ("Алиса бит: " + ui->AliceBit -> text()+ "\n");
+    writeStream << ("Боб базис: " + ui->BobBasis -> text()+ "\n");
+    writeStream << ("Боб бит: " + ui->BobBit -> text()+ "\n");
+
+    writeStream << ("Сырая строка полученная Бобом: " + ui->RawLine -> text()+ "\n");
+    writeStream << ("Ключ: " + ui->key -> text()+ "\n");
+    writeStream << ("Длина ключа: " + ui->LengthKey -> text()+ "\n");
+    writeStream << ("Время выполнения: " + ui->Time -> text() + "\n");
+    writeStream << ("Скорость: " + ui->Speed -> text()+ "\n");
+    writeStream << ("Процент ошибки: " + ui->error_pr -> text()+ "\n");
+
+    //возвращение в начальное положение
+    api::WAnglesResponse response;
+    response = stand_.SetPlatesAngles({0,0,0,0});
+    setUpdatesEnabled(true);
+    ParamAngles();
+    protocol=false;
+}
+
+/// @brief Действия после выполнения протокола с участием Евы, запись результатов в файл
+void MainWindow::Output_bit_write_eva() {
+
+    QTextStream writeStream (&this->test_protocol);
+
+    writeStream << ("Ева базис: " + ui->EvaBasis -> text()+ "\n");
+    writeStream << ("Ева бит: " + ui->EvaBit -> text()+ "\n");
+
+    writeStream << ("Сырая строка полученная Бобом: " + ui->RawLine -> text()+ "\n");
+    writeStream << ("Ключ: " + ui->key -> text()+ "\n");
+    writeStream << ("Длина ключа: " + ui->LengthKey -> text()+ "\n");
+    writeStream << ("Время выполнения: " + ui->Time -> text() + "\n");
+    writeStream << ("Скорость: " + ui->Speed -> text()+ "\n");
+    writeStream << ("Процент ошибки: " + ui->error_pr -> text()+ "\n");
+
+    //возвращение в начальное положение
+    api::WAnglesResponse response;
+    response = stand_.SetPlatesAngles({0,0,0,0});
+    setUpdatesEnabled(true);
+    ParamAngles();
+    ui ->TestLine->setEnabled(true);
+    ui ->Auto_Filing->setEnabled(true);
+    protocol=false;
+    this->test_protocol.close();
+}
+
+/// @brief Тестовое выполнение протокола (по умолчанию кол-во битов равно 1024)
+/// Основные поля заполняються рандомными битовыми последовательностями определенной длины (по умолчанию кол-во битов равно 1024)
+/// Далее выполняется протокол и результат записывается в текстовый файл
+/// После с этими же комбинациями выполняется протокол с Евой, и также записываются результаты в тот же файл
+/// Кол-во выполнения пары протоколов по умолчанию 1, иначе введенное число
 void MainWindow::on_Protocol_test_clicked()
 {
     ui->aHalf_00->setText("0");
@@ -2089,156 +2256,49 @@ void MainWindow::on_Protocol_test_clicked()
     ui->PV_10->setText("1");
     ui->PV_11->setText("1");
 
-    int m = ui ->AutoLine -> text().toInt(); //количество раз выполнение протокола
-    int n =1024; //длина передоваемой комбинации
-    api::WAnglesResponse response;
+    protocol = true;
+    Flag_1 = false;
 
-    QStringList AliceBit;
-    QStringList AliceBasis;
-    QStringList BobBit;
-    QStringList BobBasis;
-    QStringList EvaBasis;
+    pStreamWork = new StreamWork(ui);
+    pStreamWork->moveToThread(&pMyThread);
 
-    //Переменные для вывода результата
-    QStringList Combit;
-    QStringList  CombitA, CombitAE;
-    QStringList blankbit;
-    QStringList keybit;
-    QStringList bit;
-    QStringList bit_eva;
-    //QElapsedTimer timer;
-    double error;
-    float end_time,search_time,speed;
-    int nerror=0;
+    ui ->TestLine->setEnabled(false);
+    ui ->Auto_Filing->setEnabled(false);
 
-    QFile fileOut("./test_protocol.txt");
-    fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream writeStream (&fileOut);
+    int m = ui ->Quantity_test -> text().toInt(); //количество раз выполнение протокола
+    if(ui ->Quantity_test -> text() == " "){m=1;}
+    int n =ui ->AutoLine -> text().toInt(); //длина передоваемой комбинации
+    if(ui ->AutoLine -> text() == " "){n=1024;}
 
     for(int i = 1 ;i <= m; i++){
-       // timer.start();
+        ui ->AliceBit-> setText(Random(n).join(""));
+        ui ->AliceBasis-> setText(Random(n).join(""));
+        ui ->BobBit->setText(Random(n).join(""));
+        ui ->BobBasis->setText(Random(n).join(""));
+        ui ->EvaBasis->setText(Random(n).join(""));
 
-        bit.clear();
-        Combit.clear();
-        CombitA.clear();
-        blankbit.clear();
-        keybit.clear();
-        nerror =0;
+        //выполнения протокола без Евы
+        connect(pStreamWork,SIGNAL(emitdate(float,float,QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList))); //время, скорость, гистограммы
+        connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList, QStringList, QStringList, QStringList, double))); //обновление значений строк
+        connect(&pMyThread,&QThread::started,pStreamWork,&StreamWork::Protocol); //выполнение протокола
 
-        AliceBit = Random(n);
-        AliceBasis  = Random(n);
-        BobBit = Random(n);
-        BobBasis = Random(n);
-        EvaBasis = Random(n);
-        writeStream << ("Test: " + QString::number(i)+ "\n");
-        writeStream << ("AliceBit: " + AliceBit.join("")+ "\n");
-        writeStream << ("AliceBasis: " + AliceBasis.join("")+ "\n");
-        writeStream << ("BobBit: " + BobBit.join("")+ "\n");
-        writeStream << ("BobBasis: " + BobBasis.join("")+ "\n");
+        connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit_write()));
+        connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+        connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+        connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+        pMyThread.start();
 
-     /*  bit = Protocol(AliceBit, AliceBasis, BobBit, BobBasis);
-       writeStream << ("Сырая строка: " + bit.join("")+ "\n");
+        //Выполнения протокола с Евой
+        connect(pStreamWork,SIGNAL(emitdate_eva(float,float,QStringList,QStringList, QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList, QStringList, QStringList))); //время, скорость, гистограммы
+        connect(&pMyThread,SIGNAL(started()),pStreamWork,SLOT(Protocol_Eva())); //выполнение протокола
+        connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList,QStringList ,QStringList, QStringList, QStringList, double))); //обновление значений строк
 
-        response = stand_.SetPlatesAngles({0,0,0,0});
-
-        //Сравнение базисов
-        for(int j = 0; j<= bit.size()-1;j++){
-            if(AliceBasis[j] == BobBasis[j]){
-                Combit << bit[j];
-               CombitA<< AliceBit[j];
-            }
-            else {Combit << "X"; CombitA<<"X";}
-        }
-
-        //чистая строка
-        for(int a = 0; a<= Combit.size()-1;a++){
-            if(Combit[a] == '1' || Combit[a] == '0'){
-                blankbit << Combit[a];
-            }
-            else{blankbit << " ";}
-        }
-
-        //Вывод ключа
-        for(int v = 0; v<= blankbit.size()-1;v++){
-            if(blankbit[v] == '1' || blankbit[v] == '0'){
-                keybit << blankbit[v];
-            }
-            else{keybit << "";}
-        }
-        writeStream << ("Key: " + keybit.join("")+ "\n");
-        writeStream << ("LengthKey: " + QString::number(keybit.join("").size())+ "\n");
-
-        end_time = timer.elapsed();
-        search_time = end_time /1000;//CLOCKS_PER_SEC
-        speed = (AliceBasis.size()*1000)/(float)search_time;
-        writeStream << ("Time: " + QString::number(search_time) + "с"+ "\n");
-        writeStream << ("Speed: " + QString::number(speed/1000)+ "\n");
-
-        //Подсчет процента ошибок
-        for(int j = 0; j<= Combit.size()-1;j++){
-            if(CombitA[j] == Combit[j]){
-                nerror++;
-            }
-        }
-        error = ((double(Combit.size())-double(nerror))/double(Combit.size()))*100;
-        writeStream << ("Error_pr: " + QString::number(error)+ "%"+ "\n");
-
-        timer.start();
-        CombitAE.clear();
-        bit_eva.clear();
-        Combit.clear();
-        blankbit.clear();
-        keybit.clear();
-        nerror =0;
-        error=0;
-
-        writeStream << ("EvaBasis: " + EvaBasis.join("")+ "\n");
-        bit_eva = Protocol_Eva(AliceBit, AliceBasis, EvaBasis, BobBit, BobBasis);
-        writeStream << ("Сырая строка (Eva): " + bit_eva.join("")+ "\n");
-        response = stand_.SetPlatesAngles({0,0,0,0});
-        //Сравнение базисов
-        for(int j = 0; j<= bit_eva.size()-1;j++){
-            if(AliceBasis[j] == BobBasis[j]){
-                Combit << bit_eva[j];
-               CombitAE<< AliceBit[j];
-            }
-            else {Combit << "X"; CombitAE<<"X";}
-        }
-
-        //чистая строка
-        for(int a = 0; a<= Combit.size()-1;a++){
-            if(Combit[a] == '1' || Combit[a] == '0'){
-                blankbit << Combit[a];
-            }
-            else{blankbit << " ";}
-        }
-
-        //Вывод ключа
-        for(int v = 0; v<= blankbit.size()-1;v++){
-            if(blankbit[v] == '1' || blankbit[v] == '0'){
-                keybit << blankbit[v];
-            }
-            else{keybit << "";}
-        }
-        writeStream << ("Key: " + keybit.join("")+ "\n");
-        writeStream << ("LengthKey: " + QString::number(keybit.join("").size())+ "\n");
-
-        end_time = timer.elapsed();
-        search_time = end_time /1000;//CLOCKS_PER_SEC
-        speed = (AliceBasis.size()*1000)/(float)search_time;
-        writeStream << ("Time: " + QString::number(search_time) + "с"+ "\n");
-        writeStream << ("Speed: " + QString::number(speed/1000)+ "\n");
-
-        //Подсчет процента ошибок
-        for(int j = 0; j<= Combit.size()-1;j++){
-            if(CombitAE[j] == Combit[j]){
-                nerror++;
-            }
-        }
-        error = ((double(Combit.size())-double(nerror))/double(Combit.size()))*100;
-        writeStream << ("Error_pr: " + QString::number(error)+ "%"+ "\n");*/
+        connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit_write_eva()));
+        connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+        connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+        connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+        pMyThread.start();
     }
-    //response = stand_.SetPlatesAngles({0,0,0,0});
 }
 
 /// @brief Окно с информацией
@@ -2257,21 +2317,25 @@ void MainWindow::on_PlateAngle_clicked()
     QString angles3 = ui ->InitAngles3 -> text();
     QString angles4 = ui ->InitAngles4 -> text();
 
-    int num = (ui ->NumberAngle-> value());
+    int num =0;
+    num = (ui ->NumberAngle-> value());
     if(num == 1){response = stand_.SetPlateAngle(num,angles1.toFloat());}
     else if (num == 2){response = stand_.SetPlateAngle(num,angles2.toFloat());}
     else if (num == 3){response = stand_.SetPlateAngle(num,angles3.toFloat());}
     else if (num == 4){response = stand_.SetPlateAngle(num,angles4.toFloat());}
     else{ConsoleLog("Некорректные данные");}
 
-    ConsoleLog("Выполнена команда SetPlatesAngles");
     if (response.errorCode_ == 0){
-        ConsoleLog("Установленны значения:");
+        ConsoleLog("Выполнена команда SetPlatesAngles");
+        ConsoleLog("Установленные значения:");
         ConsoleLog("Угол поворота пластины " + QString::number(num) + " на " +QString::number (response.angle_));
         ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
         ParamAngles();
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {
+        ConsoleLog("Команда SetPlatesAngles не выполнена");
+        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+    }
 }
 
 /// @brief эксперимент с Евой, для записи параметров в файл
@@ -2365,24 +2429,25 @@ void MainWindow::on_Eva_key_clicked()
             keybitE << blankbitE2[v];
         }
         else{keybitE << "";}
-
     }
     writeStream << ("Ключ Eva: " + keybitE.join("")+ "\n");
     writeStream << ("LengthKey: " + QString::number(keybitE.join("").size())+ "\n");
 }
 
-/// @brief эксперимент подсчет процента ошибок
+/// @brief Подсчет процента ошибок
+/// Вводим битовые последовательности Алиса-бит, Алиса-базис, Боб-бит(значения полученные в результате эксперимента), Боб-базиса
+/// В результате получаем процент ошибок основываясь на введенных комбинации
 void MainWindow::on_Error_key_clicked()
 {
     QStringList AliceBit = pStreamWork->ConvertingArray(ui ->AliceBit -> text());
     QStringList AliceBasis = pStreamWork->ConvertingArray(ui ->AliceBasis -> text());
     QStringList  BobBit = pStreamWork->ConvertingArray(ui ->BobBit -> text());
-    QStringList BobBasis = pStreamWork->ConvertingArray(ui ->BobBasis -> text());
+    QStringList BobBasis = pStreamWork->ConvertingArray(ui ->BobBasis -> text()); //сырая строка
 
     QStringList Combit,CombitA;
     QStringList blankbit,blankbitAB;
     QStringList keybit, keybitE;
-     double error;
+    double error;
 
     //Сравнение базисов Bob
     for(int j = 0; j<= BobBit.size()-1;j++){
@@ -2416,7 +2481,7 @@ void MainWindow::on_Error_key_clicked()
         else{blankbitAB << "X";}
     }
 
-     //Вывод ключа
+    //Вывод ключа
     for(int v = 0; v<= blankbitAB.size()-1;v++){
         if(blankbitAB[v] == '1' || blankbitAB[v] == '0'){
             keybitE << blankbitAB[v];
@@ -2430,7 +2495,7 @@ void MainWindow::on_Error_key_clicked()
     ui ->LengthKey->setText(QString::number(keybitE.join("").size()));
 }
 
-/// @brief
+/// @brief снятие показателей и постоение графика по нажатию кнопки
 void MainWindow::on_Test_monitor_clicked()
 {
     if(number == 0){
@@ -2454,6 +2519,9 @@ void MainWindow::on_Test_monitor_clicked()
     ui->widget->graph(1)->setPen(QPen(Qt::red));
     ui->widget->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
+    ui->widget->xAxis->setLabel("Кол-во снятых показателей");
+    ui->widget->yAxis->setLabel("Уровень сигнала");
+
     api::SLevelsResponse response;
     response = stand_.GetSignalLevels();
     x.push_back(number++);
@@ -2465,8 +2533,8 @@ void MainWindow::on_Test_monitor_clicked()
 
     ui->widget->xAxis->setRange(0 ,number + 10);
     ui->widget->yAxis->setRange(0 ,18000);
-    ui->widget->graph(0)->addData(x,y1);
-    ui->widget->graph(1)->addData(x,y2);
+    ui->widget->graph(0)->setData(x,y1);
+    ui->widget->graph(1)->setData(x,y2);
     ui->widget->replot();
 }
 
@@ -2513,15 +2581,16 @@ void MainWindow::on_CloseConfigMode_clicked()
 {
     stand_.CloseConfigMode();
     ui ->Console_2 -> append("Выход из режима API");
+    ui->tabWidget->setTabEnabled(3,false);
 }
 
 /// @brief Возращает версию библиотеки
 void MainWindow::on_GetProtocolVersion_clicked()
 {
     hwe::Conserial::versionProtocolResponse response;
-     response=stand_.GetProtocolVersion ();
-     ui ->Console_2 -> append("Версия библиотеки: " + QString::number (response.version_) + "." + QString::number (response.subversion_));
-     ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+    response=stand_.GetProtocolVersion ();
+    ui ->Console_2 -> append("Версия библиотеки: " + QString::number (response.version_) + "." + QString::number (response.subversion_));
+    ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
  }
 
 /// @brief Возвращает версию прошивки
@@ -2536,7 +2605,7 @@ void MainWindow::on_GetProtocolFirmwareVersion_clicked()
 /// @brief Возращает текущий режим работы пользоваетля
 void MainWindow::on_GetCurrentMode_clicked()
 {
-   ui ->Console_2 -> append("Режим работы: " + QString::number(stand_.GetCurrentMode()));
+    ui ->Console_2 -> append("Режим работы: " + QString::number(stand_.GetCurrentMode()));
 }
 
 /// @brief Установка порта
@@ -2544,7 +2613,7 @@ void MainWindow::on_SetComPortName_clicked()
 {
     QString port = ui ->Port-> text();//наименование порта
     stand_.SetComPortName(port.toStdString().c_str());
-     ui ->Console_2 -> append("Порт установлен");
+    ui ->Console_2 -> append("Порт установлен");
 }
 
 /// @brief Название порта, к которому подключен стенд
@@ -2563,8 +2632,9 @@ void MainWindow::on_GetMaxPayloadSize_clicked()
 /// @brief Перепрошивка стенда
 void MainWindow::on_FirmwareUpdate_clicked()
 {
-    QString path = ui ->File_path-> text();
-    stand_.FirmwareUpdate(path.toStdString());
+    QString file = QFileDialog::getOpenFileName();
+    ui ->File_path-> setText(file);
+    stand_.FirmwareUpdate(file.toStdString());
     ui ->Console_2 -> append("Прошивка стенда");
 }
 
@@ -2598,7 +2668,13 @@ void MainWindow::on_radio_ElectionPD_v2_clicked()
 void MainWindow::on_timer_check_clicked()
 {
     if(ui->timer_check->isChecked()){
-         ui ->Timer_->setEnabled(true);
+        ui ->Timer_->setEnabled(true);
     }
     else{ ui ->Timer_->setEnabled(false);}
 }
+
+void MainWindow::on_Stop_protocol_clicked()
+{
+    pStreamWork->killLoop();
+}
+
