@@ -16,7 +16,8 @@ public:
     StreamWork( hwe::Conserial *stand_);
     StreamWork();
 
-    float bHalf_1, bHalf_0, bQuart_1, bQuart_0;
+    float bHalf_11, bHalf_00, bHalf_10, bHalf_01;
+    float bQuart_11, bQuart_00, bQuart_10, bQuart_01;
     float aHalf_00, aQuart_00, aHalf_01, aQuart_01;
     float aHalf_10, aQuart_10, aHalf_11, aQuart_11;
     int PV_11, PV_10, PV_01, PV_00;
@@ -26,9 +27,13 @@ public:
     QStringList AliceBit, AliceBasis, BobBit, BobBasis, EvaBasis;
 
 public slots:
-    QString ElectionPD(int PDH, int PDV, int yh_, int yv_);
-    QString ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig_h);
-    QStringList Protocol ();
+    QString ElectionPD_BB84(int PDH, int PDV, int yh_, int yv_);
+    QString ElectionPD_v2_BB84(int PDH, int PDV, int yh_, int yv_, int MaxSig_h);
+    QString ElectionPD_v2_B92(int PDH, int yh_, int yv_, int MaxSig_h);
+    QString ElectionPD_v2_GOKS(int PDH, int yh_, int yv_, int MaxSig_h);
+    QStringList Protocol();
+    QStringList Protocol_B92 ();
+    QStringList Protocol_GOKS ();
     QStringList Protocol_Eva ();
     QStringList ConvertingArray (QString str);
 

@@ -4,10 +4,10 @@
 /// @copyright Copyright 2022 InfoTeCS.
 
 
-#include <algorithm>
 #include <conserial.h>
 
-
+// #define ARDUINO
+#define STM
 
 //#define NO_SERIAL_LOG
 
@@ -42,12 +42,46 @@ Conserial::Conserial()
     standOptions.startLightNoises_= {0,0};
     standOptions.startPlatesAngles_ = {0,0,0,0};
     standOptions.maxSignalLevels_ = {0,0};
-    standOptions.timeoutTime_ = 2000; //ms
+    standOptions.timeoutTime_ = 2; //секунды
+    standOptions.rotateStep_ = 0.3;
+    standOptions.maxLaserPower_ = 100;
+    standOptions.maxPayloadSize = 30;
+    //FindProtocolVersion();
+}
+
+Conserial::Conserial(string port)
+{
+#ifndef NO_SERIAL_LOG
+    if (!out_.is_open())
+    {
+        out_.open("ceserial.log");
+    }
+#endif
+#ifdef CE_WINDOWS
+    com_.SetPort(port);
+#else
+    com_.SetPort("/dev/ttyStandQKD");
+#endif
+    com_.SetBaudRate(115200);
+    com_.SetDataSize(8);
+    com_.SetParity('N');
+    com_.SetStopBits(1);
+    com_.Open();
+
+    standOptions.premissions = 0;
+    standOptions.laserState_ = 0;
+    standOptions.laserPower_ = 0;
+    standOptions.signalLevels_ = {0,0};
+    standOptions.curAngles_ = {0,0,0,0};
+    standOptions.lightNoises = {0,0};
+    standOptions.startLightNoises_= {0,0};
+    standOptions.startPlatesAngles_ = {0,0,0,0};
+    standOptions.maxSignalLevels_ = {0,0};
+    standOptions.timeoutTime_ = 2; //секунды
     standOptions.rotateStep_ = 0.3;
     standOptions.maxLaserPower_ = 100;
     standOptions.maxPayloadSize = 30;
     FindProtocolVersion();
-
 }
 
 std::string Conserial::GetComPortName()const
@@ -57,7 +91,10 @@ std::string Conserial::GetComPortName()const
 
 void Conserial::SetComPortName(const char* port)
 {
+    com_.Close();
     com_.SetPort(port);
+    com_.Open();
+
 }
 
 Conserial::~Conserial()
@@ -67,7 +104,7 @@ Conserial::~Conserial()
 
 api:: InitResponse Conserial:: Init()
 {
-    logNameFunction(__FUNCTION__);
+    LOG_FUNCTION_CALL();
     api::InitResponse response; // Структура для формирования ответа
     std::fstream ini_("./Angles.ini");
     if (!ini_.is_open()) { response = InitByPD();  }
@@ -102,40 +139,24 @@ api:: InitResponse Conserial:: Init()
 
 api::InitResponse Conserial::InitByPD()
 {
-    logNameFunction(__FUNCTION__);
-    api::InitResponse response = {{0,0},{0,0,0,0},0,{0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL();
+    api::InitResponse response = {}; // Структура для формирования ответа
     uint32_t tempData = standOptions.timeoutTime_; //для FW 1.0
     standOptions.timeoutTime_ = INIT_TIMEOUT_TIME;
 
-    UartResponse pack = Twiting(dict_.at("Init"), nullptr, 0);
-
-    if(pack.parameters_.size() == 9){
-        // Заполняем поля структуры
-        response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_.at(0)) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-        response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_.at(1)) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-        response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_.at(2)) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-        response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_.at(3)) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
-
-        response.startLightNoises_.h_ = pack.parameters_.at(4); // <- начальная засветка детектора, принимающего горизонтальную поляризацию
-        response.startLightNoises_.v_ = pack.parameters_.at(5); //<- начальная засветка детектора, принимающего вертикальную поляризацию
-
-        response.maxSignalLevels_.h_ = pack.parameters_.at(6); // <- максимальный уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.maxSignalLevels_.v_ = pack.parameters_.at(7); // <- максимальный уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
-
-        response.maxLaserPower_ = pack.parameters_.at(8);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    response.errorCode_ = pack.status_;
+    response = SendCommand<api::InitResponse>("Init");
 
     standOptions.timeoutTime_ = tempData;
 
-    if(static_cast<int>(version_protocol)>3){
-        standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
-        standOptions.curAngles_ = standOptions.startPlatesAngles_;
+    if(response.errorCode_ == 0) {
+        standOptions.startPlatesAngles_ = response.startPlatesAngles_;
+        standOptions.curAngles_ = response.startPlatesAngles_;
         standOptions.startLightNoises_ = response.startLightNoises_;
         standOptions.maxSignalLevels_ = response.maxSignalLevels_;
         standOptions.maxLaserPower_ = response.maxLaserPower_;
+    }
+
+    if(static_cast<int>(version_protocol)>3){
         standOptions.timeoutTime_ = GetTimeout().adcResponse_;
     }
     return response; // Возвращаем сформированный ответ
@@ -143,607 +164,286 @@ api::InitResponse Conserial::InitByPD()
 
 api::InitResponse Conserial::InitByButtons(WAngles<angle_t> angles)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: "
-           + to_string(angles.aHalf_)+
-           +" "+to_string(angles.aQuart_)+
-           +" "+to_string(angles.bHalf_)+
-           +" "+to_string(angles.bQuart_));
-    api::InitResponse response = {{0,0},{0,0,0,0},0,{0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL(angles.aHalf_,angles.aQuart_,angles.bHalf_,angles.bQuart_ );
+
 
     WAngles<adc_t> steps = CalcSteps(angles);
 
-    auto bytes = PackToBytes(steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
+    auto response = SendCommand<api::InitResponse>(        "InitByButtons",
+                                          steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
 
-    UartResponse pack = Twiting(dict_.at("InitByButtons"), bytes.data(), bytes.size());
-
-    // Заполняем поля структуры
-    if(pack.parameters_.size() == 9){
-        // Заполняем поля структуры
-        response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_.at(0)) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-        response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_.at(1)) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-        response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_.at(2)) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-        response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_.at(3)) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
-
-        response.startLightNoises_.h_ = pack.parameters_.at(4); // <- начальная засветка детектора, принимающего горизонтальную поляризацию
-        response.startLightNoises_.v_ = pack.parameters_.at(5); //<- начальная засветка детектора, принимающего вертикальную поляризацию
-
-        response.maxSignalLevels_.h_ = pack.parameters_.at(6); // <- максимальный уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.maxSignalLevels_.v_ = pack.parameters_.at(7); // <- максимальный уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
-
-        response.maxLaserPower_ = pack.parameters_.at(8);
-
-        standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
-        standOptions.curAngles_ = standOptions.startPlatesAngles_;
+    if(response.errorCode_ == 0) {
+        standOptions.startPlatesAngles_ = response.startPlatesAngles_;
+        standOptions.curAngles_ = response.startPlatesAngles_;
         standOptions.startLightNoises_ = response.startLightNoises_;
         standOptions.maxSignalLevels_ = response.maxSignalLevels_;
         standOptions.maxLaserPower_ = response.maxLaserPower_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    response.errorCode_ = pack.status_;
-
-
-    return response; // Возвращаем сформированный ответ
+    }
+    return response;
 }
 
 api::AdcResponse Conserial::RunTest()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
+
     uint32_t oldTimeout = standOptions.timeoutTime_;
     standOptions.timeoutTime_ = 10000;
-    UartResponse pack = Twiting(dict_.at("RunSelfTest"), nullptr, 0);
 
-
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
+    api::AdcResponse response = SendCommand<api::AdcResponse>("RunSelfTest");
 
     standOptions.timeoutTime_ = oldTimeout;
-    response.errorCode_ = pack.status_; // Команда отработала корректно
 
     return response;
 }
 
 api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t power)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: "
-           + to_string(angles.aHalf_)+
-           +" "+to_string(angles.aQuart_)+
-           +" "+to_string(angles.bHalf_)+
-           +" "+to_string(angles.bQuart_)
-           +" "+ to_string(power));
-    api::SendMessageResponse response= {{0,0,0,0},{0,0},{0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL(angles.aHalf_,angles.aQuart_,angles.bHalf_,angles.bQuart_, power );
 
     WAngles<adc_t> steps = CalcSteps(angles);
 
-    auto bytes = PackToBytes(steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_, power);
+    auto response = SendCommand<api::SendMessageResponse>(        "SendMessage",
+                                                 steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_, power);
 
-    UartResponse pack = Twiting(dict_.at("SendMessage"), bytes.data(), bytes.size());
-
-    if(pack.parameters_.size() == 8){
-        // Заполняем поля
-        response.newPlatesAngles_.aHalf_  = ((float)pack.parameters_[0]) * standOptions.rotateStep_; // <- полуволновая пластина "Алисы"     (1я пластинка)
-        response.newPlatesAngles_.aQuart_ = ((float)pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-        response.newPlatesAngles_.bHalf_  = ((float)pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-        response.newPlatesAngles_.bQuart_ = ((float)pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
-
-        response.currentLightNoises_.h_ = pack.parameters_[4]; // <- засветка детектора, принимающего горизонтальную поляризацию
-        response.currentLightNoises_.v_ = pack.parameters_[5]; // <- засветка детектора, принимающего вертикальную поляризацию
-
-        response.currentSignalLevels_.h_ = pack.parameters_[6]; // <- уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.currentSignalLevels_.v_ = pack.parameters_[7]; // <- уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
-
-
-
-        standOptions.curAngles_ = response.newPlatesAngles_; // Запомнили текущие значения углов
+    if(response.errorCode_ == 0) {
+        standOptions.curAngles_ = response.newPlatesAngles_;
         standOptions.lightNoises = response.currentLightNoises_;
         standOptions.signalLevels_ = response.currentSignalLevels_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
+    }
     return response;
 }
 
-
-api::AdcResponse Conserial::SetTimeout(uint32_t timeout)
+api::AdcResponse Conserial::SetTimeout(uint32_t timeout_ms)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: " + to_string(timeout) + " мс");
-    api::AdcResponse response ={0,0} ;
-
-    if(standOptions.premissions!=1){
-        logOut("Отказано в доступе (недостаточно прав)");
-        response = {0, static_cast<uint16_t>(ErrorCode::AccessDenied)};
+    LOG_FUNCTION_CALL(timeout_ms, "мс" );
+    api::AdcResponse response = {};
+    if(timeout_ms >= 1000 && timeout_ms <10000) {
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
         return response;
     }
 
-    if (timeout < 1000 || timeout >10000){
-        logOut("Указано значение параметра вне диапазона (1000 < t < 10000)");
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput); // Принят некорректный входной параметр
-        return response;
-    }
-    uint16_t minTimeout = timeout & 0xFFFF;
+    uint16_t time_s = timeout_ms /1000 ;
 
-    auto bytes = PackToBytes(minTimeout);
+    response = SendCommand<api::AdcResponse>("SetTimeout", time_s);
 
-    UartResponse pack = Twiting(dict_.at("SetTimeout"), bytes.data(), bytes.size());
-
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
+    if(response.errorCode_ == 0) {
         standOptions.timeoutTime_ = response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-
+    }
 
     return response;
 }
 
 api::AdcResponse Conserial::SetLaserState(adc_t on)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: " + to_string(on));
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL(on);
 
-    if(on != 1 && on != 0)
-    {
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput); // Принят некорректный входной параметр
+    api::AdcResponse response = {};
+    if(on != 0 && on != 1) {
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
         return response;
     }
 
-    auto bytes = PackToBytes(on);
+    response = SendCommand<api::AdcResponse>("SetLaserState", on);
 
-    UartResponse pack = Twiting(dict_.at("SetLaserState"), bytes.data(), bytes.size());
-
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-
+    if(response.errorCode_ == 0) {
         standOptions.laserState_ = response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-    return response; // Возвращаем значение, соответствующее установленному состоянию
+    }
+
+    return response;
 }
 
 api::AdcResponse Conserial::SetLaserPower(adc_t power)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: " + to_string(power));
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
-
-    if (power > standOptions.maxLaserPower_)
-    {
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput); // Принят некорректный входной параметр
+    LOG_FUNCTION_CALL(power);
+    api::AdcResponse response = {};
+    if(power > standOptions.maxLaserPower_) {
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
         return response;
     }
 
-    auto bytes = PackToBytes(power);
-    UartResponse pack = Twiting(dict_.at("SetLaserPower"), bytes.data(), bytes.size());
+    response = SendCommand<api::AdcResponse>("SetLaserPower", power);
 
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
+    if(response.errorCode_ == 0) {
+        standOptions.laserPower_ = response.adcResponse_;
+    }
 
-        standOptions.laserPower_= response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-
-
-    return response; // Возвращаем значение, соответствующее установленному уровню
+    return response;
 }
 
 api::WAnglesResponse Conserial::SetPlatesAngles(WAngles<angle_t> angles)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: "
-           + to_string(angles.aHalf_)+
-           +" "+to_string(angles.aQuart_)+
-           +" "+to_string(angles.bHalf_)+
-           +" "+to_string(angles.bQuart_));
-    api::WAnglesResponse response = {{0,0,0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL(angles.aHalf_,angles.aQuart_,angles.bHalf_,angles.bQuart_ );
+
 
     WAngles<adc_t> steps = CalcSteps(angles);
-
-    auto bytes = PackToBytes(steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
-
-    UartResponse pack = Twiting(dict_.at("SetPlatesAngles"), bytes.data(), bytes.size());
-
-    if(pack.parameters_.size() == 4){
-        steps = {pack.parameters_.at(0),
-                 pack.parameters_.at(1),
-                 pack.parameters_.at(2),
-                 pack.parameters_.at(3)};
-        // Записываем полученное в структуру
-        response.angles_ =  CalcAngles(steps);
+    auto response = SendCommand<api::WAnglesResponse>(        "SetPlatesAngles",
+                                             steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
+    if(response.errorCode_ == 0) {
         standOptions.curAngles_ = response.angles_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
+    }
 
-
-    response.errorCode_ = pack.status_;
-
-
-    return response; // Возвращаем, чего там получилось установить
+    return response;
 }
 
 api::WAnglesResponse Conserial::UpdateBaseAngle(WAngles<angle_t> angles)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: "
-           + to_string(angles.aHalf_)+
-           +" "+to_string(angles.aQuart_)+
-           +" "+to_string(angles.bHalf_)+
-           +" "+to_string(angles.bQuart_));
-    api::WAnglesResponse response = {{0,0,0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL(angles.aHalf_,angles.aQuart_,angles.bHalf_,angles.bQuart_ );
 
-    if(standOptions.premissions!=1){
-        logOut("Отказано в доступе (недостаточно прав)");
-        response = {{0,0,0,0}, 5};
-        return response;
+    api::WAnglesResponse response = {};
+    if (CheckStandPremmissions<api::WAnglesResponse>(response)){
+
+        WAngles<adc_t> steps = CalcSteps(angles);
+        response = SendCommand<api::WAnglesResponse>(        "UpdateBaseAngles",
+                                                     steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
     }
-
-    WAngles<adc_t> steps = CalcSteps(angles);
-
-    auto bytes = PackToBytes(steps.aHalf_, steps.aQuart_, steps.bHalf_, steps.bQuart_);
-
-    UartResponse pack = Twiting(dict_.at("UpdateBaseAngles"), bytes.data(), bytes.size());
-
-    if(pack.parameters_.size() == 4){
-        steps = {pack.parameters_.at(0),
-                 pack.parameters_.at(1),
-                 pack.parameters_.at(2),
-                 pack.parameters_.at(3)};
-        // Записываем полученное в структуру
-        response.angles_ =  CalcAngles(steps);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-
-    response.errorCode_ = pack.status_;
-
-    return response; // Возвращаем, чего там получилось установить
+    if(response.errorCode_ == 0) {
+        standOptions.startPlatesAngles_ = response.angles_;
+    }
+    return response;
 }
 
 api::WAnglesResponse Conserial::ReadBaseAngles()
 {
-    logNameFunction(__FUNCTION__);
-    api::WAnglesResponse response = {{0,0,0,0},0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL();
+    api::WAnglesResponse response = {};
 
+    response = SendCommand<api::WAnglesResponse>("ReadBaseAngles");
 
-    UartResponse pack = Twiting(dict_.at("ReadBaseAngles"), nullptr, 0);
-
-    WAngles<adc_t> steps = {0,0,0,0};
-    if(pack.parameters_.size() == 4){
-        steps = {pack.parameters_.at(0),
-                 pack.parameters_.at(1),
-                 pack.parameters_.at(2),
-                 pack.parameters_.at(3)};
-        // Записываем полученное в структуру
-        response.angles_ =  CalcAngles(steps);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    response.errorCode_ = pack.status_;
-
+    if(response.errorCode_ == 0) {
+        standOptions.startPlatesAngles_ = response.angles_;
+    }
     return response;
 }
 
 api::AdcResponse Conserial::ReadEEPROM(uint8_t numberUnit_)
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
-
-    if(standOptions.premissions!=1){
-        logOut("Отказано в доступе (недостаточно прав)");
-        response = {0, static_cast<uint16_t>(ErrorCode::AccessDenied)};
-        return response;
+    LOG_FUNCTION_CALL();
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        response = SendCommand<api::AdcResponse>("ReadEEPROM", numberUnit_);
     }
-
-    auto bytes = PackToBytes(numberUnit_);
-
-    UartResponse pack = Twiting(dict_.at("ReadEEPROM"), bytes.data(), bytes.size());
-
-    // Заполняем поля для ответа
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-    return response; // Возвращаем полученное состояние
+    return response;
 }
 
 api::AdcResponse Conserial::WriteEEPROM(uint8_t numberUnit_, uint16_t param_)
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
+    LOG_FUNCTION_CALL();
 
-    if(standOptions.premissions!=1){
-        logOut("Отказано в доступе (недостаточно прав)");
-        response = {0, static_cast<uint16_t>(ErrorCode::AccessDenied)};
-        return response;
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        response = SendCommand<api::AdcResponse>("WriteEEPROM", numberUnit_, param_);
     }
 
-    auto bytes = PackToBytes(numberUnit_, param_);
-
-    UartResponse pack = Twiting(dict_.at("WriteEEPROM"), bytes.data(), bytes.size());
-
-    // Заполняем поля для ответа
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-    return response; // Возвращаем полученное состояние
+    return response;
 }
 
 api::AdcResponse Conserial::GetLaserState()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
-
-    UartResponse pack = Twiting(dict_.at("GetLaserState"), nullptr, 0);
-
-    // Заполняем поля для ответа
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-        standOptions.laserState_ = response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-
-    return response; // Возвращаем полученное состояние
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::AdcResponse>("GetLaserState");
 }
 
 api::AdcResponse Conserial::GetLaserPower()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
-
-
-    UartResponse pack = Twiting(dict_.at("GetLaserPower"), nullptr, 0);
-
-
-    // Заполняем поля для ответа
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0);
-        standOptions.laserPower_= response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-
-    return response; // Возвращаем полученное состояние
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::AdcResponse>("GetLaserPower");
 }
 
 api::WAnglesResponse Conserial::GetPlatesAngles()
 {
-    logNameFunction(__FUNCTION__);
-    api::WAnglesResponse response = {{0,0,0,0},0}; // Структура для формирования ответа
-
-    UartResponse pack = Twiting(dict_.at("GetCurPlatesAngles"), nullptr, 0);
-
-    // Получаем текущие углы поворота волновых пластин от МК
-    WAngles<adc_t> steps = {0,0,0,0};
-    if(pack.parameters_.size() == 4){
-        steps = {pack.parameters_.at(0),
-                 pack.parameters_.at(1),
-                 pack.parameters_.at(2),
-                 pack.parameters_.at(3)};
-
-        response.angles_ =  CalcAngles(steps);
-        standOptions.curAngles_ = response.angles_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    // Записываем полученное в структуру
-
-    response.errorCode_ = pack.status_;
-
-
-    return response;
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::WAnglesResponse>("GetCurPlatesAngles");
 }
 
 api::SLevelsResponse Conserial::GetSignalLevels()
 {
-    logNameFunction(__FUNCTION__);
-    api::SLevelsResponse response; // Структура для формирования ответа
-
-    UartResponse pack = Twiting(dict_.at("GetSignalLevel"), nullptr, 0);
-
-    // Заполняем структуру для ответа
-    if(pack.parameters_.size() == 2){
-        response.signal_.h_ = pack.parameters_.at(0); // <- уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.signal_.v_ = pack.parameters_.at(1); // <- уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазер
-
-        standOptions.signalLevels_ = response.signal_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    response.errorCode_ = pack.status_;
-
-
-    return response;
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::SLevelsResponse>("GetSignalLevel");
 }
 
 api::AngleResponse Conserial::GetRotateStep()
 {
-    logNameFunction(__FUNCTION__);
-    api::AngleResponse response; // Структура для формирования ответа
-
-
-    UartResponse pack = Twiting(dict_.at("GetRotateStep"), nullptr, 0);
-
-    // Получаем от МК количество шагов для поворота на 360 градусов
-    uint16_t steps_ = 0;
-
-    if(pack.parameters_.size() == 1){
-        steps_ = pack.parameters_.at(0);
-        if(steps_!=0){  standOptions.rotateStep_ = 360.0 / steps_;} // Считаем сколько градусов в одном шаге
-
-        response.angle_= standOptions.rotateStep_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-
-    response.errorCode_ = pack.status_;
-
+    LOG_FUNCTION_CALL();
+    auto response = SendCommand<api::AngleResponse>("GetRotateStep");
+    if (response.errorCode_==0 )
+        standOptions.rotateStep_ = response.angle_;
     return response;
+
 }
 
 api::SLevelsResponse Conserial::GetLightNoises()
 {
-    logNameFunction(__FUNCTION__);
-    api::SLevelsResponse response; // Структура для формирования ответа
-
-    UartResponse pack = Twiting(dict_.at("GetLightNoises"), nullptr, 0);
-
-    // Заполняем структуру для ответа
-    if(pack.parameters_.size() == 2){
-        response.signal_.h_ = pack.parameters_.at(0); // <- уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.signal_.v_ = pack.parameters_.at(1); // <- уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазер
-
-        standOptions.lightNoises = response.signal_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-
-    return response;
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::SLevelsResponse>("GetLightNoises");
 }
 
 api::AdcResponse Conserial::GetHardwareState(){
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Поле типа adc_t c ответом и код ошибки команды
+    LOG_FUNCTION_CALL();
+    api::AdcResponse response = SendCommand<api::AdcResponse>("GetHardwareState");
 
-
-    UartResponse pack = Twiting(dict_.at("GetHardwareState"), nullptr, 0);
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_.at(0); // Состояние АП
-
-        if (response.adcResponse_ & 0){
-            logOut("Аппаратная платформа в рабочем состоянии");
-        }else
-        {
-            if ( response.adcResponse_ & (1<<1) )
-                logOut("Не работает фотодетектор PDH");
-            if ( response.adcResponse_ & (1<<2) )
-                logOut("Не работает фотодетектор PDV");
-            if (response.adcResponse_ & (1<<3) )
-                logOut("Не работает лазер");
-            if ( response.adcResponse_ & (1<<4) )
-                logOut("Не работает первый двигатель");
-            if ( response.adcResponse_ & (1<<5) )
-                logOut("Не работает второй двигатель");
-            if ( response.adcResponse_ & (1<<6) )
-                logOut("Не работает третий двигатель");
-            if (response.adcResponse_ & (1<<7))
-                logOut("Не работает четвертый двигатель");
-        }
-
+    if (response.adcResponse_ & 0){
+        logOut("Аппаратная платформа в рабочем состоянии");
     }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
+    {
+        if ( response.adcResponse_ & (1<<1) )
+            logOut("Не работает фотодетектор PDH");
+        if ( response.adcResponse_ & (1<<2) )
+            logOut("Не работает фотодетектор PDV");
+        if (response.adcResponse_ & (1<<3) )
+            logOut("Не работает лазер");
+        if ( response.adcResponse_ & (1<<4) )
+            logOut("Не работает первый двигатель");
+        if ( response.adcResponse_ & (1<<5) )
+            logOut("Не работает второй двигатель");
+        if ( response.adcResponse_ & (1<<6) )
+            logOut("Не работает третий двигатель");
+        if (response.adcResponse_ & (1<<7))
+            logOut("Не работает четвертый двигатель");
+    }
     return response;
 }
 
 api::AdcResponse Conserial::GetErrorCode()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Поле типа adc_t c ответом и код ошибки команды
-
-    UartResponse pack = Twiting(dict_.at("GetLaserState"), nullptr, 0);
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_[0];
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
-    return response;
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::AdcResponse>("GetLaserState");
 }
 
 api::AdcResponse Conserial::GetTimeout()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Поле типа adc_t c ответом и код ошибки команды
-
-    UartResponse pack = Twiting(dict_.at("GetTimeout"), nullptr, 0);
-
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_[0];
-        if (pack.parameters_.at(0) > 1000)
-            standOptions.timeoutTime_  = response.adcResponse_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-    response.errorCode_ = pack.status_;
-
+    LOG_FUNCTION_CALL();
+    auto response = SendCommand<api::AdcResponse>("GetTimeout");
+    if (response.errorCode_==0){
+        if (response.adcResponse_ != 0) {
+            standOptions.timeoutTime_ = response.adcResponse_;
+        }
+        else{
+            return {response.adcResponse_, static_cast<uint16_t>(ErrorCode::FlashDataEmpty)};
+        }
+    }
     return response;
 }
 
-
 api::InitResponse Conserial::GetInitParams(){
 
-    logNameFunction(__FUNCTION__);
-    api::InitResponse response; // Структура для формирования ответа
-
-    UartResponse pack = Twiting( dict_.at("GetInitParams"), nullptr, 0);
-
-    if(pack.parameters_.size() == 9){
-        // Заполняем поля структуры
-        response.startPlatesAngles_.aHalf_  = ((float) pack.parameters_[0]) * standOptions.rotateStep_; //<- полуволновая пластина "Алисы"     (1я пластинка)
-        response.startPlatesAngles_.aQuart_ = ((float) pack.parameters_[1]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Алисы" (2я пластинка)
-        response.startPlatesAngles_.bHalf_  = ((float) pack.parameters_[2]) * standOptions.rotateStep_; // <- полуволновая пластина "Боба"      (3я пластинка)
-        response.startPlatesAngles_.bQuart_ = ((float) pack.parameters_[3]) * standOptions.rotateStep_; // <- четвертьволновая пластина "Боба"  (4я пластинка)
-
-        response.startLightNoises_.h_ = pack.parameters_[4]; // <- начальная засветка детектора, принимающего горизонтальную поляризацию
-        response.startLightNoises_.v_ = pack.parameters_[5]; //<- начальная засветка детектора, принимающего вертикальную поляризацию
-
-        response.maxSignalLevels_.h_ = pack.parameters_[6]; // <- максимальный уровень сигнала на детекторе, принимающем горизонтальную поляризацию, при включенном лазере
-        response.maxSignalLevels_.v_ = pack.parameters_[7]; // <- максимальный уровень сигнала на детекторе, принимающем вертикальную поляризацию, при включенном лазере
-
-        response.maxLaserPower_ = pack.parameters_[8];
-
-
-
-        standOptions.startPlatesAngles_ = response.startPlatesAngles_; // Сохраняем текущее значение углов на будущее
-        standOptions.startLightNoises_ = response.startLightNoises_;
-        standOptions.maxSignalLevels_ = response.maxSignalLevels_;
-        standOptions.maxLaserPower_ = response.maxLaserPower_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    response.errorCode_ = pack.status_;
-
-    return response; // Возвращаем сформированный ответ
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::InitResponse>("GetInitParams"); // Возвращаем сформированный ответ
 
 }
 
 api::SLevelsResponse Conserial::GetStartLightNoises()
 {
-    logNameFunction(__FUNCTION__);
-    api::SLevelsResponse response; // Структура для формирования ответа
-
-    // Заполняем структуру
-    response.signal_ = standOptions.startLightNoises_; // <- начальная засветка
-    response.errorCode_ = static_cast<uint16_t>(ErrorCode::Success);
-    return response;
+    LOG_FUNCTION_CALL();
+    return {standOptions.startLightNoises_, static_cast<uint16_t>(ErrorCode::Success)};
 }
 
 api::AngleResponse Conserial::SetPlateAngle(adc_t plateNumber, angle_t angle)
 {
-    logNameFunction(__FUNCTION__);
-    logOut("Параметры: "+to_string(plateNumber)+ " " + to_string(angle));
+    LOG_FUNCTION_CALL(plateNumber, angle);
+    // logOut("Параметры: "+to_string(plateNumber)+ " " + to_string(angle));
+
     api::AngleResponse response; // Структура для формирования ответа
     api::WAnglesResponse tempResponse;
-    WAngles <angle_t> angles {};
+    WAngles <angle_t> angles = standOptions.curAngles_;
 
     if(plateNumber < 1 || plateNumber > 4)
     {
@@ -754,148 +454,88 @@ api::AngleResponse Conserial::SetPlateAngle(adc_t plateNumber, angle_t angle)
     switch (plateNumber)
     {
     case 1:
-        angles = {angle,
-                  standOptions.curAngles_.aQuart_,
-                  standOptions.curAngles_.bHalf_,
-                  standOptions.curAngles_.bQuart_};
+        angles.aHalf_ = angle;
         tempResponse = SetPlatesAngles(angles);
 
-        // Заполняем поля
         response.angle_ = tempResponse.angles_.aHalf_;
-        response.errorCode_ = tempResponse.errorCode_;
-        standOptions.curAngles_ = tempResponse.angles_;
-
         break;
     case 2:
-        angles = {standOptions.curAngles_.aHalf_,
-                  angle,
-                  standOptions.curAngles_.bHalf_,
-                  standOptions.curAngles_.bQuart_};
+        angles.aQuart_ = angle;
         tempResponse = SetPlatesAngles(angles);
 
-        // Заполняем поля
         response.angle_ = tempResponse.angles_.aQuart_;
-        response.errorCode_ = tempResponse.errorCode_;
-        standOptions.curAngles_ = tempResponse.angles_;
-
         break;
     case 3:
-        angles = {standOptions.curAngles_.aHalf_,
-                  standOptions.curAngles_.aQuart_,
-                  angle,
-                  standOptions.curAngles_.bQuart_};
+        angles.bHalf_ = angle;
         tempResponse = SetPlatesAngles(angles);
 
-        // Заполняем поля
         response.angle_ = tempResponse.angles_.bHalf_;
-        response.errorCode_ = tempResponse.errorCode_;
-        standOptions.curAngles_ = tempResponse.angles_;
-
         break;
     case 4:
-        angles = {standOptions.curAngles_.aHalf_,
-                  standOptions.curAngles_.aQuart_,
-                  standOptions.curAngles_.bHalf_,
-                  angle};
+        angles.bQuart_ = angle;
         tempResponse = SetPlatesAngles(angles);
 
-        // Заполняем поля
         response.angle_ = tempResponse.angles_.bQuart_;
-        response.errorCode_ = tempResponse.errorCode_;
-        standOptions.curAngles_ = tempResponse.angles_;
-
         break;
     }
 
-    return response; // Возвращаем, чего там получилось установить
+    response.errorCode_ = tempResponse.errorCode_;
+    standOptions.curAngles_ = tempResponse.angles_;
+    return response;
 }
 
 api::AdcResponse Conserial::GetMaxLaserPower()
 {
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0}; // Структура для формирования ответа
-
-    // Заполняем поля для ответа
-    response.adcResponse_ = standOptions.maxLaserPower_;
-    response.errorCode_ = static_cast<uint16_t>(ErrorCode::Success);
-    return response; // Возвращаем полученное состояние
+    LOG_FUNCTION_CALL();
+    return {standOptions.maxLaserPower_, static_cast<uint16_t>(ErrorCode::Success)};
 }
 
 api::WAnglesResponse Conserial::GetStartPlatesAngles()
 {
-
-    logOut(__FUNCTION__ );
-    api::WAnglesResponse response = {{0,0,0,0},0}; // Структура для формирования ответа
-
-    // Записываем полученное в структуру
-    response.angles_ =  standOptions.startPlatesAngles_;
-    response.errorCode_ = static_cast<uint16_t>(ErrorCode::Success);
-    // возвращаем структуру
-    return response;
+    LOG_FUNCTION_CALL();
+    return {standOptions.startPlatesAngles_, static_cast<uint16_t>(ErrorCode::Success)};
 }
 
 api::SLevelsResponse Conserial::GetMaxSignalLevels()
 {
-    logNameFunction(__FUNCTION__);
-    api::SLevelsResponse response; // Структура для формирования ответа
+    LOG_FUNCTION_CALL();
+    return {standOptions.maxSignalLevels_, static_cast<uint16_t>(ErrorCode::Success)};
+}
 
-    response.signal_ = standOptions.maxSignalLevels_;
-    response.errorCode_ = static_cast<uint16_t>(ErrorCode::Success);
-    return response;
+std::vector<uint8_t> Conserial::PreparePasswordBytes(const string& passwd)
+{
+    size_t original_len = passwd.size();
+    size_t padded_len = original_len;
+    if (original_len % 2 != 0) {
+        padded_len += 1;
+    }
+
+    std::vector<uint8_t> bytes(padded_len, 0);
+    std::memcpy(bytes.data(), passwd.data(), original_len);
+    return bytes;
 }
 
 api::AdcResponse Conserial::CreateConfigSecret(string passwd){
 
-    logNameFunction(__FUNCTION__);
-    api::AdcResponse response = {0,0};
+    LOG_FUNCTION_CALL();
 
-    if(standOptions.premissions!=1){
-        logOut("Отказано в доступе (недостаточно прав)");
-        response = {0,5};
-        return response;
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        std::vector<uint8_t> passwordBytes=PreparePasswordBytes(passwd);
+
+        response = SendCommand<api::AdcResponse>("CreateConfigSecret", passwordBytes);
     }
-
-    size_t original_len = passwd.size();
-    if (original_len > 10 || passwd.empty())
-    {
-        logOut("Пароль слишком длинный!");
-        response.adcResponse_ = 0;
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput); // Принят некорректный входной параметр
-        return response;
-    }
-
-    // Вычисляем длину с выравниванием до чётной (padding нулевым байтом сзади)
-    size_t padded_len = original_len;
-    if (original_len % 2 != 0) {
-        padded_len += 1;                        // делаем длину чётной
-    }
-
-    std::vector<uint8_t> passwordBytes(padded_len, 0);
-
-    // Копируем пароль
-    std::memcpy(passwordBytes.data(), passwd.data(), original_len);
-
-
-    UartResponse pack;
-    pack = Twiting(dict_.at("CreateConfigSecret"),
-                   passwordBytes.data(),
-                   passwordBytes.size());
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_[0];
-        standOptions.premissions  = response.adcResponse_;
-        response.errorCode_ = pack.status_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
 
     return response;
 }
 
 
+
 api::AdcResponse Conserial::OpenConfigMode(string passwd)
 {
-    logNameFunction(__FUNCTION__);
+    LOG_FUNCTION_CALL();
     api::AdcResponse response = {0,0};
-    if (versionFirmware.major <= 1 && versionFirmware.minor<5){
+    if (versionFirmware.major <= 1 && versionFirmware.micro<=5){
         if (passwd == "admin"){
             response.adcResponse_ = 1;
             response.errorCode_   = static_cast<uint16_t>(ErrorCode::Success);
@@ -909,247 +549,203 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd)
         return response;
     }
 
-    size_t original_len = passwd.size();
-    if (original_len > 10 || passwd.empty())
-    {
-        logOut("Пароль слишком длинный!");
-        response.adcResponse_ = 0;
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput); // Принят некорректный входной параметр
-        return response;
-    }
-
-    // Вычисляем длину с выравниванием до чётной (padding нулевым байтом сзади)
-    size_t padded_len = original_len;
-    if (original_len % 2 != 0) {
-        padded_len += 1;                        // делаем длину чётной
-    }
-
-    std::vector<uint8_t> passwordBytes(padded_len, 0);
-
-    // Копируем пароль
-    std::memcpy(passwordBytes.data(), passwd.data(), original_len);
-
-    UartResponse pack = Twiting(
-        dict_.at("OpenConfigMode"),
-        passwordBytes.data(),
-        passwordBytes.size()
-        );
-    if(pack.parameters_.size() == 1){
-        response.adcResponse_ = pack.parameters_[0];
-        response.errorCode_   = pack.status_;
-    }else
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
-
-    standOptions.premissions = response.adcResponse_;
-
-    return response;
+    std::vector<uint8_t> passwordBytes=PreparePasswordBytes(passwd);
+    return SendCommand<api::AdcResponse>("CreateConfigSecret", passwordBytes);
 }
 
 
 uint16_t Conserial::CloseConfigMode()
 {
-    logNameFunction(__FUNCTION__);
+    LOG_FUNCTION_CALL();
     standOptions.premissions  = 0;
     return 1;
 }
 
 uint16_t Conserial::GetCurrentMode()
 {
-    logNameFunction(__FUNCTION__);
+    LOG_FUNCTION_CALL();
     return standOptions.premissions;
 }
 
 uint16_t Conserial::GetMaxPayloadSize()
 {
-    logNameFunction(__FUNCTION__);
-
-    UartResponse pack = Twiting(dict_.at("GetMaxPayloadSize"), nullptr, 0);
-    if(!pack.parameters_.empty()){
-        standOptions.maxPayloadSize = pack.parameters_[0];
-    }
-
-    return standOptions.maxPayloadSize;
+    LOG_FUNCTION_CALL();
+    return SendCommand<api::AdcResponse>("GetMaxPayloadSize").adcResponse_;
 }
 
 api::versionProtocolResponse Conserial::GetProtocolVersion (){
-    logNameFunction(__FUNCTION__);
-    api::versionProtocolResponse response;
+    LOG_FUNCTION_CALL();
 
-    if(static_cast<int>(version_protocol)>3){
-        UartResponse pack = Twiting(dict_.at("GetProtocolVersion"), nullptr, 0);
-        if(pack.parameters_.size() == 2){
-            response.version_ = pack.parameters_.at(0);
-            response.subversion_ = pack.parameters_.at(1);
-            versionProtocol  = {response.version_, response.subversion_};
-            response = {versionProtocol.version, versionProtocol.subversion}; //?
-            response.errorCode_ = pack.status_;
-        }else
-            response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);;
+    switch (version_protocol) {
+    case VersionProtocol::unknown:
+        return {0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        break;
+    case VersionProtocol::protocol_1_2:
+        return  {1,2, static_cast<uint16_t>(ErrorCode::Success)};
+        break;
+    case VersionProtocol::protocol_1_0:
+        return  {1,0, static_cast<uint16_t>(ErrorCode::Success)};
+        break;
+    default:
+        return SendCommand<api::versionProtocolResponse>("GetProtocolVersion");
+        break;
     }
-    else if (static_cast<int>(version_protocol)== 1) {
-        response = {1,0, static_cast<uint16_t>(ErrorCode::Success)};
-    }else
-        response = {0,0, static_cast<uint16_t>(ErrorCode::Success)};
-
-
-    return response;
 }
 
 api::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
-    logNameFunction(__FUNCTION__);
-    api::versionFirmwareResponse response;
+    LOG_FUNCTION_CALL();
     switch (version_protocol) {
-    case VersionProtocol::protocol_1_5:{
-        UartResponse pack = Twiting(dict_.at("GetCurrentFirmwareVersion"), nullptr, 0);
-        if(!pack.parameters_.empty()){
-            response.major_ = pack.parameters_.at(0);
-            response.minor_ = pack.parameters_.at(1);
-            response.micro_ = pack.parameters_.at(2);
-
-            versionFirmware  = {response.major_,response.minor_,response.micro_};
-            response = {versionFirmware.major,versionFirmware.minor,versionFirmware.micro}; //?
-        }
-        response.errorCode_ = pack.status_;
-
+    case VersionProtocol::unknown:
+        return {0,0,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
-    }
+    case VersionProtocol::protocol_1_2:
+        return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        break;
+    case VersionProtocol::protocol_1_0:
+        return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        break;
     default:
-        if(version_protocol == VersionProtocol::protocol_1_0){
-            response = {1, 0, static_cast<uint16_t>(ErrorCode::Success)};
-        }
+        return SendCommand<api::versionFirmwareResponse>("GetCurrentFirmwareVersion");
         break;
     }
-    return response;
-}
-
-bool IsBootloaderFile(const string& path) {
-    // Простая проверка: если в имени есть "optiboot", "bootloader", "boot"
-    string lower = path;
-    transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-    return lower.find("optiboot") != string::npos ||
-           lower.find("bootloader") != string::npos ||
-           lower.find("boot") != string::npos;
 }
 
 
+#ifdef STM
+#undef ARDUINO
 api::AdcResponse Conserial::FirmwareUpdate(std::string path)
 {
-    logNameFunction(__FUNCTION__);
+    LOG_FUNCTION_CALL();
 
-    if (standOptions.premissions != 1) {
-        logOut("Отказано в доступе (недостаточно прав)");
-        return {0, static_cast<uint16_t>(ErrorCode::AccessDenied)};
-    }
-    com_.Close();
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        com_.Close();
 
-    /* ==== Открываем BIN ==== */
-    FILE* bin = nullptr;
+        /* ==== Открываем BIN ==== */
+        FILE* bin = nullptr;
 
 #ifdef _WIN32
-    std::wstring wpath(path.begin(), path.end());
-    bin = _wfopen(wpath.c_str(), L"rb");
+        std::wstring wpath(path.begin(), path.end());
+        bin = _wfopen(wpath.c_str(), L"rb");
 #else
-    bin = fopen(path.c_str(), "rb");
+        bin = fopen(path.c_str(), "rb");
 #endif
 
-    if (!bin) {
-        logOut("Не удалось открыть файл прошивки: " + path);
-        return {0, static_cast<uint16_t>(ErrorCode::FirmwareFileNotRead)};
-    }
-
-    /* ==== Открываем FTDI ==== */
-    FT_HANDLE ft;
-
-    // как в main (2).c — первый FTDI в системе
-    if (FT_Open(0, &ft) != FT_OK) {
-        logOut("Не удалось открыть FTDI устройство");
-        fclose(bin);
-        return {0, static_cast<uint16_t>(ErrorCode::NoConnection)};
-    }
-
-    /* ==== Настройка порта ==== */
-    FT_SetBaudRate(ft, 115200);
-    FT_SetDataCharacteristics(ft, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_NONE);
-    FT_SetTimeouts(ft, 1000, 1000);
-
-    logOut("FTDI сконфигурирован: 115200, 8N1");
-
-    /* ================= ВХОД В BOOTLOADER ================= */
-
-    logOut("Вход в режим загрузчика...");
-
-    FT_SetDtr(ft);
-    sleep_ms(50);
-    FT_ClrRts(ft);
-    sleep_ms(50);
-    FT_SetRts(ft);
-    sleep_ms(50);
-
-    /* ==== Инициализация STM32 ROM Bootloader ==== */
-    uint8_t init = 0x7F;
-    uart_write(ft, &init, 1);
-    if (!wait_ack(ft, 1000)) {
-        logOut("Загрузчик не отвечает");
-        FT_Close(ft);
-        fclose(bin);
-        return {0, static_cast<uint16_t>(ErrorCode::BootloaderNoResponse)};
-    }
-
-    logOut("Загрузчик активен");
-
-    /* ================= СТИРАНИЕ FLASH ================= */
-
-    logOut("Стирание FLASH...");
-    if (!bl_mass_erase(ft)) {
-        logOut("Ошибка стирания FLASH");
-        FT_Close(ft);
-        fclose(bin);
-        return {0, static_cast<uint16_t>(ErrorCode::FlashEraseFailed)};
-    }
-
-    /* ================= ЗАПИСЬ ПРОШИВКИ ================= */
-
-    logOut("Запись прошивки...");
-
-    uint8_t buf[256];
-    uint32_t addr = 0x08000000;
-    size_t r;
-    size_t total = 0;
-    std::stringstream ss;
-
-    while ((r = fread(buf, 1, sizeof(buf), bin)) > 0) {
-        if (!bl_write(ft, addr, buf, (int)r)) {
-            ss << std::hex << addr;
-            logOut("Ошибка записи @0x" + ss.str());
-            FT_Close(ft);
-            fclose(bin);
-            return {0, static_cast<uint16_t>(ErrorCode::FlashWriteFailed)};
+        if (!bin) {
+            logOut("Не удалось открыть файл прошивки: " + path);
+            return {0, static_cast<uint16_t>(ErrorCode::FirmwareFileNotRead)};
         }
 
-        addr += r;
-        total += r;
+        /* ==== Открываем FTDI ==== */
+        FT_HANDLE ft;
+
+        // как в main (2).c — первый FTDI в системе
+        if (FT_Open(0, &ft) != FT_OK) {
+            logOut("Не удалось открыть FTDI устройство");
+            fclose(bin);
+            return {0, static_cast<uint16_t>(ErrorCode::NoConnection)};
+        }
+
+        /* ==== Настройка порта ==== */
+        FT_SetBaudRate(ft, 115200);
+        FT_SetDataCharacteristics(ft, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_NONE);
+        FT_SetTimeouts(ft, 1000, 1000);
+
+        logOut("FTDI сконфигурирован: 115200, 8N1");
+
+        /* ================= ВХОД В BOOTLOADER ================= */
+
+        logOut("Вход в режим загрузчика...");
+
+        FT_SetDtr(ft);
+        sleep_ms(50);
+        FT_ClrRts(ft);
+        sleep_ms(50);
+        FT_SetRts(ft);
+        sleep_ms(50);
+
+        /* ==== Инициализация STM32 ROM Bootloader ==== */
+        uint8_t init = 0x7F;
+        uart_write(ft, &init, 1);
+        if (!wait_ack(ft, 1000)) {
+            logOut("Загрузчик не отвечает");
+            FT_Close(ft);
+            fclose(bin);
+            return {0, static_cast<uint16_t>(ErrorCode::BootloaderNoResponse)};
+        }
+
+        logOut("Загрузчик активен");
+
+        /* ================= СТИРАНИЕ FLASH ================= */
+
+        logOut("Стирание FLASH...");
+        if (!bl_mass_erase(ft)) {
+            logOut("Ошибка стирания FLASH");
+            FT_Close(ft);
+            fclose(bin);
+            return {0, static_cast<uint16_t>(ErrorCode::FlashEraseFailed)};
+        }
+
+        /* ================= ЗАПИСЬ ПРОШИВКИ ================= */
+
+        logOut("Запись прошивки...");
+
+        uint8_t buf[256];
+        uint32_t addr = 0x08000000;
+        size_t r;
+        size_t total = 0;
+        std::stringstream ss;
+
+        while ((r = fread(buf, 1, sizeof(buf), bin)) > 0) {
+            if (!bl_write(ft, addr, buf, (int)r)) {
+                ss << std::hex << addr;
+                logOut("Ошибка записи @0x" + ss.str());
+                FT_Close(ft);
+                fclose(bin);
+                return {0, static_cast<uint16_t>(ErrorCode::FlashWriteFailed)};
+            }
+
+            addr += r;
+            total += r;
+        }
+
+        logOut("Записано " + std::to_string(total) + " байт");
+
+        /* ================= СБРОС ================= */
+
+        logOut("Сброс устройства...");
+
+        FT_ClrDtr(ft);
+        sleep_ms(50);
+        FT_ClrRts(ft);
+        sleep_ms(50);
+        FT_SetRts(ft);
+        sleep_ms(50);
+
+        FT_Close(ft);
+        fclose(bin);
+
+        logOut("Прошивка успешно завершена");
+        com_.Open();
     }
-
-    logOut("Записано " + std::to_string(total) + " байт");
-
-    /* ================= СБРОС ================= */
-
-    logOut("Сброс устройства...");
-
-    FT_ClrDtr(ft);
-    sleep_ms(50);
-    FT_ClrRts(ft);
-    sleep_ms(50);
-    FT_SetRts(ft);
-    sleep_ms(50);
-
-    FT_Close(ft);
-    fclose(bin);
-
-    logOut("Прошивка успешно завершена");
-
     return {1, static_cast<uint16_t>(ErrorCode::Success)};
 }
+#endif
+#ifdef ARDUINO
+void Conserial::FirmwareUpdate (string path){
+    logOut(__FUNCTION__);
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        string command ="avrdude -v -p atmega328p -c arduino -P " + com_.GetPort() +" -b 115200 -D -U flash:w:\"" + path + "\":i";
+        const char * mainCommand= command.c_str();
+        if(system(mainCommand)){
+            FindProtocolVersion();
+        }
+    }
+    logOut("\n");
+}
+#endif
+
 
 
 
@@ -1200,10 +796,11 @@ Conserial::UartResponse Conserial::Twiting (uint8_t commandName,  uint8_t * byte
 
     UartResponse pack;
 
+
     // Проверка соединения
     if (!StandIsConected())
     {
-        pack.status_= 0;
+        pack.status_= static_cast<uint16_t>(ErrorCode::NoConnection);
     }else {
 
         for(int attempt = 0; attempt < 3; ++attempt)
@@ -1212,15 +809,13 @@ Conserial::UartResponse Conserial::Twiting (uint8_t commandName,  uint8_t * byte
             try {
                 pack = ParsePacket();
             } catch (...) {
-                cerr << "ОШИБКА: Проблема считывания пакета с UART" << endl;
+                cerr << "ERROR: Problem reading packet from UART" << endl;
             }
 
             if (pack.status_ == 1)
                 break;
         }
     }
-
-    pack.status_= CheckStatus(pack.status_);
     return pack;
 }
 
@@ -1338,7 +933,8 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
     for (auto b : packet)
     {
         com_.Write(b);
-        logOutLine( to_string(b) + " | " );
+        LogParametersHex(b);
+        // logOutLine( to_string(b) + " | " );
     }
     logOut("");
 
@@ -1348,7 +944,7 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
 std::vector<uint8_t> Conserial::ReadPacket(){
 
     bool success = 0, end_read = 0, start_read = 0;
-    clock_t dedline = clock() + (standOptions.timeoutTime_/1000) * CLOCKS_PER_SEC ;
+    clock_t dedline = clock() + standOptions.timeoutTime_ * CLOCKS_PER_SEC ;
     uint8_t byte = 0;
     uint16_t sliding = 0;
     std::vector<uint8_t> readBytes;
@@ -1358,34 +954,42 @@ std::vector<uint8_t> Conserial::ReadPacket(){
         break;
     default:
         logOut( "\n"+ currentDateTime()+ " -- Поиск начала пакета" );
-        while (clock()< dedline && !end_read){
+        while (/*clock()< dedline &&*/  !end_read){
             byte = com_.ReadChar(success);
+            LogParametersHex(byte);
             if (!success)
                 continue;
 
             sliding = (sliding << 8) |  byte;
 
-            if (!start_read && byte !=0){
-                logOutLine( to_string( byte) + " | " );
-            }else{
-                logOutLine( to_string( byte) + " | " );
-            }
             if (!start_read) // Поиск начала пакета
             {
                 if (sliding == 0xFFFE)
                 {
                     start_read = true;
                     logOut( "\n======== Успешно найдено начало пакета ======== ");
+                    sliding = 0;
+                    readBytes.clear();
                 }
                 continue;
             }
-
             //======== Считывание ========
             readBytes.push_back(byte);
 
             if (sliding == 0xFFFF)
             {
+                // Вечный костыль на случай CRC = FF
+                byte = com_.ReadChar(success);
+                LogParametersHex(byte);
+                if (byte == 0xFF && success){
+                    readBytes.push_back(byte);
+                }
                 end_read = true;
+                if (readBytes.size() >= 2){
+                    readBytes.pop_back(); // удалить предыдущий 0xFF
+                    readBytes.pop_back();
+                }
+                // cout << ""<<endl;
             }
 
             if (clock()>dedline){ //timeouted
@@ -1396,7 +1000,10 @@ std::vector<uint8_t> Conserial::ReadPacket(){
         }
         break;
     }
-
+    // for (auto var : readBytes) {
+    //     cout << int (var) << " ";
+    // }
+    // logOut("");
     return readBytes;
 }
 
@@ -1409,7 +1016,6 @@ Conserial::UartResponse Conserial::ParsePacket(){
     uint8_t crc = 255;
 
     if (!readedBytes.empty() && readedBytes.size()>2){ // Считаны байты с UART
-        readedBytes.erase(readedBytes.cend()-2, readedBytes.cend()) ;
 
         switch (version_protocol) {
         case VersionProtocol::protocol_1_5:{
@@ -1424,6 +1030,7 @@ Conserial::UartResponse Conserial::ParsePacket(){
             }
 
             crc = Crc8(readedBytes.data(), readedBytes.size());
+            // cout <<(int) pack_.crc_<< "<- recive/math ->" << (int) crc <<endl;
             if(crc!=0){
                 logOut("\n"+ currentDateTime() + "-- Ошибка: Несоответствие CRC \t" + to_string( crc) );
                 logOutUart(pack_);
@@ -1480,7 +1087,7 @@ Conserial::UartResponse Conserial::ParsePacket(){
 
     }else{
         logOut("\n" + currentDateTime() + "-- Ошибка: Принятый пакет был сломан");
-        pack_.status_ = static_cast<uint16_t>(ErrorCode::InvalidCommand);
+        pack_.status_ = static_cast<uint16_t>(ErrorCode::MissingFrameEnd);
     }
 
     logOut("\n======== Конец пакета ========");
@@ -1541,14 +1148,18 @@ uint8_t Conserial::Crc8(uint8_t *pcBlock, uint8_t len)
     return crc;
 }
 
+std::vector<uint8_t> Conserial::PackToBytes(const std::vector<uint8_t>& vec) {
+    return vec;
+}
+
 //          ========  Step to Angle  & Angle to Step ========
 uint16_t Conserial::CalcStep(angle_t angle, angle_t rotateStep){
+
+
+    angle = fmod(angle , 360.0); // Подсчет кратчайшего угла поворота
     if (angle < 0){
         angle = angle + 360;
     }
-
-    angle = fmod(angle , 360.0); // Подсчет кратчайшего угла поворота
-
     int Steps = round (angle / rotateStep); //Подсчёт и округление шагов
     return Steps;
 }
@@ -1616,6 +1227,53 @@ void Conserial::logOutUart(const UartResponse &pack)
         logOut("Pack.parameters[" + std::to_string(i) + "] = " + std::to_string(pack.parameters_[i]));
 }
 
+std::vector<std::string> Conserial::GetFTDIComPorts() {
+    std::vector<std::string> comPorts;  // Вектор для хранения найденных портов
+    FT_STATUS ftStatus;                  // Статус выполнения операций FTDI
+    DWORD numDevices = 0;                // Количество найденных устройств
+
+    // Создаем список устройств
+    ftStatus = FT_CreateDeviceInfoList(&numDevices);
+    if (ftStatus != FT_OK) {
+        std::cerr << "Ошибка создания списка устройств" << std::endl;
+        return comPorts;
+    }
+
+    // Проверяем, есть ли устройства
+    if (numDevices == 0) {
+        std::cout << "FTDI устройства не найдены" << std::endl;
+        return comPorts;
+    }
+
+    // Перебираем каждое устройство
+    for (DWORD i = 0; i < numDevices; i++) {
+        FT_HANDLE ftHandle = nullptr;
+
+        // Открываем устройство для получения COM-порта
+        ftStatus = FT_Open(i, &ftHandle);
+        if (ftStatus == FT_OK) {
+            LONG comPortNumber = 0;
+
+            // Получаем номер COM-порта
+            ftStatus = FT_GetComPortNumber(ftHandle, &comPortNumber);
+
+            // Если порт найден (не -1), добавляем его в список
+            if (ftStatus == FT_OK && comPortNumber != -1) {
+                std::string comPortName = "COM" + std::to_string(comPortNumber);
+                comPorts.push_back(comPortName);
+            }
+
+            // Закрываем устройство
+            FT_Close(ftHandle);
+        }
+    }
+
+    for (const auto& el : comPorts) {
+        std::cout << el << " ";
+    }
+
+    return comPorts;
+}
 
 
 }//namespace

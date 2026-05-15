@@ -59,7 +59,7 @@ QStringList StreamWork:: ConvertingArray (QString str){
     return list;
 }
 /// @brief метод вероятностей
-QString StreamWork::ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig_h){
+QString StreamWork::ElectionPD_v2_BB84(int PDH, int PDV, int yh_, int yv_, int MaxSig_h){
 
     QString bit = "";
     double val = rand(); //рандом числа
@@ -96,7 +96,7 @@ QString StreamWork::ElectionPD_v2(int PDH, int PDV, int yh_, int yv_, int MaxSig
 }
 
 /// @brief метод сравнений
-QString StreamWork::ElectionPD(int PDH, int PDV, int yh_, int yv_){
+QString StreamWork::ElectionPD_BB84(int PDH, int PDV, int yh_, int yv_){
 
     QString bit = "";
     if(yh_ < 200 && yv_< 200){
@@ -126,8 +126,78 @@ QString StreamWork::ElectionPD(int PDH, int PDV, int yh_, int yv_){
         }
     }
 }
+
+/// @brief метод вероятностей для B92
+QString StreamWork::ElectionPD_v2_B92(int PDH, int yh_,  int yv_, int MaxSig_h){
+
+    QString bit = "";
+    double val = rand(); //рандом числа
+    double val_max = RAND_MAX;
+    double val_de = val/val_max;
+    double h_de = double(yh_)/double(MaxSig_h); //определение в каком интервале находиться сигнал
+    double v_de = double(yv_)/double(yv_+yh_);
+    if(yh_ < 200 && yv_< 200){
+        return bit='X';
+    }
+    else{
+        if(v_de < 0.7){
+            if(val_de >= h_de){
+                if(PDH == 0){
+                    return bit='0';
+                }
+                else if(PDH == 1){
+                    return bit='1';
+                }
+                else {
+                    return bit='X';
+                }
+            }
+            else{
+                return bit='X';
+            }
+        }
+        else {return bit='X';}
+    }
+}
+
+/// @brief метод вероятностей для ГОКС
+QString StreamWork::ElectionPD_v2_GOKS(int PDH, int yh_,  int yv_, int MaxSig_h){
+
+    QString bit = "";
+    double val = rand(); //рандом числа
+    double val_max = RAND_MAX;
+    double val_de = val/val_max;
+    double h_de = double(yh_)/double(MaxSig_h); //определение в каком интервале находиться сигнал
+    if(MaxSig_h == 0){
+        MaxSig_h = 16000;
+    }
+    double v_de = double(yv_)/double(yv_+yh_);
+    if(yh_ < 200 && yv_< 200){
+        return bit='X';
+    }
+    else{
+        if(v_de < 0.7){
+            if(val_de <= h_de){
+                if(PDH == 0){
+                    return bit='0';
+                }
+                else if(PDH == 1){
+                    return bit='1';
+                }
+                else {
+                    return bit='X';
+                }
+            }
+            else{
+                return bit='X';
+            }
+        }
+        else {return bit='X';}
+    }
+}
+
 /// @brief выполнение протокола ВВ84
-QStringList StreamWork:: Protocol (){
+QStringList StreamWork:: Protocol(){
 
     QStringList bit, signalH, signalV;
     float aHalf_,aQuart_,bHalf_,bQuart_;
@@ -162,8 +232,8 @@ QStringList StreamWork:: Protocol (){
         if(flag == true){
             //определение параметров для Боба
             if(BobBasis[i]=='1'){
-                bHalf_= bHalf_1;
-                bQuart_= bQuart_1;
+                bHalf_= bHalf_11;
+                bQuart_= bQuart_11;
                 if(BobBit[i]=='1'){
                     PDH_ = PH_11;
                     PDV_ = PV_11;}
@@ -172,8 +242,8 @@ QStringList StreamWork:: Protocol (){
                     PDV_ = PV_10;}
             }
             else{
-                bHalf_= bHalf_0;
-                bQuart_= bQuart_0;
+                bHalf_= bHalf_00;
+                bQuart_= bQuart_00;
                 if(BobBit[i]=='1'){
                     PDH_ = PH_01;
                     PDV_ = PV_01;}
@@ -220,11 +290,11 @@ QStringList StreamWork:: Protocol (){
             //выбор метода для определения бита
             if (ElectionPD_)
             {
-                bit << ElectionPD_v2(PDH_, PDV_, yh_, yv_,MaxSig_h);
+                bit << ElectionPD_v2_BB84(PDH_, PDV_, yh_, yv_,MaxSig_h);
             }
             else
             {
-                bit << ElectionPD(PDH_, PDV_, yh_, yv_);
+                bit << ElectionPD_BB84(PDH_, PDV_, yh_, yv_);
             }
             //Сравнение базисов
             for(int j = 0; j<= bit.size()-1;j++){
@@ -319,18 +389,18 @@ QStringList StreamWork:: Protocol_Eva (){
         if(flag == true){
             //определение параметров для Ева
             if(EvaBasis[i]=='1'){
-                eHalf_= bHalf_1;
-                eQuart_= bQuart_1;
+                eHalf_= bHalf_11;
+                eQuart_= bQuart_11;
             }
             else{
-                eHalf_= bHalf_0;
-                eQuart_= bQuart_0;
+                eHalf_= bHalf_00;
+                eQuart_= bQuart_00;
             }
 
             //определение параметров для Боба
             if(BobBasis[i]=='1'){
-                bHalf_= bHalf_1;
-                bQuart_= bQuart_1;
+                bHalf_= bHalf_11;
+                bQuart_= bQuart_11;
                 if(BobBit[i]=='1'){
                     PDH_ = PH_11;
                     PDV_ = PV_11;}
@@ -339,8 +409,8 @@ QStringList StreamWork:: Protocol_Eva (){
                     PDV_ = PV_10;}
             }
             else{
-                bHalf_= bHalf_0;
-                bQuart_= bQuart_0;
+                bHalf_= bHalf_00;
+                bQuart_= bQuart_00;
                 if(BobBit[i]=='1'){
                     PDH_ = PH_01;
                     PDV_ = PV_01;}
@@ -386,13 +456,13 @@ QStringList StreamWork:: Protocol_Eva (){
             //выбор метода для определения бита
             if (ElectionPD_)
             {
-                bit_eva = ElectionPD_v2(PDH_, PDV_, yh_, yv_,MaxSig_h);
-                bit_e << ElectionPD_v2(PDH_, PDV_, yh_, yv_,MaxSig_h);
+                bit_eva = ElectionPD_v2_BB84(PDH_, PDV_, yh_, yv_,MaxSig_h);
+                bit_e << ElectionPD_v2_BB84(PDH_, PDV_, yh_, yv_,MaxSig_h);
             }
             else
             {
-                bit_eva = ElectionPD(PDH_, PDV_, yh_, yv_);
-                bit_e << ElectionPD(PDH_, PDV_, yh_, yv_);
+                bit_eva = ElectionPD_BB84(PDH_, PDV_, yh_, yv_);
+                bit_e << ElectionPD_BB84(PDH_, PDV_, yh_, yv_);
             }
             //определение параметров для Евы
             if(EvaBasis[i]=='1'){
@@ -424,11 +494,11 @@ QStringList StreamWork:: Protocol_Eva (){
             //выбор метода для определения бита
             if (ElectionPD_)
             {
-                bit << ElectionPD_v2(PDH_, PDV_, yh_, yv_,MaxSig_h);
+                bit << ElectionPD_v2_BB84(PDH_, PDV_, yh_, yv_,MaxSig_h);
             }
             else
             {
-                bit << ElectionPD(PDH_, PDV_, yh_, yv_);
+                bit << ElectionPD_BB84(PDH_, PDV_, yh_, yv_);
             }
             //Сравнение базисов
             for(int j = 0; j<= bit.size()-1;j++){
@@ -477,6 +547,292 @@ QStringList StreamWork:: Protocol_Eva (){
     float search_time = end_time /1000;//CLOCKS_PER_SEC
     float speed = (AliceBasis.size()*1000)/(float)search_time;
     emit emitdate_eva(search_time,speed, signalH_AE,signalV_AE, signalH_EB, signalV_EB);
+
+    emit finished ();
+    return bit;
+}
+
+QStringList StreamWork:: Protocol_B92 (){
+
+    QStringList bit, signalH, signalV;
+    float aHalf_,aQuart_,bHalf_,bQuart_;
+    int PDH_, PDV_, MaxSig_h;
+    QStringList Combit, Combit_new;
+    QStringList  CombitA;
+    QStringList blankbit;
+    QStringList keybit;
+    int nerror=0;
+    flag = true;
+
+    //запуск таймера
+    QElapsedTimer timer;
+    timer.start();
+
+    //проверка версии протокола
+    api::versionFirmwareResponse response1;
+    response1 = stand_->GetCurrentFirmwareVersion();
+    if(response1.major_ == 1 && response1.minor_ == 0 && response1.micro_ == 0){
+        MaxSig_h = (stand_->GetMaxSignalLevels().signal_.h_)*1.1; //для протокола 1.0.0
+    }
+    else{
+        MaxSig_h = (stand_->GetInitParams().maxSignalLevels_.h_)*1.1; //для протокола 1.5 и 1.2
+    }
+
+
+    int yh_ = 0, yv_=0;
+    api::SendMessageResponse response;
+    double Power = stand_->GetLaserPower().adcResponse_;
+    int i;
+    for(i = 0; i<= AliceBit.size()-1;i++){
+        if(flag == true){
+            //определение параметров для Боба
+            if(BobBit[i]=='1'){
+                PDH_ = PH_01;
+                bHalf_= bHalf_01;
+                bQuart_= bQuart_01;
+            }
+            else{
+                PDH_ = PH_00;
+                bHalf_= bHalf_00;
+                bQuart_= bQuart_00;
+            }
+
+            //определение параметров для Алисы
+            if(AliceBit[i]=='1'){
+                aHalf_= aHalf_01;
+                aQuart_= aQuart_01;
+            }
+            else{
+                aHalf_= aHalf_00;
+                aQuart_= aQuart_00;
+            }
+
+            stand_->SetPlatesAngles({aHalf_, aQuart_, bHalf_, bQuart_});
+            response = stand_->Sendmessage({aHalf_, aQuart_, bHalf_, bQuart_}, Power);
+            //снятие показателей
+            yh_ = response.currentSignalLevels_.h_;
+            yv_ = response.currentSignalLevels_.v_;
+
+            signalH << QString::number(yh_);
+            signalV << QString::number(yv_);
+            //Определение бита
+            bit << ElectionPD_v2_B92(PDH_, yh_, yv_, MaxSig_h);
+
+            //Сравнение базисов
+            for(int j = 0; j<= bit.size()-1;j++){
+                if(AliceBasis[j] == BobBasis[j]){
+                    Combit << bit[j];
+                    //CombitA<< AliceBit[j];
+                }
+                else {Combit << "X";/*CombitA<<"X";*/}
+            }
+            //чистая строка
+            for(int a = 0; a<= bit.size()-1;a++){
+                if(bit[a] == '1' || bit[a] == '0'){
+                    if(bit[a] == AliceBit[a]){
+                        blankbit << bit[a];
+                    }
+                    Combit_new << bit[a];
+                    CombitA <<  AliceBit[a];
+                }
+                else{
+                    blankbit << " ";
+                    CombitA << " ";
+                    Combit_new << " ";
+                }
+            }
+            //Вывод ключа
+            for(int v = 0; v<= blankbit.size()-1;v++){
+                if(blankbit[v] == '1' || blankbit[v] == '0'){
+                    keybit << blankbit[v];
+                }
+                else{keybit << "";}
+            }
+            //Подсчет процента ошибок
+            for(int j = 0; j<= Combit.size()-1;j++){
+                if(CombitA[j] == Combit_new[j]){
+                    nerror++;
+                }
+            }
+            double error = ((double(Combit.size())-double(nerror))/double(Combit.size()))*100;
+
+            emit emitdate(i,AliceBit.size(),bit,Combit,blankbit,keybit,error);
+            QThread::msleep(200);
+
+            nerror=0;
+            Combit.clear();
+            CombitA.clear();
+            Combit_new.clear();
+            blankbit.clear();
+            keybit.clear();
+        }
+        else break;
+    }
+
+    float end_time = timer.elapsed(); //остановка таймера
+    float search_time = end_time /1000;//CLOCKS_PER_SEC
+    float speed = ((i+1)*1000)/(float)search_time;
+    BobBasis.clear();
+    BobBit.clear();
+    AliceBasis.clear();
+    AliceBit.clear();
+    emit emitdate(search_time,speed, signalH,signalV);
+
+    emit finished ();
+    return bit;
+}
+
+QStringList StreamWork:: Protocol_GOKS (){
+    QStringList bit, signalH, signalV;
+    float aHalf_,aQuart_,bHalf_,bQuart_;
+    int PDH_, PDV_, MaxSig_h;
+    QStringList Combit;
+    QStringList  CombitA;
+    QStringList blankbit;
+    QStringList keybit;
+    int nerror=0;
+    flag = true;
+
+    //запуск таймера
+    QElapsedTimer timer;
+    timer.start();
+
+    //проверка версии протокола
+    api::versionFirmwareResponse response1;
+    response1 = stand_->GetCurrentFirmwareVersion();
+    if(response1.major_ == 1 && response1.minor_ == 0 && response1.micro_ == 0){
+        MaxSig_h = (stand_->GetMaxSignalLevels().signal_.h_)*1.1; //для протокола 1.0.0
+    }
+    else{
+        MaxSig_h = (stand_->GetInitParams().maxSignalLevels_.h_)*1.1; //для протокола 1.5 и 1.2
+    }
+
+    int yh_ = 0, yv_=0;
+    api::SendMessageResponse response;
+    double Power = stand_->GetLaserPower().adcResponse_;
+    int i;
+    for(i = 0; i<= AliceBit.size()-1;i++){
+        if(flag == true){
+            //определение параметров для Боба
+            if(BobBasis[i]=='1'){
+                if(BobBit[i]=='1'){
+                    PDH_ = PH_11;
+                    PDV_ = PV_11;
+                    bHalf_= bHalf_11;
+                    bQuart_= bQuart_11;
+                }
+                else{
+                    PDH_ = PH_10;
+                    PDV_ = PV_10;
+                    bHalf_= bHalf_10;
+                    bQuart_= bQuart_10;
+                }
+            }
+            else{
+                if(BobBit[i]=='1'){
+                    PDH_ = PH_01;
+                    PDV_ = PV_01;
+                    bHalf_= bHalf_01;
+                    bQuart_= bQuart_01;
+                }
+                else{
+                    PDH_ = PH_00;
+                    PDV_ = PV_00;
+                    bHalf_= bHalf_00;
+                    bQuart_= bQuart_00;
+                }
+            }
+
+            //определение параметров для Алисы
+            if(AliceBasis[i]=='1'){
+                if(AliceBit[i]=='1'){
+                    aHalf_= aHalf_11;
+                    aQuart_= aQuart_11;
+                }
+                else{
+                    aHalf_= aHalf_10;
+                    aQuart_= aQuart_10;
+                }
+            }
+            else{
+                if(AliceBit[i]=='1'){
+                    aHalf_= aHalf_01;
+                    aQuart_= aQuart_01;
+                }
+                else{
+                    aHalf_= aHalf_00;
+                    aQuart_= aQuart_00;
+                }
+            }
+
+            stand_->SetPlatesAngles({aHalf_, aQuart_, bHalf_, bQuart_});
+            response = stand_->Sendmessage({aHalf_, aQuart_, bHalf_, bQuart_}, Power);
+            //снятие показателей
+            yh_ = response.currentSignalLevels_.h_;
+            yv_ = response.currentSignalLevels_.v_;
+
+            /* if(yh_ < 200 && yv_< 200){
+                QMessageBox::critical(NULL,
+                                      "Ошибка!",
+                                      "Лазер не работает!",
+                                      QMessageBox::Ok);
+                break;
+            }*/
+            signalH << QString::number(yh_);
+            signalV << QString::number(yv_);
+
+            bit << ElectionPD_v2_GOKS(PDH_, yh_, yv_, MaxSig_h);
+
+            //Сравнение базисов
+            for(int j = 0; j<= bit.size()-1;j++){
+                if(AliceBasis[j] == BobBasis[j]){
+                    Combit << bit[j];
+                    CombitA<< AliceBit[j];
+                }
+                else {Combit << "X"; CombitA<<"X";}
+            }
+            //чистая строка
+            for(int a = 0; a<= Combit.size()-1;a++){
+                if((Combit[a] == '1' || Combit[a] == '0') && Combit[a]==CombitA[a]){
+                    blankbit << Combit[a];
+                }
+                else{blankbit << " ";}
+            }
+            //Вывод ключа
+            for(int v = 0; v<= blankbit.size()-1;v++){
+                if(blankbit[v] == '1' || blankbit[v] == '0'){
+                    keybit << blankbit[v];
+                }
+                else{keybit << "";}
+            }
+            //Подсчет процента ошибок
+            for(int j = 0; j<= Combit.size()-1;j++){
+                if(CombitA[j] == Combit[j]||Combit[j] == "X"){
+                    nerror++;
+                }
+            }
+            double error = ((double(Combit.size())-double(nerror))/double(Combit.size()))*100;
+
+            emit emitdate(i,AliceBit.size(),bit,Combit,blankbit,keybit,error);
+            QThread::msleep(200);
+
+            nerror=0;
+            Combit.clear();
+            CombitA.clear();
+            blankbit.clear();
+            keybit.clear();
+        }
+        else break;
+    }
+
+    float end_time = timer.elapsed(); //остановка таймера
+    float search_time = end_time /1000;//CLOCKS_PER_SEC
+    float speed = ((i+1)*1000)/(float)search_time;
+    BobBasis.clear();
+    BobBit.clear();
+    AliceBasis.clear();
+    AliceBit.clear();
+    emit emitdate(search_time,speed, signalH,signalV);
 
     emit finished ();
     return bit;

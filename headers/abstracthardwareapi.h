@@ -34,7 +34,7 @@ public:
     ///@brief Функция установки времени ожидания ответа от аппаратной платформы
     ///@param [in] timeout - Время ожидания в мс
     ///@return Установленное время ожидания и код ошибки
-    virtual api::AdcResponse SetTimeout(uint32_t timeout) = 0;
+    virtual api::AdcResponse SetTimeout(uint32_t timeout_ms) = 0;
 
     /// @param [in] on Устанавливаемое состояние лазера.
     /// @return Установленное состояние лазера.

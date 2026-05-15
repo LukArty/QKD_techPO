@@ -27,6 +27,15 @@ MainWindow::MainWindow(QWidget *parent)
     mutx_str=false;
     mutx=false;
 
+    QString port;
+    port = readPortFromIni("config.ini");
+    if (port.isEmpty()) {
+        port = "COM3";
+    }
+
+    stand_.SetComPortName(port.toStdString().c_str());
+    stand_.FindProtocolVersion();
+
     ///Начальные параметры
     ParamAngles();
 
@@ -91,6 +100,46 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->test_protocol.setFileName("./test_protocol.txt");
     ui->Console_2->setReadOnly(false);  // Разблокировать
+
+    connect(ui->protocol_name, QOverload<int>::of(&QComboBox::currentIndexChanged),
+        [this](int index) {
+            if (index == 1) {
+                ui->aHalf_10->setEnabled(false);
+                ui->aHalf_11->setEnabled(false);
+                ui->aQuart_10->setEnabled(false);
+                ui->aQuart_11->setEnabled(false);
+
+                ui->bHalf_10->setEnabled(false);
+                ui->bHalf_11->setEnabled(false);
+                ui->bQuart_10->setEnabled(false);
+                ui->bQuart_11->setEnabled(false);
+
+                ui->PH_10->setEnabled(false);
+                ui->PH_11->setEnabled(false);
+                ui->PV_10->setEnabled(false);
+                ui->PV_11->setEnabled(false);
+                ui->Evacheck ->setEnabled(false);
+
+            }
+            else {
+                ui->aHalf_10->setEnabled(true);
+                ui->aHalf_11->setEnabled(true);
+                ui->aQuart_10->setEnabled(true);
+                ui->aQuart_11->setEnabled(true);
+
+                ui->bHalf_10->setEnabled(true);
+                ui->bHalf_11->setEnabled(true);
+                ui->bQuart_10->setEnabled(true);
+                ui->bQuart_11->setEnabled(true);
+
+                ui->PH_10->setEnabled(true);
+                ui->PH_11->setEnabled(true);
+                ui->PV_10->setEnabled(true);
+                ui->PV_11->setEnabled(true);
+
+                if (index == 0){ui->Evacheck ->setEnabled(true);}
+            }
+        });
 }
 
 /// @brief обработчик нажатия клавишиae
@@ -124,6 +173,26 @@ MainWindow::~MainWindow()
     stand_.SetLaserState(0); //перевод лазер в состояние выкл
     delete ui;
 
+}
+
+// Функция для чтения порта из INI-файла
+QString MainWindow::readPortFromIni(const QString& iniFilePath)
+{
+    // Проверяем существование файла
+    if (!QFile::exists(iniFilePath)) {
+        qWarning() << "INI file not found:" << iniFilePath;
+        return QString();
+    }
+
+    // Создаем объект QSettings для работы с INI файлом
+    QSettings settings(iniFilePath, QSettings::IniFormat);
+
+    // Читаем значение порта (секция "Settings", ключ "port")
+    QString port = settings.value("Settings/port", "COM1").toString();
+
+    qDebug() << "Port read from INI file:" << port;
+
+    return port;
 }
 
 void MainWindow::ConsoleLog(QString text)
@@ -805,6 +874,7 @@ void MainWindow::InitByPD(float aHalf_, float aQuart_, float bHalf_, float bQuar
     ParamAngles();
     mutx_str=false;
 }
+
 void MainWindow::on_InitByPD_clicked()
 {
     if(mutx==true){killLoop();}
@@ -923,132 +993,6 @@ void MainWindow::on_PulseLaser_clicked()
     }
     mutx=false;
 }
-
-/// @brief Сканирование по 1 пластине
-/*void MainWindow::on_ScanAngles1_clicked()
-{
-    if(mutx_str==false){
-        mutx=true;
-        //очистка предыдущего графика
-        ui->graph->clearGraphs();
-        x.clear();
-        y1.clear();
-        y2.clear();
-
-        //отрисовка графика
-        int interval = ui ->Interval-> text().toInt();
-        if(interval == 0){interval=180;ui ->Interval-> setText("180");}
-        ui->graph->xAxis->setRange(0,interval);
-        ui->graph->yAxis->setRange(0,3000);
-        ui->graph->xAxis->setLabel("Угол поворота пластины");
-        ui->graph->yAxis->setLabel("Уровень сигнала");
-
-        ui->graph->addGraph();
-        ui->graph->graph(0)->setPen(QPen(Qt::blue));
-        ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-        ui->graph->addGraph();
-        ui->graph->graph(1)->setPen(QPen(Qt::red));
-        ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-        QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
-        ui->graph->xAxis->setTicker(fixedTicker);
-        fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
-        fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
-
-        api::SLevelsResponse response; //для проведния SendMessage
-        api::AdcResponse response_1; //для определения мощности лазера
-        //считывание углов и проверка кратности
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-
-        double h = (ui ->Step_scan-> value());//значение шага
-        response_1 = stand_.GetLaserPower();
-        //double Power = response_1.adcResponse_;
-        Flag_ = false;
-
-        int y1_max = 0,y1_ = 0, y1_min = 100000;
-        int y2_max = 0,y2_ = 0, y2_min = 100000;
-        QString PDH_max,PDH_min, PDV_max,PDV_min;
-        QFile fileOut("./ScanAngles1.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
-
-        api::AdcResponse response_er;
-        response_er = stand_.GetErrorCode();
-        if(response_er.errorCode_ == 0){
-            for (float angles=0; angles <= interval;angles +=h)
-            {
-                if( Flag_ == false){
-                    stand_.SetPlatesAngles({angles, angles2, angles3, angles4});
-                    response = stand_.GetSignalLevels();
-                    x.push_back(angles);
-                    y1_ = response.signal_.h_;
-                    y2_ = response.signal_.v_;
-                    y1.push_back(y1_);
-                    y2.push_back(y2_);
-
-                    writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                    writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                    writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
-
-
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
-                    if (y1_ < y1_min){
-                        y1_min =y1_;
-                    }
-
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
-                    if (y2_ < y2_min){
-                        y2_min =y2_;
-                    }
-
-                    PDH_max = QString::number(y1_max);
-                    PDH_min = QString::number(y1_min);
-                    PDV_max = QString::number(y2_max);
-                    PDV_min = QString::number(y2_min);
-                    ui ->PDH_max -> setText(PDH_max);
-                    ui ->PDH_min -> setText(PDH_min);
-                    ui ->PDV_max -> setText(PDV_max);
-                    ui ->PDV_min -> setText(PDV_min);
-                    ui ->Cur_PDH -> setText(QString::number(y1_));
-                    ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                    if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                    else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
-                    ui->graph->graph(0)->setData(x,y1);
-                    ui->graph->graph(1)->setData(x,y2);
-                    ui->graph->replot();
-
-                    QApplication::processEvents();
-                    connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                    connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                }
-            }
-            api::SLevelsResponse response_3;
-            stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
-            response_3 = stand_.GetSignalLevels();
-            ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
-            ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
-            ParamAngles();
-        }
-        else {
-            ConsoleLog("Сканирование не выполнено");
-            ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
-        }
-        mutx=false;
-    }
-}*/
 
 
 void MainWindow::on_ScanAngles1_clicked()
@@ -2007,76 +1951,84 @@ void MainWindow::on_Start_protocol_clicked()
             ui ->Auto_Filing->setEnabled(true);
         }
         else{
-            float step = stand_.GetRotateStep().angle_; //шаг двигателя
-            //Углы пластин Алисы
-            pStreamWork->aHalf_00 = AngleCheck((ui ->aHalf_00 -> text().toFloat()), step); //базис 0 бит 0
-            ui ->aHalf_00 -> setText(QString::number(pStreamWork-> aHalf_00));
-            pStreamWork-> aQuart_00 = AngleCheck((ui ->aQuart_00 -> text().toFloat()), step); //базис 0 бит 0
-            ui ->aQuart_00 -> setText(QString::number(pStreamWork-> aQuart_00));
-
-            pStreamWork-> aHalf_01 = AngleCheck((ui ->aHalf_01 -> text().toFloat()), step); //базис 0 бит 1
-            ui ->aHalf_01 -> setText(QString::number(pStreamWork-> aHalf_01));
-            pStreamWork-> aQuart_01 = AngleCheck((ui ->aQuart_01 -> text().toFloat()), step); //базис 0 бит 1
-            ui ->aQuart_01 -> setText(QString::number(pStreamWork->aQuart_01));
-
-            pStreamWork-> aHalf_10 = AngleCheck((ui ->aHalf_10 -> text().toFloat()), step); //базис 1 бит 0
-            ui ->aHalf_10 -> setText(QString::number(pStreamWork->aHalf_10));
-            pStreamWork-> aQuart_10 = AngleCheck((ui ->aQuart_10 -> text().toFloat()), step); //базис 1 бит 0
-            ui ->aQuart_10 -> setText(QString::number(pStreamWork->aQuart_10));
-
-            pStreamWork-> aHalf_11 = AngleCheck((ui ->aHalf_11 -> text().toFloat()), step); //базис 1 бит 1
-            ui ->aHalf_11 -> setText(QString::number(pStreamWork->aHalf_11));
-            pStreamWork-> aQuart_11 = AngleCheck((ui ->aQuart_11 -> text().toFloat()), step); //базис 1 бит 1
-            ui ->aQuart_11 -> setText(QString::number(pStreamWork->aQuart_11));
-
-            //Углы пластин Bob
-            float bHalf_00 = AngleCheck((ui ->bHalf_00 -> text().toFloat()), step); //базис 0 бит 0
-            ui ->bHalf_00 -> setText(QString::number(bHalf_00));
-            float bQuart_00 = AngleCheck((ui ->bQuart_00 -> text().toFloat()), step); //базис 0 бит 0
-            ui ->bQuart_00 -> setText(QString::number(bQuart_00));
-            float bHalf_01 = AngleCheck((ui ->bHalf_01 -> text().toFloat()), step); //базис 0 бит 1
-            ui ->bHalf_01 -> setText(QString::number(bHalf_01));
-            float bQuart_01 = AngleCheck((ui ->bQuart_01 -> text().toFloat()),step); //базис 0 бит 1
-            ui ->bQuart_01 -> setText(QString::number(bQuart_01));
-            float bHalf_10 = AngleCheck((ui ->bHalf_10 -> text().toFloat()),step); //базис 1 бит 0
-            ui ->bHalf_10 -> setText(QString::number(bHalf_10));
-            float bQuart_10 = AngleCheck((ui ->bQuart_10 -> text().toFloat()), step); //базис 1 бит 0
-            ui ->bQuart_10 -> setText(QString::number(bQuart_10));
-            float bHalf_11 = AngleCheck((ui ->bHalf_11 -> text().toFloat()), step); //базис 1 бит 1
-            ui ->bHalf_11 -> setText(QString::number(bHalf_11));
-            float bQuart_11 = AngleCheck((ui ->bQuart_11 -> text().toFloat()), step); //базис 1 бит 1
-            ui ->bQuart_11 -> setText(QString::number(bQuart_11));
-
-
-            pStreamWork->bHalf_1 = bHalf_11;
-            pStreamWork->bHalf_0 = bHalf_00;
-            pStreamWork->bQuart_1 = bQuart_11;
-            pStreamWork->bQuart_0 = bQuart_00;
-
-            pStreamWork->PV_00 = ui->PV_00 -> text().toInt();
-            pStreamWork->PV_01 = ui->PV_01 -> text().toInt();
-            pStreamWork->PV_10 = ui->PV_10 -> text().toInt();
-            pStreamWork->PV_11 = ui->PV_11 -> text().toInt();
-
-            pStreamWork->PH_00 = ui->PH_00 -> text().toInt();
-            pStreamWork->PH_01 = ui->PH_01 -> text().toInt();
-            pStreamWork->PH_10 = ui->PH_10 -> text().toInt();
-            pStreamWork->PH_11 = ui->PH_11 -> text().toInt();
-
-            QStringList AliceBasis = pStreamWork->ConvertingArray(ui ->AliceBasis -> text());
-            QStringList AliceBit = pStreamWork->ConvertingArray(ui->AliceBit -> text());
-            QStringList BobBasis = pStreamWork->ConvertingArray(ui ->BobBasis -> text());
-            QStringList BobBit = pStreamWork->ConvertingArray(ui ->BobBit -> text());
-            pStreamWork->AliceBasis = AliceBasis;
-            pStreamWork->AliceBit = AliceBit;
-            pStreamWork->BobBasis = BobBasis;
-            pStreamWork->BobBit = BobBit;
-            pStreamWork->ElectionPD_ = ui->radio_ElectionPD_v2->isDown();
-
             api::AdcResponse response;
             response = stand_.GetErrorCode();
             if(response.errorCode_ == 0){
+                float step = stand_.GetRotateStep().angle_; //шаг двигателя
+                auto toFloat = [](const QString &str) -> float {
+                    QString s = str;
+                    return s.replace(',', '.').toFloat();
+                };
+                //Углы пластин Алисы
+                pStreamWork->aHalf_00 = AngleCheck(toFloat(ui ->aHalf_00 -> text()), step); //базис 0 бит 0
+                ui ->aHalf_00 -> setText(QString::number(pStreamWork-> aHalf_00));
+                pStreamWork-> aQuart_00 = AngleCheck(toFloat(ui ->aQuart_00 -> text()), step); //базис 0 бит 0
+                ui ->aQuart_00 -> setText(QString::number(pStreamWork-> aQuart_00));
+
+                pStreamWork-> aHalf_01 = AngleCheck(toFloat(ui ->aHalf_01 -> text()), step); //базис 0 бит 1
+                ui ->aHalf_01 -> setText(QString::number(pStreamWork-> aHalf_01));
+                pStreamWork-> aQuart_01 = AngleCheck(toFloat(ui ->aQuart_01 -> text()), step); //базис 0 бит 1
+                ui ->aQuart_01 -> setText(QString::number(pStreamWork->aQuart_01));
+
+                pStreamWork-> aHalf_10 = AngleCheck(toFloat(ui ->aHalf_10 -> text()), step); //базис 1 бит 0
+                ui ->aHalf_10 -> setText(QString::number(pStreamWork->aHalf_10));
+                pStreamWork-> aQuart_10 = AngleCheck(toFloat(ui ->aQuart_10 -> text()), step); //базис 1 бит 0
+                ui ->aQuart_10 -> setText(QString::number(pStreamWork->aQuart_10));
+
+                pStreamWork-> aHalf_11 = AngleCheck(toFloat(ui ->aHalf_11 -> text()), step); //базис 1 бит 1
+                ui ->aHalf_11 -> setText(QString::number(pStreamWork->aHalf_11));
+                pStreamWork-> aQuart_11 = AngleCheck(toFloat(ui ->aQuart_11 -> text()), step); //базис 1 бит 1
+                ui ->aQuart_11 -> setText(QString::number(pStreamWork->aQuart_11));
+
+                //Углы пластин Bob
+                float bHalf_00 = AngleCheck(toFloat(ui ->bHalf_00 -> text()), step); //базис 0 бит 0
+                ui ->bHalf_00 -> setText(QString::number(bHalf_00));
+                float bQuart_00 = AngleCheck(toFloat(ui ->bQuart_00 -> text()), step); //базис 0 бит 0
+                ui ->bQuart_00 -> setText(QString::number(bQuart_00));
+                float bHalf_01 = AngleCheck(toFloat(ui ->bHalf_01 -> text()), step); //базис 0 бит 1
+                ui ->bHalf_01 -> setText(QString::number(bHalf_01));
+                float bQuart_01 = AngleCheck(toFloat(ui ->bQuart_01 -> text()),step); //базис 0 бит 1
+                ui ->bQuart_01 -> setText(QString::number(bQuart_01));
+                float bHalf_10 = AngleCheck(toFloat(ui ->bHalf_10 -> text()),step); //базис 1 бит 0
+                ui ->bHalf_10 -> setText(QString::number(bHalf_10));
+                float bQuart_10 = AngleCheck(toFloat(ui ->bQuart_10 -> text()), step); //базис 1 бит 0
+                ui ->bQuart_10 -> setText(QString::number(bQuart_10));
+                float bHalf_11 = AngleCheck(toFloat(ui ->bHalf_11 -> text()), step); //базис 1 бит 1
+                ui ->bHalf_11 -> setText(QString::number(bHalf_11));
+                float bQuart_11 = AngleCheck(toFloat(ui ->bQuart_11 -> text()), step); //базис 1 бит 1
+                ui ->bQuart_11 -> setText(QString::number(bQuart_11));
+
+
+                pStreamWork->bHalf_11 = bHalf_11;
+                pStreamWork->bHalf_00 = bHalf_00;
+                pStreamWork->bHalf_10 = bHalf_10;
+                pStreamWork->bHalf_01 = bHalf_01;
+                pStreamWork->bQuart_11 = bQuart_11;
+                pStreamWork->bQuart_00 = bQuart_00;
+                pStreamWork->bQuart_10 = bQuart_10;
+                pStreamWork->bQuart_01 = bQuart_01;
+
+                pStreamWork->PV_00 = ui->PV_00 -> text().toInt();
+                pStreamWork->PV_01 = ui->PV_01 -> text().toInt();
+                pStreamWork->PV_10 = ui->PV_10 -> text().toInt();
+                pStreamWork->PV_11 = ui->PV_11 -> text().toInt();
+
+                pStreamWork->PH_00 = ui->PH_00 -> text().toInt();
+                pStreamWork->PH_01 = ui->PH_01 -> text().toInt();
+                pStreamWork->PH_10 = ui->PH_10 -> text().toInt();
+                pStreamWork->PH_11 = ui->PH_11 -> text().toInt();
+
+                QStringList AliceBasis = pStreamWork->ConvertingArray(ui ->AliceBasis -> text());
+                QStringList AliceBit = pStreamWork->ConvertingArray(ui->AliceBit -> text());
+                QStringList BobBasis = pStreamWork->ConvertingArray(ui ->BobBasis -> text());
+                QStringList BobBit = pStreamWork->ConvertingArray(ui ->BobBit -> text());
+                pStreamWork->AliceBasis = AliceBasis;
+                pStreamWork->AliceBit = AliceBit;
+                pStreamWork->BobBasis = BobBasis;
+                pStreamWork->BobBit = BobBit;
+                pStreamWork->ElectionPD_ = ui->radio_ElectionPD_v2->isDown();
                 pStreamWork->moveToThread(&pMyThread);
+
                 //Определение алгоритма протокола
                 if (ui->Evacheck->isChecked())
                 {
@@ -2104,16 +2056,49 @@ void MainWindow::on_Start_protocol_clicked()
                 }
                 else
                 {
-                    connect(pStreamWork,SIGNAL(emitdate(float,float,QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList))); //время, скорость, гистограммы
-                    connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList, QStringList, QStringList, QStringList, double))); //обновление значений строк
-                    connect(&pMyThread,&QThread::started,pStreamWork,&StreamWork::Protocol); //выполнение протокола
+                    if(ui->protocol_name->currentText() == "BB84"){
+                        connect(pStreamWork,SIGNAL(emitdate(float,float,QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList))); //время, скорость, гистограммы
+                        connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList, QStringList, QStringList, QStringList, double))); //обновление значений строк
+                        connect(&pMyThread,&QThread::started,pStreamWork,&StreamWork::Protocol); //выполнение протокола
 
-                    connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit()));
-                    connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
-                    connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
-                    //connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
-                    pMyThread.start();
+                        connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit()));
+                        connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+                        connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+                        //connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+                        pMyThread.start();
+                    }
+                    else if(ui->protocol_name->currentText() == "B92"){
+                        connect(pStreamWork,SIGNAL(emitdate(float,float,QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList))); //время, скорость, гистограммы
+                        connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList, QStringList, QStringList, QStringList, double))); //обновление значений строк
+                        connect(&pMyThread,&QThread::started,pStreamWork,&StreamWork::Protocol_B92); //выполнение протокола
+
+                        connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit()));
+                        connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+                        connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+                        //connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+                        pMyThread.start();
+                    }
+                    else if(ui->protocol_name->currentText() == "ГОКС"){
+                        connect(pStreamWork,SIGNAL(emitdate(float,float,QStringList,QStringList)),this,SLOT(Date_time_hist(float,float,QStringList,QStringList))); //время, скорость, гистограммы
+                        connect(pStreamWork,SIGNAL(emitdate(int, int,QStringList, QStringList, QStringList, QStringList, double)),this,SLOT(update(int, int,QStringList, QStringList, QStringList, QStringList, double))); //обновление значений строк
+                        connect(&pMyThread,&QThread::started,pStreamWork,&StreamWork::Protocol_GOKS); //выполнение протокола
+
+                        connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit()));
+                        connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
+                        connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+                        //connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+                        pMyThread.start();
+                    }
+
                 }
+            }
+            else{
+                QMessageBox::critical(this,
+                                      "Ошибка!",
+                                      "Стенд не подключен! Проверьте соединение со стендом!",
+                                      QMessageBox::Ok);
+                protocol=false;
+                mutx_str=false;
             }
         }
     }
@@ -2158,53 +2143,142 @@ void MainWindow::on_Auto_Filing_clicked()
     QString bHalf_11 = ui ->bHalf_11 -> text(); //базис 1 бит 1
     QString bQuart_11 = ui ->bQuart_11 -> text(); //базис 1 бит 1
 
-    if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
-        bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
+    if(ui->protocol_name->currentText() == "BB84"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
+            bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
 
-        ui->aHalf_00->setText("0");
-        ui->aHalf_01->setText("45");
-        ui->aHalf_10->setText("0");
-        ui->aHalf_11->setText("0");
-        ui->aQuart_00->setText("0");
-        ui->aQuart_01->setText("0");
-        ui->aQuart_10->setText("45");
-        ui->aQuart_11->setText("-45");
+            ui->aHalf_00->setText("0");
+            ui->aHalf_01->setText("45");
+            ui->aHalf_10->setText("0");
+            ui->aHalf_11->setText("0");
+            ui->aQuart_00->setText("0");
+            ui->aQuart_01->setText("0");
+            ui->aQuart_10->setText("45");
+            ui->aQuart_11->setText("-45");
 
-        ui->bHalf_00->setText("0");
-        ui->bHalf_01->setText("0");
-        ui->bHalf_10->setText("0");
-        ui->bHalf_11->setText("0");
-        ui->bQuart_00->setText("0");
-        ui->bQuart_01->setText("0");
-        ui->bQuart_10->setText("45");
-        ui->bQuart_11->setText("45");
+            ui->bHalf_00->setText("0");
+            ui->bHalf_01->setText("0");
+            ui->bHalf_10->setText("0");
+            ui->bHalf_11->setText("0");
+            ui->bQuart_00->setText("0");
+            ui->bQuart_01->setText("0");
+            ui->bQuart_10->setText("45");
+            ui->bQuart_11->setText("45");
 
-        ui->PH_00->setText("0");
-        ui->PH_01->setText("0");
-        ui->PH_10->setText("0");
-        ui->PH_11->setText("0");
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("0");
+            ui->PH_10->setText("0");
+            ui->PH_11->setText("0");
 
-        ui->PV_00->setText("1");
-        ui->PV_01->setText("1");
-        ui->PV_10->setText("1");
-        ui->PV_11->setText("1");
+            ui->PV_00->setText("1");
+            ui->PV_01->setText("1");
+            ui->PV_10->setText("1");
+            ui->PV_11->setText("1");
+        }
+
+        if (ui->Evacheck->isChecked())
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(Random(n).join(""));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(Random(n).join(""));
+            ui ->EvaBasis->setText(Random(n).join(""));
+        }
+        else
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(Random(n).join(""));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(Random(n).join(""));
+        }
+    }
+    else if (ui->protocol_name->currentText() == "B92"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" ){
+
+            ui->aHalf_00->setText("22.5");
+            ui->aHalf_01->setText("45");
+            ui->aQuart_00->setText("0");
+            ui->aQuart_01->setText("0");
+
+            ui->bHalf_00->setText("0");
+            ui->bHalf_01->setText("22.5");
+            ui->bQuart_00->setText("0");
+            ui->bQuart_01->setText("45");
+
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("1");
+
+            ui->PV_00->setText("?");
+            ui->PV_01->setText("?");
+        }
+
+        if (ui->Evacheck->isChecked())
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(QString(n, '0'));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(QString(n, '0'));
+            ui ->EvaBasis->setText(QString(n, '0'));
+        }
+        else
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(QString(n, '0'));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(QString(n, '0'));
+        }
+    }
+    else if(ui->protocol_name->currentText() == "ГОКС"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
+            bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
+
+            ui->aHalf_00->setText("22.5");
+            ui->aHalf_01->setText("0");
+            ui->aHalf_10->setText("67.5");
+            ui->aHalf_11->setText("45");
+            ui->aQuart_00->setText("112.5");
+            ui->aQuart_01->setText("112.5");
+            ui->aQuart_10->setText("112.5");
+            ui->aQuart_11->setText("112.5");
+
+            ui->bHalf_00->setText("45");
+            ui->bHalf_01->setText("45");
+            ui->bHalf_10->setText("22.5");
+            ui->bHalf_11->setText("22.5");
+            ui->bQuart_00->setText("67.5");
+            ui->bQuart_01->setText("157.5");
+            ui->bQuart_10->setText("112.5");
+            ui->bQuart_11->setText("22.5");
+
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("1");
+            ui->PH_10->setText("0");
+            ui->PH_11->setText("1");
+
+            ui->PV_00->setText("?");
+            ui->PV_01->setText("?");
+            ui->PV_10->setText("?");
+            ui->PV_11->setText("?");
+        }
+
+        if (ui->Evacheck->isChecked())
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(Random(n).join(""));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(Random(n).join(""));
+            ui ->EvaBasis->setText(Random(n).join(""));
+        }
+        else
+        {
+            ui ->AliceBit-> setText(Random(n).join(""));
+            ui ->AliceBasis-> setText(Random(n).join(""));
+            ui ->BobBit->setText(Random(n).join(""));
+            ui ->BobBasis->setText(Random(n).join(""));
+        }
     }
 
-    if (ui->Evacheck->isChecked())
-    {
-        ui ->AliceBit-> setText(Random(n).join(""));
-        ui ->AliceBasis-> setText(Random(n).join(""));
-        ui ->BobBit->setText(Random(n).join(""));
-        ui ->BobBasis->setText(Random(n).join(""));
-        ui ->EvaBasis->setText(Random(n).join(""));
-    }
-    else
-    {
-        ui ->AliceBit-> setText(Random(n).join(""));
-        ui ->AliceBasis-> setText(Random(n).join(""));
-        ui ->BobBit->setText(Random(n).join(""));
-        ui ->BobBasis->setText(Random(n).join(""));
-    }
+
 
 }
 
@@ -2284,51 +2358,128 @@ void MainWindow::on_TestLine_clicked()
     QString bHalf_11 = ui ->bHalf_11 -> text(); //базис 1 бит 1
     QString bQuart_11 = ui ->bQuart_11 -> text(); //базис 1 бит 1
 
-    if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
-        bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
+    if(ui->protocol_name->currentText() == "BB84"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
+            bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
 
-        ui->aHalf_00->setText("0");
-        ui->aHalf_01->setText("45");
-        ui->aHalf_10->setText("0");
-        ui->aHalf_11->setText("0");
-        ui->aQuart_00->setText("0");
-        ui->aQuart_01->setText("0");
-        ui->aQuart_10->setText("45");
-        ui->aQuart_11->setText("-45");
+            ui->aHalf_00->setText("0");
+            ui->aHalf_01->setText("45");
+            ui->aHalf_10->setText("0");
+            ui->aHalf_11->setText("0");
+            ui->aQuart_00->setText("0");
+            ui->aQuart_01->setText("0");
+            ui->aQuart_10->setText("45");
+            ui->aQuart_11->setText("-45");
 
-        ui->bHalf_00->setText("0");
-        ui->bHalf_01->setText("0");
-        ui->bHalf_10->setText("0");
-        ui->bHalf_11->setText("0");
-        ui->bQuart_00->setText("0");
-        ui->bQuart_01->setText("0");
-        ui->bQuart_10->setText("45");
-        ui->bQuart_11->setText("45");
+            ui->bHalf_00->setText("0");
+            ui->bHalf_01->setText("0");
+            ui->bHalf_10->setText("0");
+            ui->bHalf_11->setText("0");
+            ui->bQuart_00->setText("0");
+            ui->bQuart_01->setText("0");
+            ui->bQuart_10->setText("45");
+            ui->bQuart_11->setText("45");
 
-        ui->PH_00->setText("0");
-        ui->PH_01->setText("0");
-        ui->PH_10->setText("0");
-        ui->PH_11->setText("0");
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("0");
+            ui->PH_10->setText("0");
+            ui->PH_11->setText("0");
 
-        ui->PV_00->setText("1");
-        ui->PV_01->setText("1");
-        ui->PV_10->setText("1");
-        ui->PV_11->setText("1");
+            ui->PV_00->setText("1");
+            ui->PV_01->setText("1");
+            ui->PV_10->setText("1");
+            ui->PV_11->setText("1");
+        }
+        if (ui->Evacheck->isChecked())
+        {
+            ui ->AliceBit-> setText("00110011001100110011001100110011");
+            ui ->AliceBasis-> setText("00001111000011110000111100001111");
+            ui ->BobBit->setText("01010101010101010101010101010101");
+            ui ->BobBasis->setText("00001111111100000000111111110000");
+            ui ->EvaBasis->setText("00000000000000001111111111111111");
+        }
+        else {
+            ui ->AliceBit-> setText("0011001100110011");
+            ui ->AliceBasis-> setText("0000111100001111");
+            ui ->BobBit->setText("0101010101010101");
+            ui ->BobBasis->setText("0000111111110000");
+        }
     }
-    if (ui->Evacheck->isChecked())
-    {
-        ui ->AliceBit-> setText("00110011001100110011001100110011");
-        ui ->AliceBasis-> setText("00001111000011110000111100001111");
-        ui ->BobBit->setText("01010101010101010101010101010101");
-        ui ->BobBasis->setText("00001111111100000000111111110000");
-        ui ->EvaBasis->setText("00000000000000001111111111111111");
+    else if (ui->protocol_name->currentText() == "B92"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" ){
+
+            ui->aHalf_00->setText("22.5");
+            ui->aHalf_01->setText("45");
+            ui->aQuart_00->setText("0");
+            ui->aQuart_01->setText("0");
+
+            ui->bHalf_00->setText("0");
+            ui->bHalf_01->setText("22.5");
+            ui->bQuart_00->setText("0");
+            ui->bQuart_01->setText("45");
+
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("1");
+
+            ui->PV_00->setText("?");
+            ui->PV_01->setText("?");
+        }
+
+        ui ->AliceBit-> setText("0000111100001111");
+        ui ->AliceBasis-> setText("0000000000000000");
+        ui ->BobBit->setText("0000111111110000");
+        ui ->BobBasis->setText("0000000000000000");
     }
-    else {
-        ui ->AliceBit-> setText("0011001100110011");
-        ui ->AliceBasis-> setText("0000111100001111");
-        ui ->BobBit->setText("0101010101010101");
-        ui ->BobBasis->setText("0000111111110000");
+    else if(ui->protocol_name->currentText() == "ГОКС"){
+        if(aHalf_00 == "" && aQuart_00 == "" && aHalf_01== "" && aQuart_01== "" && aHalf_10 == "" && aQuart_10== "" && aHalf_11 == "" && aQuart_11 == "" &&
+            bHalf_00 == "" && bQuart_00 == "" && bHalf_01 == "" && bQuart_01 == "" && bHalf_10 == "" && bQuart_10 == "" && bHalf_11 == "" && bQuart_11 == ""){
+
+            ui->aHalf_00->setText("22.5");
+            ui->aHalf_01->setText("0");
+            ui->aHalf_10->setText("67.5");
+            ui->aHalf_11->setText("45");
+            ui->aQuart_00->setText("112.5");
+            ui->aQuart_01->setText("112.5");
+            ui->aQuart_10->setText("112.5");
+            ui->aQuart_11->setText("112.5");
+
+            ui->bHalf_00->setText("45");
+            ui->bHalf_01->setText("45");
+            ui->bHalf_10->setText("22.5");
+            ui->bHalf_11->setText("22.5");
+            ui->bQuart_00->setText("67.5");
+            ui->bQuart_01->setText("157.5");
+            ui->bQuart_10->setText("112.5");
+            ui->bQuart_11->setText("22.5");
+
+            ui->PH_00->setText("0");
+            ui->PH_01->setText("1");
+            ui->PH_10->setText("0");
+            ui->PH_11->setText("1");
+
+            ui->PV_00->setText("?");
+            ui->PV_01->setText("?");
+            ui->PV_10->setText("?");
+            ui->PV_11->setText("?");
+        }
+
+        if (ui->Evacheck->isChecked())
+        {
+            ui ->AliceBit-> setText("00110011001100110011001100110011");
+            ui ->AliceBasis-> setText("00001111000011110000111100001111");
+            ui ->BobBit->setText("01010101010101010101010101010101");
+            ui ->BobBasis->setText("00001111111100000000111111110000");
+            ui ->EvaBasis->setText("00000000000000001111111111111111");
+        }
+        else
+        {
+            ui ->AliceBit-> setText("0101010101010101");
+            ui ->AliceBasis-> setText("0000111100001111");
+            ui ->BobBit->setText("0110011001100110");
+            ui ->BobBasis->setText("0000111111110000");
+        }
     }
+
 }
 
 /// @brief поворот пластин на указаные углы во вкладке Мониторинг

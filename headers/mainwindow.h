@@ -47,6 +47,8 @@ private slots:
 
     void on_InitBut_clicked();
 
+    QString readPortFromIni(const QString& iniFilePath);
+
     void on_RunSelfTestBut_clicked();
 
     void on_GetHardwareState_clicked();

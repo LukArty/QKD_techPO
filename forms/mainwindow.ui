@@ -2516,7 +2516,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>180</x>
-          <y>10</y>
+          <y>5</y>
           <width>41</width>
           <height>16</height>
          </rect>
@@ -2534,7 +2534,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>460</x>
-          <y>9</y>
+          <y>5</y>
           <width>31</width>
           <height>16</height>
          </rect>
@@ -2574,136 +2574,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
          <string>Сброс</string>
         </property>
        </widget>
-       <widget class="QLineEdit" name="AliceBit">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>240</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_53">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>240</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Алиса (выбор бита)</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_54">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>270</y>
-          <width>151</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Алиса (выбор базиса)</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_55">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>310</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Боб (выбор бита)</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_56">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>340</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Боб (выбор базиса)</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="AliceBasis">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>270</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="BobBit">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>310</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="BobBasis">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>340</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_59">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>470</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Сырая строка</string>
-        </property>
-       </widget>
        <widget class="QPushButton" name="Auto_Filing">
         <property name="geometry">
          <rect>
@@ -2715,62 +2585,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="text">
          <string>Авто</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_60">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>500</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Сравнение базисов</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="Comparison">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>500</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="BlankLine">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>530</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_61">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>530</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Чистая строка</string>
         </property>
        </widget>
        <widget class="QGroupBox" name="groupBox_8">
@@ -2785,147 +2599,38 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="title">
          <string/>
         </property>
-        <widget class="QLineEdit" name="Time">
+        <widget class="QWidget" name="layoutWidget">
          <property name="geometry">
           <rect>
-           <x>140</x>
-           <y>164</y>
-           <width>121</width>
-           <height>23</height>
+           <x>3</x>
+           <y>10</y>
+           <width>271</width>
+           <height>232</height>
           </rect>
          </property>
-        </widget>
-        <widget class="QLabel" name="label_64">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>164</y>
-           <width>141</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Время выполнения:</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_65">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>200</y>
-           <width>141</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Скорость (бит/с):</string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="Speed">
-         <property name="geometry">
-          <rect>
-           <x>140</x>
-           <y>200</y>
-           <width>121</width>
-           <height>23</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_66">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>92</y>
-           <width>101</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Длина ключа:</string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="LengthKey">
-         <property name="geometry">
-          <rect>
-           <x>140</x>
-           <y>92</y>
-           <width>121</width>
-           <height>23</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_67">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>20</y>
-           <width>101</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Выполнено:</string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="error_pr">
-         <property name="geometry">
-          <rect>
-           <x>140</x>
-           <y>128</y>
-           <width>121</width>
-           <height>23</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_68">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>128</y>
-           <width>121</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Процент ошибки:</string>
-         </property>
-        </widget>
-        <widget class="QProgressBar" name="progressBar">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>56</y>
-           <width>251</width>
-           <height>23</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QProgressBar {
+         <layout class="QFormLayout" name="formLayout_3">
+          <property name="verticalSpacing">
+           <number>12</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_67">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Выполнено:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="Progress"/>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QProgressBar" name="progressBar">
+            <property name="styleSheet">
+             <string notr="true">QProgressBar {
 	border: 1px solid grey;
 	background-color: rgba(0, 0, 0, 0);
 	text-align: center;
@@ -2938,20 +2643,73 @@ QProgressBar::chunk {
 
 
 </string>
-         </property>
-         <property name="value">
-          <number>100</number>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="Progress">
-         <property name="geometry">
-          <rect>
-           <x>140</x>
-           <y>20</y>
-           <width>121</width>
-           <height>23</height>
-          </rect>
-         </property>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_66">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Длина ключа:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="LengthKey"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_68">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Процент ошибки:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="error_pr"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_64">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Время выполнения:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="Time"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_65">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Скорость (бит/с):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="Speed"/>
+          </item>
+         </layout>
         </widget>
        </widget>
        <widget class="QPushButton" name="TestLine">
@@ -2972,7 +2730,7 @@ QProgressBar::chunk {
          <rect>
           <x>790</x>
           <y>190</y>
-          <width>111</width>
+          <width>100</width>
           <height>30</height>
          </rect>
         </property>
@@ -2980,56 +2738,10 @@ QProgressBar::chunk {
          <number>5</number>
         </property>
        </widget>
-       <widget class="QLabel" name="label_62">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>560</y>
-          <width>41</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Ключ:</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="EvaBasis">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>380</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_96">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>380</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Ева (выбор базиса)</string>
-        </property>
-       </widget>
        <widget class="QCheckBox" name="Evacheck">
         <property name="geometry">
          <rect>
-          <x>790</x>
+          <x>900</x>
           <y>22</y>
           <width>101</width>
           <height>30</height>
@@ -3042,34 +2754,6 @@ QProgressBar::chunk {
         </property>
         <property name="text">
          <string>Атака Евы</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="EvaBit">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>410</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_95">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>410</y>
-          <width>141</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Ева (полученные биты)</string>
         </property>
        </widget>
        <widget class="QPushButton" name="Protocol_test">
@@ -3163,26 +2847,6 @@ QProgressBar::chunk {
          <string>Гистограммы</string>
         </property>
        </widget>
-       <widget class="QLineEdit" name="RawLine">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>470</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="key">
-        <property name="geometry">
-         <rect>
-          <x>160</x>
-          <y>560</y>
-          <width>711</width>
-          <height>23</height>
-         </rect>
-        </property>
-       </widget>
        <widget class="QPushButton" name="Stop_protocol">
         <property name="geometry">
          <rect>
@@ -3205,6 +2869,214 @@ QProgressBar::chunk {
           <height>31</height>
          </rect>
         </property>
+       </widget>
+       <widget class="QComboBox" name="protocol_name">
+        <property name="geometry">
+         <rect>
+          <x>790</x>
+          <y>22</y>
+          <width>100</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <item>
+         <property name="text">
+          <string>BB84</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>B92</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ГОКС</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>240</y>
+          <width>861</width>
+          <height>270</height>
+         </rect>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+         <property name="verticalSpacing">
+          <number>15</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_53">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Алиса (выбор бита)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="AliceBit"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_54">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Алиса (выбор базиса)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="AliceBasis"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_55">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Боб (выбор бита)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="BobBit"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_56">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Боб (выбор базиса)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="BobBasis"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_96">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Ева (выбор базиса)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="EvaBasis"/>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_95">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Ева (полученные биты)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QLineEdit" name="EvaBit"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>470</y>
+          <width>861</width>
+          <height>159</height>
+         </rect>
+        </property>
+        <layout class="QFormLayout" name="formLayout_2">
+         <property name="horizontalSpacing">
+          <number>30</number>
+         </property>
+         <property name="verticalSpacing">
+          <number>15</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_59">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Сырая строка</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="RawLine"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_60">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Сравнение базисов</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="Comparison"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_61">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Чистая строка</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="BlankLine"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_62">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Ключ:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="key"/>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="tab_4">

@@ -324,6 +324,20 @@ char ceSerial::ReadChar()
     return rxchar_;
 }
 
+// char ceSerial::ReadChar(bool& success)
+// {
+//     success = false;
+//     if (!IsOpened())
+//         return 0;
+//     DWORD dwRead;
+
+//     success = ReadFile(hComm, &rxchar_, 1, &dwRead, 0);
+//     if (!success || dwRead == 0)
+//         rxchar_ = 0;
+
+//     return rxchar_;
+// }
+
 char ceSerial::ReadChar(bool& success)
 {
     success = false;
@@ -331,11 +345,11 @@ char ceSerial::ReadChar(bool& success)
         return 0;
     DWORD dwRead;
 
-    success = ReadFile(hComm, &rxchar_, 1, &dwRead, 0);
-    if (!success)
-        rxchar_ = 0;
-
-    return rxchar_;
+    if (ReadFile(hComm, &rxchar_, 1, &dwRead, nullptr) && dwRead == 1) {
+        success = true;
+        return rxchar_;
+    }
+    return 0;
 }
 
 bool ceSerial::SetRTS(bool value)

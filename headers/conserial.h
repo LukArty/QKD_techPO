@@ -17,6 +17,7 @@
 #include <cstring>
 #include <fstream>
 #include <stdarg.h>
+#include <iomanip>
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -32,6 +33,7 @@
 using namespace std;
 namespace hwe
 {
+
 
 /// @brief Интерфейс для взаимодействия с аппаратной платформой.
 class Conserial : public AbstractHardwareApi
@@ -53,10 +55,13 @@ public:
         BootloaderNoResponse  = 10,  // Не отвечает бутлоадер
         FlashEraseFailed      = 11,  // Ошибка стирания памяти мк
         FlashWriteFailed      = 12,  // Ошибка записи
+        FlashDataEmpty        = 13,  // Нет данных в мк
 
     };
 
     Conserial();
+    Conserial(string port);
+       void FindProtocolVersion();
     virtual ~Conserial();
     /*!
     @brief Функция инициализации стенда
@@ -95,7 +100,7 @@ public:
     @param [in] timeout - Время ожидания в мс
     @return Установленное время ожидания и код ошибки
     */
-    virtual api::AdcResponse SetTimeout(uint32_t timeout);
+    virtual api::AdcResponse SetTimeout(uint32_t timeout_ms);
     /*!
     @brief Функция включения и выключения лазера
     @param [in] on - Состояние лазера (1\0)
@@ -263,7 +268,11 @@ public:
     ///@brief Установка порта подключения стенда
     void SetComPortName(const char* port);
 
+    static std::vector<std::string> GetFTDIComPorts();
+
 private:
+
+    bool firstOpenFlag = 1;
     /// @breif Значение для ожидания ответа при инициализации
     const uint32_t INIT_TIMEOUT_TIME = 900000;
 
@@ -284,11 +293,7 @@ private:
         uint16_t version = 0;
         uint16_t subversion = 0;
     };
-
-    //Конфигурация
-    versionFirmware versionFirmware = {1,0,0};
-    versionProtocol versionProtocol = {1, 5};
-
+    /// @brief Структура для хранения текущей конфигурации стенда
     struct StandOptions{
         adc_t premissions = 0;
         adc_t laserState_ = 0;
@@ -299,14 +304,12 @@ private:
         SLevels<hwe::adc_t> startLightNoises_= {0,0};
         WAngles<hwe::angle_t> startPlatesAngles_ = {0,0,0,0};
         SLevels<hwe::adc_t> maxSignalLevels_ = {0,0};
-        uint32_t timeoutTime_ = 2000; //ms
+        uint32_t timeoutTime_ = 2; //ms
         angle_t rotateStep_ = 0.3;
         adc_t maxLaserPower_ = 100;
         adc_t maxPayloadSize = 30;
     };
-
-    Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
-
+    /// @brief Структура для парсинга транспортных пакетов
     struct UartResponse{
         uint8_t status_= 0;
         uint8_t nameCommand_ = 0;
@@ -315,14 +318,22 @@ private:
         uint16_t payload = 0;
     };
 
+    //Конфигурация
+    versionFirmware versionFirmware = {1,0,0};
+    versionProtocol versionProtocol = {1, 5};
+    Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
+
+
+
 
     ce::ceSerial com_; // Обект класса для соединения с МК
 
     /// @brief Подсчет CRC
     uint8_t Crc8(uint8_t *pcBlock, uint8_t len);
+    /// @brief Чтение пакетов с UART
     std::vector<uint8_t> ReadPacket();
 
-    /// @brief Парсинг пакетов версии 1.2 и 1.5
+    /// @brief Парсинг пакетов
     UartResponse ParsePacket();
 
     /// @brief Подсчет из угла в шаг
@@ -336,17 +347,10 @@ private:
 
     /// @brief Отправка и получение ответов
     /// @param [in] commandName - ID команды
-    /// @param [in] N - Количество передаваемых параметров
-    /// @param ... - Параметры
-    /// @return Распаршеный пакет
-    UartResponse Twiting (uint8_t commandName, int N,... );
-
-    /// @brief Отправка и получение ответов
-    /// @param [in] commandName - ID команды
     /// @param [in] bytes - Массив передаваемых байтов
     /// @param [in] length - Количество передаваемых байтов
     /// @return Распаршеный пакет
-    UartResponse Twiting (uint8_t commandName,  uint8_t * bytes, uint16_t length);
+    UartResponse Twiting (uint8_t commandName,  uint8_t * bytes = nullptr, uint16_t length = 0);
 
     /// @brief Отправка запросов
     /// @param [in] commandName - ID команды
@@ -358,49 +362,96 @@ private:
     /// @brief Парсинг кодов ошибок с АП
     /// @return Статус
     uint16_t CheckStatus(uint16_t status);
+
     /// @brief Проверка подключения к АП
     bool StandIsConected ();
 
-    void FindProtocolVersion();
+
+
+
 
     template<typename... Args>
     std::vector<uint8_t> PackToBytes(Args... args)
     {
         std::vector<uint8_t> bytes;
 
-        // считаем общий размер всех аргументов
-        bytes.reserve((sizeof(args) + ...));
+        // Проверяем, есть ли аргументы
+        if constexpr (sizeof...(args) > 0) {
+            // считаем общий размер всех аргументов
+            bytes.reserve((sizeof(args) + ...));
 
-        auto push = [&](auto value)
-        {
-            using T = decltype(value);
-            using U = std::make_unsigned_t<T>;
-
-            U v = static_cast<U>(value);
-
-            // записываем байты от старшего к младшему (Big Endian)
-            for (int i = sizeof(U) - 1; i >= 0; --i)
+            auto push = [&](auto value)
             {
-                bytes.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
-            }
-        };
+                using T = decltype(value);
+                using U = std::make_unsigned_t<T>;
 
-        (push(args), ...);
+                U v = static_cast<U>(value);
+
+                // записываем байты от старшего к младшему (Big Endian)
+                for (int i = sizeof(U) - 1; i >= 0; --i)
+                {
+                    bytes.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
+                }
+            };
+
+            (push(args), ...);
+        }
 
         return bytes;
     }
+    std::vector<uint8_t> PackToBytes(const std::vector<uint8_t>& vec);
+    std::vector<uint8_t> PreparePasswordBytes(const string& passwd);
 
 
-    bool TryUpload(const string& path, int baud);
-
-
-    //Loging
+//Loging
+#define LOG_FUNCTION_CALL(...) logFunctionCall(__FUNCTION__, ##__VA_ARGS__)
     std::ofstream out_;
     void logOut(string str);
     void logOutLine(std::string str);
     const string currentDateTime();
     void logOutUart(const UartResponse &pack);
     void logNameFunction(const char * func);
+
+    template<typename... Args>
+    void LogParametersHex(Args... args) {
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0'); // Устанавливаем hex формат
+
+        auto push = [&](auto value) {
+            using T = decltype(value);
+            if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, unsigned char>) {
+                // Для uint8_t выводим как 2-значное hex число
+                ss << "0x" << std::setw(2) << static_cast<int>(value);
+            } else if constexpr (std::is_same_v<T, char>) {
+                // Для char тоже выводим как hex
+                ss << "0x" << std::setw(2) << static_cast<int>(static_cast<unsigned char>(value));
+            } else {
+                // Для остальных типов
+                ss << "0x" << std::setw(sizeof(T) * 2) << static_cast<uint64_t>(value);
+            }
+            ss << " ";
+        };
+
+        (push(args), ...);
+
+        logOutLine(ss.str());
+    }
+
+    template<typename... Args>
+    void logFunctionCall(const char* funcName, Args... args) {
+        logOut("______________________________________________________________");
+        logOut(funcName);
+        logOut("Количество параметров: " + std::to_string(sizeof...(args)));
+
+        if constexpr (sizeof...(args) > 0) {
+            logOut("Параметры:");
+            std::stringstream ss;
+            ((ss << "  " << args), ...);
+            logOut(ss.str());
+        }
+
+        logOut("______________________________________________________________");
+    }
 
     //Таблица для подсчёта CRC
     const uint8_t Crc8Table[256] = {
@@ -470,6 +521,148 @@ private:
         {"UpdateBaseAngles", 0x58}, //X
         {"ReadBaseAngles", 0x59}  //Y
     };
+
+    //_____________________________________________________________________________________________
+    // Шаблоны
+    //_____________________________________________________________________________________________
+
+    template<typename ResponseType>
+    bool CheckStandPremmissions(ResponseType &response){
+        if(standOptions.premissions!=1){
+            logOut("Отказано в доступе (недостаточно прав)");
+            response.errorCode_ = static_cast<uint16_t>(ErrorCode::AccessDenied);
+            return false;
+        }
+        return true;
+    }
+
+    // Упрощенный базовый шаблон только для отправки команд
+    template<typename ResponseType, typename... Args>
+    ResponseType SendCommand(const std::string& cmd, Args... args) {
+
+        logOut("SendCommand: " + cmd);
+
+
+
+        ResponseType response{};
+        auto bytes = PackToBytes(args...);
+        UartResponse pack{};
+
+        try {
+            uint8_t cmdByte = dict_.at(cmd);
+            pack = Twiting(cmdByte, bytes.data(), bytes.size());
+        } catch (const std::out_of_range& e) {
+            pack.status_ = static_cast<uint16_t>(ErrorCode::InvalidCommand);
+            response.errorCode_ = pack.status_;
+            return response;
+        }
+
+        if(pack.status_ != 1) {
+            response.errorCode_ = CheckStatus(pack.status_);
+            return response;
+        }
+
+        size_t expectedParams = GetExpectedParams<ResponseType>();
+        if(pack.parameters_.size() != expectedParams) {
+            response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
+            return response;
+        }
+
+        FillResponse(response, pack);
+        response.errorCode_ = CheckStatus(pack.status_);
+        return response;
+    }
+
+    // Упрощенный FillResponse - только заполнение ответа, без storageField
+    template<typename ResponseType>
+    void FillResponse(ResponseType& resp, const UartResponse& pack) {
+        logOut("FillResponse: pack.parameters_.size() = " + to_string(pack.parameters_.size()));
+
+        if constexpr (std::is_same_v<ResponseType, api::AngleResponse>) {
+            if (pack.parameters_.at(0) > 0)
+                resp.angle_ = 360.0 / pack.parameters_.at(0);
+            else
+                resp.angle_ = 0;
+        }
+        if constexpr (std::is_same_v<ResponseType, api::AdcResponse>) {
+            resp.adcResponse_ = pack.parameters_.at(0);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::versionProtocolResponse>) {
+            resp.version_ = pack.parameters_.at(0);
+            resp.subversion_ = pack.parameters_.at(1);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::versionFirmwareResponse>) {
+            resp.major_ = pack.parameters_.at(0);
+            resp.minor_ = pack.parameters_.at(1);
+            resp.micro_ = pack.parameters_.at(2);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::SLevelsResponse>) {
+            resp.signal_.h_ = pack.parameters_.at(0);
+            resp.signal_.v_ = pack.parameters_.at(1);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::WAnglesResponse>) {
+            WAngles<adc_t> steps = {
+                pack.parameters_.at(0),
+                pack.parameters_.at(1),
+                pack.parameters_.at(2),
+                pack.parameters_.at(3)
+            };
+            resp.angles_ = CalcAngles(steps);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::InitResponse>) {
+            resp.startPlatesAngles_ = CalcAngles({
+                pack.parameters_.at(0), pack.parameters_.at(1),
+                pack.parameters_.at(2), pack.parameters_.at(3)
+            });
+            resp.startLightNoises_ = {pack.parameters_.at(4), pack.parameters_.at(5)};
+            resp.maxSignalLevels_ = {pack.parameters_.at(6), pack.parameters_.at(7)};
+            resp.maxLaserPower_ = pack.parameters_.at(8);
+        }
+        else if constexpr (std::is_same_v<ResponseType, api::SendMessageResponse>) {
+            resp.newPlatesAngles_ = CalcAngles({
+                pack.parameters_.at(0), pack.parameters_.at(1),
+                pack.parameters_.at(2), pack.parameters_.at(3)
+            });
+            resp.currentLightNoises_ = {pack.parameters_.at(4), pack.parameters_.at(5)};
+            resp.currentSignalLevels_ = {pack.parameters_.at(6), pack.parameters_.at(7)};
+        }
+    }
+    /**
+ * @brief Определяет ожидаемое количество параметров для типа ответа
+ *
+ * Используется для валидации полученного пакета - если количество параметров
+ * не совпадает с ожидаемым, возвращается ошибка InvalidResponse.
+ *
+ * @tparam T Тип ответа
+ * @return constexpr size_t Ожидаемое количество параметров
+ *
+ * @note Соответствие типов и количества параметров:
+ * - AdcResponse, AngleResponse: 1 параметр
+ * - SLevelsResponse, versionProtocolResponse: 2 параметра
+ * - versionFirmwareResponse: 3 параметра
+ * - WAnglesResponse: 4 параметра
+ * - SendMessageResponse: 8 параметров
+ * - InitResponse: 9 параметров
+ */
+    template<typename T>
+    constexpr size_t GetExpectedParams() {
+        if constexpr (std::is_same_v<T, api::AdcResponse> ||
+                      std::is_same_v<T, api::AngleResponse>) {
+            return 1;
+        } else if constexpr (std::is_same_v<T, api::SLevelsResponse> ||
+                             std::is_same_v<T, api::versionProtocolResponse> ) {
+            return 2;
+        } else if constexpr (std::is_same_v<T, api::versionFirmwareResponse>) {
+            return 3;
+        } else if constexpr (std::is_same_v<T, api::WAnglesResponse>) {
+            return 4;
+        } else if constexpr (std::is_same_v<T, api::InitResponse>) {
+            return 9;
+        } else if constexpr (std::is_same_v<T, api::SendMessageResponse>) {
+            return 8;
+        }
+        return 0;
+    }
 };
 
 } //namespace
