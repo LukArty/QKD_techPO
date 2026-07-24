@@ -16,6 +16,7 @@ public:
     explicit Adminlogin(QWidget *parent = nullptr);
     ~Adminlogin();
     void Adminlogin_init (hwe::Conserial *stand);
+
 private slots:
     void on_Login_clicked();
 

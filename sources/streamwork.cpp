@@ -161,39 +161,48 @@ QString StreamWork::ElectionPD_v2_B92(int PDH, int yh_,  int yv_, int MaxSig_h){
 }
 
 /// @brief метод вероятностей для ГОКС
-QString StreamWork::ElectionPD_v2_GOKS(int PDH, int yh_,  int yv_, int MaxSig_h){
+/// PDH - конфигурация 1 или 0 (базис)
+/// yh_ - уровень сигнала на фотодетекторе PDH
+/// yv_ - уровень сигнала на фотодетекторе PDV
+/// MaxSig_h - максимальный уровень сигнала на PDH
+QString StreamWork::ElectionPD_v2_GOKS(int PDH, int yh_, int yv_, int MaxSig_h) {
 
     QString bit = "";
-    double val = rand(); //рандом числа
-    double val_max = RAND_MAX;
-    double val_de = val/val_max;
-    double h_de = double(yh_)/double(MaxSig_h); //определение в каком интервале находиться сигнал
-    if(MaxSig_h == 0){
+
+    if (MaxSig_h == 0) {
         MaxSig_h = 16000;
     }
-    double v_de = double(yv_)/double(yv_+yh_);
-    if(yh_ < 200 && yv_< 200){
-        return bit='X';
+
+    if (yh_ < 200 && yv_ < 200) {
+        return "X";
+    }
+
+    double prob_PDH = double(yh_) / double(MaxSig_h);
+    double prob_PDV = double(yv_) / double(yv_ + yh_);
+
+    double random = double(rand()) / double(RAND_MAX);
+
+    const double CLOSE_TO_ONE = 0.9;
+
+    if (prob_PDV >= CLOSE_TO_ONE) {
+        return "X";
+    }
+
+    if(random >= prob_PDH){
+        if(PDH == 0){
+            return bit='0';
+        }
+        else if(PDH == 1){
+            return bit='1';
+        }
+        else {
+            return bit='X';
+        }
     }
     else{
-        if(v_de < 0.7){
-            if(val_de <= h_de){
-                if(PDH == 0){
-                    return bit='0';
-                }
-                else if(PDH == 1){
-                    return bit='1';
-                }
-                else {
-                    return bit='X';
-                }
-            }
-            else{
-                return bit='X';
-            }
-        }
-        else {return bit='X';}
+        return bit='X';
     }
+    return "X";
 }
 
 /// @brief выполнение протокола ВВ84

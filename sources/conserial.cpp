@@ -6,67 +6,40 @@
 
 #include <conserial.h>
 
+
 // #define ARDUINO
 #define STM
 
-//#define NO_SERIAL_LOG
+#define SERIAL_LOG
 
 namespace hwe
 {
 /// @brief Интерфейс для взаимодействия с аппаратной платформой.
-Conserial::Conserial()
-{
-#ifndef NO_SERIAL_LOG
-    if (!out_.is_open())
-    {
-        out_.open("ceserial.log");
-    }
-#endif
-#ifdef CE_WINDOWS
-    com_.SetPort("COM3");
-#else
-    com_.SetPort("/dev/ttyStandQKD");
-#endif
-    com_.SetBaudRate(115200);
-    com_.SetDataSize(8);
-    com_.SetParity('N');
-    com_.SetStopBits(1);
-    com_.Open();
-
-    standOptions.premissions = 0;
-    standOptions.laserState_ = 0;
-    standOptions.laserPower_ = 0;
-    standOptions.signalLevels_ = {0,0};
-    standOptions.curAngles_ = {0,0,0,0};
-    standOptions.lightNoises = {0,0};
-    standOptions.startLightNoises_= {0,0};
-    standOptions.startPlatesAngles_ = {0,0,0,0};
-    standOptions.maxSignalLevels_ = {0,0};
-    standOptions.timeoutTime_ = 2; //секунды
-    standOptions.rotateStep_ = 0.3;
-    standOptions.maxLaserPower_ = 100;
-    standOptions.maxPayloadSize = 30;
-    //FindProtocolVersion();
-}
-
 Conserial::Conserial(string port)
 {
-#ifndef NO_SERIAL_LOG
-    if (!out_.is_open())
-    {
-        out_.open("ceserial.log");
-    }
-#endif
-#ifdef CE_WINDOWS
-    com_.SetPort(port);
+    com_ = std::make_unique<ce::ceSerial>();
+#ifdef SERIAL_LOG
+    Logger::instance().initialize("ceserial.log", LogLevel::INFO_LEVEL, true, true);
 #else
-    com_.SetPort("/dev/ttyStandQKD");
+    Logger::instance().initialize("ceserial.log", LogLevel::OFF_LEVEL, true, true);
 #endif
-    com_.SetBaudRate(115200);
-    com_.SetDataSize(8);
-    com_.SetParity('N');
-    com_.SetStopBits(1);
-    com_.Open();
+
+#ifdef CE_WINDOWS
+    if (port.empty())
+        com_->SetPort("COM3");
+    else
+        com_->SetPort(port);
+#else
+    if (port.empty())
+        com_.SetPort("/dev/ttyStandQKD");
+    else
+        com_.SetPort(port);
+#endif
+    com_->SetBaudRate(115200);
+    com_->SetDataSize(8);
+    com_->SetParity('N');
+    com_->SetStopBits(1);
+    com_->Open();
 
     standOptions.premissions = 0;
     standOptions.laserState_ = 0;
@@ -77,7 +50,7 @@ Conserial::Conserial(string port)
     standOptions.startLightNoises_= {0,0};
     standOptions.startPlatesAngles_ = {0,0,0,0};
     standOptions.maxSignalLevels_ = {0,0};
-    standOptions.timeoutTime_ = 2; //секунды
+    standOptions.timeoutTime_ = 2000;
     standOptions.rotateStep_ = 0.3;
     standOptions.maxLaserPower_ = 100;
     standOptions.maxPayloadSize = 30;
@@ -86,20 +59,51 @@ Conserial::Conserial(string port)
 
 std::string Conserial::GetComPortName()const
 {
-    return com_.GetPort();
+    return com_->GetPort();
 }
 
-void Conserial::SetComPortName(const char* port)
+void Conserial::SetComPortName(const std::string& port)
 {
-    com_.Close();
-    com_.SetPort(port);
-    com_.Open();
+    LOG_FUNCTION_CALL(port);
+
+    // Закрываем текущее соединение
+    if (com_->IsOpened()) {
+        com_->Close();
+        LOG_DEBUG("Текущий порт закрыт");
+    }
+
+    // Устанавливаем новый порт
+    if (!port.empty()) {
+        com_->SetPort("\\\\.\\" + port);
+        LOG_DEBUG("Установлен порт: ", port);
+    } else {
+        // Если порт не указан - используем текущий
+        LOG_DEBUG("Порт не указан, используем: ", com_->GetPort());
+    }
+
+    // Настраиваем параметры
+    com_->SetBaudRate(115200);
+    com_->SetDataSize(8);
+    com_->SetParity('N');
+    com_->SetStopBits(1);
+
+    // Пытаемся открыть порт
+    com_->Open();
+    if (!com_->IsOpened()) {
+        LOG_ERROR("Не удалось открыть порт: ", com_->GetPort());
+    }else{
+        LOG_INFO("Порт успешно открыт: ", com_->GetPort());
+        FindProtocolVersion();
+    }
 
 }
 
-Conserial::~Conserial()
-{
-    out_.close();
+
+Conserial::~Conserial(){
+    if (com_ && com_->IsOpened()) {
+        com_->Close();
+        LOG_DEBUG("COM-порт закрыт");
+    }
 }
 
 api:: InitResponse Conserial:: Init()
@@ -216,12 +220,12 @@ api::AdcResponse Conserial::SetTimeout(uint32_t timeout_ms)
 {
     LOG_FUNCTION_CALL(timeout_ms, "мс" );
     api::AdcResponse response = {};
-    if(timeout_ms >= 1000 && timeout_ms <10000) {
+    if(timeout_ms >= 1000 && timeout_ms <65000) {
         response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
         return response;
     }
 
-    uint16_t time_s = timeout_ms /1000 ;
+    uint16_t time_s = timeout_ms;
 
     response = SendCommand<api::AdcResponse>("SetTimeout", time_s);
 
@@ -381,23 +385,23 @@ api::AdcResponse Conserial::GetHardwareState(){
     api::AdcResponse response = SendCommand<api::AdcResponse>("GetHardwareState");
 
     if (response.adcResponse_ & 0){
-        logOut("Аппаратная платформа в рабочем состоянии");
+        LOG_INFO("Аппаратная платформа в рабочем состоянии");
     }else
     {
         if ( response.adcResponse_ & (1<<1) )
-            logOut("Не работает фотодетектор PDH");
+            LOG_CRITICAL("Не работает фотодетектор PDH");
         if ( response.adcResponse_ & (1<<2) )
-            logOut("Не работает фотодетектор PDV");
+            LOG_CRITICAL("Не работает фотодетектор PDV");
         if (response.adcResponse_ & (1<<3) )
-            logOut("Не работает лазер");
+            LOG_CRITICAL("Не работает лазер");
         if ( response.adcResponse_ & (1<<4) )
-            logOut("Не работает первый двигатель");
+            LOG_CRITICAL("Не работает первый двигатель");
         if ( response.adcResponse_ & (1<<5) )
-            logOut("Не работает второй двигатель");
+            LOG_CRITICAL("Не работает второй двигатель");
         if ( response.adcResponse_ & (1<<6) )
-            logOut("Не работает третий двигатель");
+            LOG_CRITICAL("Не работает третий двигатель");
         if (response.adcResponse_ & (1<<7))
-            logOut("Не работает четвертый двигатель");
+            LOG_CRITICAL("Не работает четвертый двигатель");
     }
     return response;
 }
@@ -550,7 +554,7 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd)
     }
 
     std::vector<uint8_t> passwordBytes=PreparePasswordBytes(passwd);
-    return SendCommand<api::AdcResponse>("CreateConfigSecret", passwordBytes);
+    return SendCommand<api::AdcResponse>("OpenConfigMode", passwordBytes);
 }
 
 
@@ -619,7 +623,7 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
 
     api::AdcResponse response = {};
     if (CheckStandPremmissions<api::AdcResponse>(response)){
-        com_.Close();
+        com_->Close();
 
         /* ==== Открываем BIN ==== */
         FILE* bin = nullptr;
@@ -632,7 +636,7 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
 #endif
 
         if (!bin) {
-            logOut("Не удалось открыть файл прошивки: " + path);
+            LOG_ERROR("Не удалось открыть файл прошивки: " + path);
             return {0, static_cast<uint16_t>(ErrorCode::FirmwareFileNotRead)};
         }
 
@@ -641,7 +645,7 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
 
         // как в main (2).c — первый FTDI в системе
         if (FT_Open(0, &ft) != FT_OK) {
-            logOut("Не удалось открыть FTDI устройство");
+            LOG_ERROR("Не удалось открыть FTDI устройство");
             fclose(bin);
             return {0, static_cast<uint16_t>(ErrorCode::NoConnection)};
         }
@@ -651,11 +655,11 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
         FT_SetDataCharacteristics(ft, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_NONE);
         FT_SetTimeouts(ft, 1000, 1000);
 
-        logOut("FTDI сконфигурирован: 115200, 8N1");
+        LOG_ERROR("FTDI сконфигурирован: 115200, 8N1");
 
         /* ================= ВХОД В BOOTLOADER ================= */
 
-        logOut("Вход в режим загрузчика...");
+        LOG_INFO("Вход в режим загрузчика...");
 
         FT_SetDtr(ft);
         sleep_ms(50);
@@ -668,19 +672,19 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
         uint8_t init = 0x7F;
         uart_write(ft, &init, 1);
         if (!wait_ack(ft, 1000)) {
-            logOut("Загрузчик не отвечает");
+            LOG_CRITICAL("Загрузчик не отвечает");
             FT_Close(ft);
             fclose(bin);
             return {0, static_cast<uint16_t>(ErrorCode::BootloaderNoResponse)};
         }
 
-        logOut("Загрузчик активен");
+        LOG_INFO("Загрузчик активен");
 
         /* ================= СТИРАНИЕ FLASH ================= */
 
-        logOut("Стирание FLASH...");
+        LOG_INFO("Стирание FLASH...");
         if (!bl_mass_erase(ft)) {
-            logOut("Ошибка стирания FLASH");
+            LOG_CRITICAL("Ошибка стирания FLASH");
             FT_Close(ft);
             fclose(bin);
             return {0, static_cast<uint16_t>(ErrorCode::FlashEraseFailed)};
@@ -688,7 +692,7 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
 
         /* ================= ЗАПИСЬ ПРОШИВКИ ================= */
 
-        logOut("Запись прошивки...");
+        LOG_INFO("Запись прошивки...");
 
         uint8_t buf[256];
         uint32_t addr = 0x08000000;
@@ -699,7 +703,7 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
         while ((r = fread(buf, 1, sizeof(buf), bin)) > 0) {
             if (!bl_write(ft, addr, buf, (int)r)) {
                 ss << std::hex << addr;
-                logOut("Ошибка записи @0x" + ss.str());
+                LOG_CRITICAL("Ошибка записи @0x" + ss.str());
                 FT_Close(ft);
                 fclose(bin);
                 return {0, static_cast<uint16_t>(ErrorCode::FlashWriteFailed)};
@@ -709,11 +713,11 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
             total += r;
         }
 
-        logOut("Записано " + std::to_string(total) + " байт");
+        LOG_INFO("Записано " + std::to_string(total) + " байт");
 
         /* ================= СБРОС ================= */
 
-        logOut("Сброс устройства...");
+        LOG_INFO("Сброс устройства...");
 
         FT_ClrDtr(ft);
         sleep_ms(50);
@@ -725,8 +729,8 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
         FT_Close(ft);
         fclose(bin);
 
-        logOut("Прошивка успешно завершена");
-        com_.Open();
+        LOG_INFO("Прошивка успешно завершена");
+        com_->Open();
     }
     return {1, static_cast<uint16_t>(ErrorCode::Success)};
 }
@@ -750,8 +754,10 @@ void Conserial::FirmwareUpdate (string path){
 
 
 void Conserial::FindProtocolVersion(){
-    logOut("\t  ******** START " + (string) __FUNCTION__+ " ********");
+    Logger::instance().logOut("\t  *********************************");
+    LOG_FUNCTION_CALL();
     int notFound = 1;
+    version_protocol = VersionProtocol::protocol_1_5;
 
     while(notFound !=0 && !(version_protocol == VersionProtocol::unknown)){
         notFound = GetLaserState().errorCode_;
@@ -772,22 +778,22 @@ void Conserial::FindProtocolVersion(){
     switch (version_protocol) {
     case VersionProtocol::protocol_1_5:
         versionProtocol  = {1, 5};
-        logOut("Version: 1.5");
+        LOG_INFO("Version: 1.5");
         break;
     case VersionProtocol::protocol_1_2:
         versionProtocol  = {1, 2};
-        logOut("Version: 1.2");
+        LOG_INFO("Version: 1.2");
         break;
     case VersionProtocol::protocol_1_0:
         versionProtocol  = {1, 0};
-        logOut("Version: 1.0");
+        LOG_INFO("Version: 1.0");
         break;
     default:
         versionProtocol  = {0, 0};
-        logOut("Version: unknown");
+        LOG_INFO("Version: unknown");
         break;
     }
-    logOut("\t ******** END " + (string)__FUNCTION__ + " ******** \n");
+    Logger::instance().logOut("\t  ********************************* \n");
 }
 
 //          ****** ТРАНСПРОТ ******
@@ -795,27 +801,41 @@ void Conserial::FindProtocolVersion(){
 Conserial::UartResponse Conserial::Twiting (uint8_t commandName,  uint8_t * bytes, uint16_t length){
 
     UartResponse pack;
-
+    pack.status_ = static_cast<uint16_t>(ErrorCode::Success);
 
     // Проверка соединения
-    if (!StandIsConected())
+    if (!com_->IsOpened())
     {
         pack.status_= static_cast<uint16_t>(ErrorCode::NoConnection);
-    }else {
-
-        for(int attempt = 0; attempt < 3; ++attempt)
-        {
-            SendPacket(commandName, bytes, length);
-            try {
-                pack = ParsePacket();
-            } catch (...) {
-                cerr << "ERROR: Problem reading packet from UART" << endl;
-            }
-
-            if (pack.status_ == 1)
-                break;
-        }
+        LOG_ERROR("Порт не открыт");
+        return pack;
     }
+    // Попытки отправки
+    const int MAX_ATTEMPTS = 3;
+    for(int attempt = 0; attempt < MAX_ATTEMPTS; ++attempt)
+    {
+        LOG_INFO("Попытка отправки #" + std::to_string(attempt + 1));
+
+        // Отправка пакета
+        if(!SendPacket(commandName, bytes, length)){
+            LOG_ERROR("Ошибка: Не удалось отправить пакет");
+            pack.status_ = static_cast<uint16_t>(ErrorCode::InternalError);
+            continue;
+        }
+
+        // Чтение ответа
+        try {
+            pack = ParsePacket();
+        } catch (...) {
+            LOG_DEBUG("Исключение при парсинге !");
+            pack.status_ = static_cast<uint16_t>(ErrorCode::InternalError);
+            continue;
+        }
+
+        if (pack.status_ == 1)
+            break;
+    }
+
     return pack;
 }
 
@@ -909,9 +929,9 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
 
         for (auto b : packData)
         {
-            logOutLine( to_string(b) + " | " );
+            Logger::instance().logOutLine( to_string(b) + " | " );
         }
-        logOut("");
+        Logger::instance().logOut("");
         packet.push_back(0xFF); //st0
         packet.push_back(0xFE); //st1
         packet.push_back(0x00); //status
@@ -928,15 +948,14 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
         return 0;
     }
 
-    logOut( currentDateTime() + " -- Отправка пакета");
+    Logger::instance().logOut( Logger::instance().currentDateTime() + " -- Отправка пакета");
 
     for (auto b : packet)
     {
-        com_.Write(b);
-        LogParametersHex(b);
-        // logOutLine( to_string(b) + " | " );
+        com_->Write(b);
+        LOG_HEX(b);
     }
-    logOut("");
+    Logger::instance().logOut("");
 
     return 1;
 }
@@ -944,7 +963,7 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
 std::vector<uint8_t> Conserial::ReadPacket(){
 
     bool success = 0, end_read = 0, start_read = 0;
-    clock_t dedline = clock() + standOptions.timeoutTime_ * CLOCKS_PER_SEC ;
+    clock_t dedline = clock() + standOptions.timeoutTime_ * CLOCKS_PER_SEC / 1000 ; //! МС
     uint8_t byte = 0;
     uint16_t sliding = 0;
     std::vector<uint8_t> readBytes;
@@ -953,10 +972,10 @@ std::vector<uint8_t> Conserial::ReadPacket(){
     case VersionProtocol::unknown:
         break;
     default:
-        logOut( "\n"+ currentDateTime()+ " -- Поиск начала пакета" );
-        while (/*clock()< dedline &&*/  !end_read){
-            byte = com_.ReadChar(success);
-            LogParametersHex(byte);
+        Logger::instance().logOut("\n"+ Logger::instance().currentDateTime() + " -- Поиск начала пакета" );
+        while (clock()< dedline && !end_read){
+            byte = com_->ReadChar(success);
+            LOG_HEX(byte);
             if (!success)
                 continue;
 
@@ -967,7 +986,7 @@ std::vector<uint8_t> Conserial::ReadPacket(){
                 if (sliding == 0xFFFE)
                 {
                     start_read = true;
-                    logOut( "\n======== Успешно найдено начало пакета ======== ");
+                    LOG_INFO("\n======== Успешно найдено начало пакета ======== ");
                     sliding = 0;
                     readBytes.clear();
                 }
@@ -979,8 +998,8 @@ std::vector<uint8_t> Conserial::ReadPacket(){
             if (sliding == 0xFFFF)
             {
                 // Вечный костыль на случай CRC = FF
-                byte = com_.ReadChar(success);
-                LogParametersHex(byte);
+                byte = com_->ReadChar(success);
+                LOG_HEX(byte);
                 if (byte == 0xFF && success){
                     readBytes.push_back(byte);
                 }
@@ -993,7 +1012,7 @@ std::vector<uint8_t> Conserial::ReadPacket(){
             }
 
             if (clock()>dedline){ //timeouted
-                logOut("\n"+ currentDateTime() + " -- Вышел таймаут" );
+                LOG_WARNING("\n"+ Logger::instance().currentDateTime() + " -- Вышел таймаут" );
                 end_read = true;
                 readBytes.resize(0);
             }
@@ -1023,17 +1042,16 @@ Conserial::UartResponse Conserial::ParsePacket(){
             pack_.nameCommand_ = readedBytes.at(2);
             pack_.status_ = readedBytes.at(3);
             pack_.crc_ = readedBytes.back();
-            logOut(to_string((int)readedBytes.size()));
+            LOG_DEBUG(to_string((int)readedBytes.size()));
             for (int j = 4; j < (int)readedBytes.size()-3 ; j+=2) {
                 pack_.parameters_.push_back((uint16_t) readedBytes.at(j) << 8 | (uint16_t) readedBytes.at(j+1));
 
             }
 
             crc = Crc8(readedBytes.data(), readedBytes.size());
-            // cout <<(int) pack_.crc_<< "<- recive/math ->" << (int) crc <<endl;
             if(crc!=0){
-                logOut("\n"+ currentDateTime() + "-- Ошибка: Несоответствие CRC \t" + to_string( crc) );
-                logOutUart(pack_);
+                LOG_ERROR("\n"+ Logger::instance().currentDateTime() + "-- Ошибка: Несоответствие CRC \t" + to_string( crc) );
+                LOG_UART(pack_);
                 pack_.status_ = static_cast<uint16_t>(ErrorCode::CrcMismatch);
             }
             break;
@@ -1051,8 +1069,8 @@ Conserial::UartResponse Conserial::ParsePacket(){
 
             crc = Crc8(readedBytes.data(), readedBytes.size());
             if(crc!=0){
-                logOut("\n" + currentDateTime() + " -- Ошибка: Несоответствие CRC \t" + to_string( crc) );
-                logOutUart(pack_);
+                LOG_ERROR("\n" + Logger::instance().currentDateTime() + " -- Ошибка: Несоответствие CRC \t" + to_string( crc) );
+                LOG_UART(pack_);
                 pack_.status_ = static_cast<uint16_t>(ErrorCode::CrcMismatch);
             }
             break;
@@ -1075,8 +1093,8 @@ Conserial::UartResponse Conserial::ParsePacket(){
             crc = Crc8((uint8_t *)&temp, sizeof(temp));
 
             if(!(crc == pack_.crc_)){
-                logOut("\n" + currentDateTime() + "-- Ошибка: Несоответствие CRC \t" + to_string( crc) );
-                logOutUart(pack_);
+                LOG_ERROR("\n" + Logger::instance().currentDateTime() + "-- Ошибка: Несоответствие CRC \t" + to_string( crc) );
+                LOG_UART(pack_);
                 pack_.status_ = static_cast<uint16_t>(ErrorCode::CrcMismatch);
             }
             break;
@@ -1086,22 +1104,22 @@ Conserial::UartResponse Conserial::ParsePacket(){
         }
 
     }else{
-        logOut("\n" + currentDateTime() + "-- Ошибка: Принятый пакет был сломан");
+        LOG_ERROR("\n" + Logger::instance().currentDateTime() + "-- Ошибка: Принятый пакет был сломан");
         pack_.status_ = static_cast<uint16_t>(ErrorCode::MissingFrameEnd);
     }
 
-    logOut("\n======== Конец пакета ========");
-    logOutUart(pack_);
+    Logger::instance().logOut("\n ======== Конец пакета ========");
+    LOG_UART(pack_);
 
     return pack_;
 }
 
 bool Conserial::StandIsConected (){
-    if(!com_.IsOpened())
+    if(!com_->IsOpened())
     {
-        com_.Close();
-        com_.Open();
-        if(!com_.IsOpened())
+        com_->Close();
+        com_->Open();
+        if(!com_->IsOpened())
             return 0;
         else{
             FindProtocolVersion();
@@ -1115,26 +1133,28 @@ uint16_t Conserial::CheckStatus(uint16_t status){
 
     if (status == 1){
         errorCode = static_cast<uint16_t>(ErrorCode::Success);
-        logOut("Успешное выполнение запроса");
-    }else if(status == 0){
-        errorCode = static_cast<uint16_t>(ErrorCode::NoConnection);
-        logOut("Отсутствует соединение со стендом");
-    }else if(status == 2){
-        logOut("Количество принятых параметров превышает допустимый предел");
-    }else if(status == 3){
-        logOut("Необнаружена метка конца пакета");
-    }else if(status == 4){
-        logOut("Не удалось выполнить команду / Не известный ID команды ");
-    }else if(status == 5){
-        logOut("Отказано в доступе (недостаточно прав)");
-    }else if(status == 6){
-        logOut("Переданы неверные параметры на вход библиотечной функции");
-    }else if(status == 7){
-        logOut("Аппаратная платформа в аварийном состоянии");
-    }else if(status == 8){
-        logOut("Несоответствие CRC");
+        LOG_INFO("Успешное выполнение запроса");
     }
-    logOut("-> Код ошибки: " + to_string(errorCode));
+
+    else if(status == 0){
+        errorCode = static_cast<uint16_t>(ErrorCode::NoConnection);
+        LOG_ERROR("Отсутствует соединение со стендом");
+    }else if(status == 2){
+        LOG_ERROR("Количество принятых параметров превышает допустимый предел");
+    }else if(status == 3){
+        LOG_ERROR("Необнаружена метка конца пакета");
+    }else if(status == 4){
+        LOG_ERROR("Не удалось выполнить команду / Не известный ID команды ");
+    }else if(status == 5){
+        LOG_ERROR("Отказано в доступе (недостаточно прав)");
+    }else if(status == 6){
+        LOG_ERROR("Переданы неверные параметры на вход библиотечной функции");
+    }else if(status == 7){
+        LOG_CRITICAL("Аппаратная платформа в аварийном состоянии");
+    }else if(status == 8){
+        LOG_ERROR("Несоответствие CRC");
+    }
+    LOG_INFO("-> Код ошибки: " + to_string(errorCode));
     return errorCode;
 }
 
@@ -1148,9 +1168,9 @@ uint8_t Conserial::Crc8(uint8_t *pcBlock, uint8_t len)
     return crc;
 }
 
-std::vector<uint8_t> Conserial::PackToBytes(const std::vector<uint8_t>& vec) {
-    return vec;
-}
+// std::vector<uint8_t> Conserial::PackToBytes(const std::vector<uint8_t>& vec) {
+//     return vec;
+// }
 
 //          ========  Step to Angle  & Angle to Step ========
 uint16_t Conserial::CalcStep(angle_t angle, angle_t rotateStep){
@@ -1160,8 +1180,8 @@ uint16_t Conserial::CalcStep(angle_t angle, angle_t rotateStep){
     if (angle < 0){
         angle = angle + 360;
     }
-    int Steps = round (angle / rotateStep); //Подсчёт и округление шагов
-    return Steps;
+    int Step = round (angle / rotateStep); //Подсчёт и округление шагов
+    return Step;
 }
 
 WAngles<adc_t> Conserial::CalcSteps(WAngles<angle_t> angles){
@@ -1182,49 +1202,6 @@ WAngles<angle_t> Conserial::CalcAngles(WAngles<adc_t> steps)
     angles.bHalf_ = ((float)steps.bHalf_) * standOptions.rotateStep_;
     angles.bQuart_ = ((float)steps.bQuart_) * standOptions.rotateStep_;
     return angles;
-}
-
-//          ========  ЖУРНАЛИРОВАНИЕ ========
-
-void Conserial::logNameFunction(const char * func){
-    logOut("______________________________________________________________");
-    logOut((string)func);
-    logOut("______________________________________________________________");
-
-}
-void Conserial::logOut(std::string str)
-{
-#ifndef NO_SERIAL_LOG
-    if (out_.is_open())
-        out_ << str << std::endl;
-#endif
-}
-void Conserial::logOutLine(std::string str)
-{
-#ifndef NO_SERIAL_LOG
-    if (out_.is_open())
-        out_ << str ;
-#endif
-}
-
-const std::string Conserial::currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
-
-    return buf;
-}
-
-void Conserial::logOutUart(const UartResponse &pack)
-{
-    logOut("Whole packet info:");
-    logOut("Pack.status = " + std::to_string(pack.status_));
-    logOut("Pack.nameCommand = " + std::to_string(pack.nameCommand_));
-    logOut("Pack.crc = " + std::to_string(pack.crc_));
-    for(int i = 0; i < (int)pack.parameters_.size(); ++i)
-        logOut("Pack.parameters[" + std::to_string(i) + "] = " + std::to_string(pack.parameters_[i]));
 }
 
 std::vector<std::string> Conserial::GetFTDIComPorts() {

@@ -181,6 +181,8 @@ private slots:
 
     void on_ReadEEPROM_clicked();
 
+    void onTabChanged(int index);
+
 private:
     QFile test_protocol; //файл для записи результатов тестов
     QTimer *timer, *timer2; //переменые для таймера на вкладке Мониторинг
@@ -188,6 +190,10 @@ private:
     float AngleCheck (float angle, float step);
     bool mutx, mutx_str;
     bool sendInProgress_ = false;
+
+    int previousTabIndex_ = 0;
+    bool settingsUnlocked_ = false;
+
 
     QStringList Random(int n);
     void ParamAngles();

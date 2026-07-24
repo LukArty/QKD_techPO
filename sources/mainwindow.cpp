@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     mutx=false;
 
     QString port;
-    port = readPortFromIni("config.ini");
+    port = readPortFromIni("./config.ini");
     if (port.isEmpty()) {
         port = "COM3";
     }
@@ -53,7 +53,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui ->InitByButtons->setEnabled(false);
     ui ->InitBut->setEnabled(false);
     ui ->Timer_->setEnabled(false);
-    ui->tabWidget->setTabEnabled(3,false);
+    //ui->tabWidget->setTabEnabled(3,false);
+    connect(ui->tabWidget, &QTabWidget::currentChanged,
+            this, &MainWindow::onTabChanged);
 
     ///Значения по умолчанию
     ui->radio_ElectionPD->setDown(true);
@@ -100,6 +102,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->test_protocol.setFileName("./test_protocol.txt");
     ui->Console_2->setReadOnly(false);  // Разблокировать
+
+    // Инициализируем окно Adminlogin
+    adm = new Adminlogin();
+    adm->Adminlogin_init(&stand_);
+    connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
+    previousTabIndex_ = ui->tabWidget->currentIndex();
 
     connect(ui->protocol_name, QOverload<int>::of(&QComboBox::currentIndexChanged),
         [this](int index) {
@@ -615,7 +624,6 @@ void MainWindow::on_SetTimeoutBut_clicked()
     response = stand_.SetTimeout(value_.toUInt());
     if(response.errorCode_ == 0){
         ui->Console_2->append("Выполнена команда SetTimeout");
-        ui->Console_2->append("Установленные значения:");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
         ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
     }
@@ -634,7 +642,6 @@ void MainWindow::on_GetTimeoutBut_clicked()
     response = stand_.GetTimeout();
     if(response.errorCode_ == 0){
         ui->Console_2->append("Выполнена команда GetTimeout");
-        ui->Console_2->append("Полученные значения:");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
         ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
     }
@@ -935,9 +942,9 @@ void MainWindow::on_PulseLaser_clicked()
         while (Flag_ == false)
         {
             // вкл/выкл лазера
-            if(cout%2){response = stand_.SetLaserState(1); QThread::msleep(200);}
+            if(cout%2){response = stand_.SetLaserState(1); QThread::msleep(2);}
             else{response = stand_.SetLaserState(0);}
-            QThread::msleep(200);
+            QThread::msleep(2);
             response1 = stand_.GetSignalLevels();
             x.push_back(cout++);
             y1_ = response1.signal_.h_;
@@ -3176,8 +3183,9 @@ void MainWindow::on_CloseConfigMode_clicked()
     ui ->Console_2 -> append("Выход из режима API");
     ui ->Console_2 ->clear();
     ui ->password->clear();
-    ui->tabWidget->setTabEnabled(3,false);
     ui->radio_admin->setChecked(false);
+    ui->tabWidget->setCurrentIndex(0);
+    settingsUnlocked_ = false;
 
 }
 
@@ -3220,8 +3228,17 @@ void MainWindow::on_SetComPortName_clicked()
         ui ->Console_2 -> append("Не указан порт");
     }
     else {
+        QSettings settings("./config.ini", QSettings::IniFormat);
+        settings.beginGroup("Settings");
+        settings.setValue("port", port);
+        settings.endGroup();
+
+        settings.sync();
+
+
         stand_.SetComPortName(port.toStdString().c_str());
         ui ->Console_2 -> append("Порт установлен");
+        ui->Console_2->append("Порт сохранен в config.ini: " + port);
     }
 }
 
@@ -3275,7 +3292,10 @@ void MainWindow::on_radio_admin_clicked()
     }
 }
 void MainWindow::Flag_admin(){
-    ui->tabWidget->setTabEnabled(3,true);
+    settingsUnlocked_ = true;
+    ui->tabWidget->setTabEnabled(3, true);
+    ui->tabWidget->setCurrentIndex(3);
+    previousTabIndex_ = 3;
 }
 
 /// @brief Открытие окна с гистограммами
@@ -3363,3 +3383,29 @@ void MainWindow::on_ReadEEPROM_clicked()
     }
 }
 
+void MainWindow::onTabChanged(int index)
+{
+    const int protectedTabIndex = 3;
+
+    if (index != protectedTabIndex) {
+        previousTabIndex_ = index;
+        return;
+    }
+
+    if (settingsUnlocked_) {
+        previousTabIndex_ = index;
+        ui->tabWidget->setCurrentIndex(3);
+        ui->radio_admin->setChecked(true);
+        return;
+    }
+
+    ui->tabWidget->blockSignals(true);
+    ui->tabWidget->setCurrentIndex(previousTabIndex_);
+    ui->tabWidget->blockSignals(false);
+
+    if (adm) {
+        adm->show();
+        adm->raise();
+        adm->activateWindow();
+    }
+}

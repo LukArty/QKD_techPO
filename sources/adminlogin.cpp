@@ -29,6 +29,7 @@ void Adminlogin::on_Login_clicked()
     if((response1.major_ == 1 && response1.minor_ == 0 && response1.micro_ == 0)||(response1.major_ == 1 && response1.minor_ == 2 && response1.micro_ == 0) || (response1.major_ == 0 && response1.minor_ == 0 && response1.micro_ == 0)){ //для протокола 1.0 и 1.2
         if(password == "admin"){
             emit firstWindow();
+            ui->Password->clear();
             close();
         }
         else{                 QMessageBox::critical(this,"Ошибка!",
@@ -42,6 +43,7 @@ void Adminlogin::on_Login_clicked()
         if(response.errorCode_==0){
             if(response.adcResponse_== 1){
                 emit firstWindow();
+                ui->Password->clear();
                 close();
             }
             else{                 QMessageBox::critical(this,"Ошибка!",

@@ -15,16 +15,14 @@
 #include <ctime>
 #include <string>
 #include <cstring>
-#include <fstream>
 #include <stdarg.h>
-#include <iomanip>
-#include <functional>
-#include <iostream>
 #include <vector>
 // #include <algorithm>
 
 #include <ftd2xx.h>
 #include <bootloader.h>
+#include <logger.h>
+
 
 
 //uncommit this define to disable logging for COM exchange
@@ -40,6 +38,7 @@ class Conserial : public AbstractHardwareApi
 {
 public:
     enum class ErrorCode : uint16_t {
+        // Ошибки общения с АП
         Success         = 0,    // Успешное выполнение запроса
         NoConnection    = 1,    // Отсутствует соединение со стендом
         InvalidResponse = 2,    // Количество принятых параметров превышает допустимый предел
@@ -57,11 +56,13 @@ public:
         FlashWriteFailed      = 12,  // Ошибка записи
         FlashDataEmpty        = 13,  // Нет данных в мк
 
+        // Другие ошибки
+        InternalError = 200, // Внутренние ошибки
+
     };
 
-    Conserial();
-    Conserial(string port);
-       void FindProtocolVersion();
+    Conserial(string port = "");
+    void FindProtocolVersion();
     virtual ~Conserial();
     /*!
     @brief Функция инициализации стенда
@@ -247,7 +248,6 @@ public:
     @return 0 - штатный режим, 1 - технологический
     */
     uint16_t GetCurrentMode();
-
     /*!
     @brief Функция получения текущей версии протокола общения
     @return {X,Y,Z}
@@ -266,7 +266,7 @@ public:
     ///@brief Получение порта подключения стенда
     std::string GetComPortName()const;
     ///@brief Установка порта подключения стенда
-    void SetComPortName(const char* port);
+    void SetComPortName(const std::string& port);
 
     static std::vector<std::string> GetFTDIComPorts();
 
@@ -304,7 +304,7 @@ private:
         SLevels<hwe::adc_t> startLightNoises_= {0,0};
         WAngles<hwe::angle_t> startPlatesAngles_ = {0,0,0,0};
         SLevels<hwe::adc_t> maxSignalLevels_ = {0,0};
-        uint32_t timeoutTime_ = 2; //ms
+        uint32_t timeoutTime_ = 2000; //ms
         angle_t rotateStep_ = 0.3;
         adc_t maxLaserPower_ = 100;
         adc_t maxPayloadSize = 30;
@@ -323,13 +323,11 @@ private:
     versionProtocol versionProtocol = {1, 5};
     Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
 
-
-
-
-    ce::ceSerial com_; // Обект класса для соединения с МК
+    std::unique_ptr<ce::ceSerial> com_;; // УКАЗАТЕЛЬ класса для соединения с МК
 
     /// @brief Подсчет CRC
     uint8_t Crc8(uint8_t *pcBlock, uint8_t len);
+
     /// @brief Чтение пакетов с UART
     std::vector<uint8_t> ReadPacket();
 
@@ -366,91 +364,45 @@ private:
     /// @brief Проверка подключения к АП
     bool StandIsConected ();
 
-
-
-
+    std::vector<uint8_t> PreparePasswordBytes(const string& passwd);
 
     template<typename... Args>
     std::vector<uint8_t> PackToBytes(Args... args)
     {
         std::vector<uint8_t> bytes;
 
-        // Проверяем, есть ли аргументы
-        if constexpr (sizeof...(args) > 0) {
-            // считаем общий размер всех аргументов
-            bytes.reserve((sizeof(args) + ...));
+        auto push = [&](auto value)
+        {
+            using T = std::decay_t<decltype(value)>;
 
-            auto push = [&](auto value)
-            {
-                using T = decltype(value);
+            // Проверяем, является ли тип вектором
+            if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+                // Если это вектор байт - просто копируем его
+                bytes.insert(bytes.end(), value.begin(), value.end());
+            }
+            else if constexpr (std::is_same_v<T, std::vector<char>>) {
+                // Если вектор char - конвертируем в uint8_t
+                for (auto c : value) {
+                    bytes.push_back(static_cast<uint8_t>(c));
+                }
+            }
+            else if constexpr (std::is_arithmetic_v<T>) {
                 using U = std::make_unsigned_t<T>;
-
                 U v = static_cast<U>(value);
 
-                // записываем байты от старшего к младшему (Big Endian)
-                for (int i = sizeof(U) - 1; i >= 0; --i)
-                {
+                // Записываем байты от старшего к младшему (Big Endian)
+                for (int i = sizeof(U) - 1; i >= 0; --i) {
                     bytes.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
                 }
-            };
-
-            (push(args), ...);
-        }
-
-        return bytes;
-    }
-    std::vector<uint8_t> PackToBytes(const std::vector<uint8_t>& vec);
-    std::vector<uint8_t> PreparePasswordBytes(const string& passwd);
-
-
-//Loging
-#define LOG_FUNCTION_CALL(...) logFunctionCall(__FUNCTION__, ##__VA_ARGS__)
-    std::ofstream out_;
-    void logOut(string str);
-    void logOutLine(std::string str);
-    const string currentDateTime();
-    void logOutUart(const UartResponse &pack);
-    void logNameFunction(const char * func);
-
-    template<typename... Args>
-    void LogParametersHex(Args... args) {
-        std::stringstream ss;
-        ss << std::hex << std::setfill('0'); // Устанавливаем hex формат
-
-        auto push = [&](auto value) {
-            using T = decltype(value);
-            if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, unsigned char>) {
-                // Для uint8_t выводим как 2-значное hex число
-                ss << "0x" << std::setw(2) << static_cast<int>(value);
-            } else if constexpr (std::is_same_v<T, char>) {
-                // Для char тоже выводим как hex
-                ss << "0x" << std::setw(2) << static_cast<int>(static_cast<unsigned char>(value));
-            } else {
-                // Для остальных типов
-                ss << "0x" << std::setw(sizeof(T) * 2) << static_cast<uint64_t>(value);
             }
-            ss << " ";
+            else {
+                // Для остальных типов - пробуем привести к строке
+                static_assert(sizeof(T) == 0, "Невозможно преобразовать в байт массив");
+            }
         };
 
         (push(args), ...);
-
-        logOutLine(ss.str());
-    }
-
-    template<typename... Args>
-    void logFunctionCall(const char* funcName, Args... args) {
-        logOut("______________________________________________________________");
-        logOut(funcName);
-        logOut("Количество параметров: " + std::to_string(sizeof...(args)));
-
-        if constexpr (sizeof...(args) > 0) {
-            logOut("Параметры:");
-            std::stringstream ss;
-            ((ss << "  " << args), ...);
-            logOut(ss.str());
-        }
-
-        logOut("______________________________________________________________");
+        return bytes;
     }
 
     //Таблица для подсчёта CRC
@@ -529,7 +481,7 @@ private:
     template<typename ResponseType>
     bool CheckStandPremmissions(ResponseType &response){
         if(standOptions.premissions!=1){
-            logOut("Отказано в доступе (недостаточно прав)");
+            LOG_WARNING("Отказано в доступе (недостаточно прав)");
             response.errorCode_ = static_cast<uint16_t>(ErrorCode::AccessDenied);
             return false;
         }
@@ -540,9 +492,7 @@ private:
     template<typename ResponseType, typename... Args>
     ResponseType SendCommand(const std::string& cmd, Args... args) {
 
-        logOut("SendCommand: " + cmd);
-
-
+        LOG_DEBUG("Отправленная команда: " + cmd);
 
         ResponseType response{};
         auto bytes = PackToBytes(args...);
@@ -573,10 +523,10 @@ private:
         return response;
     }
 
-    // Упрощенный FillResponse - только заполнение ответа, без storageField
+    // Упрощенный FillResponse - только заполнение ответа
     template<typename ResponseType>
     void FillResponse(ResponseType& resp, const UartResponse& pack) {
-        logOut("FillResponse: pack.parameters_.size() = " + to_string(pack.parameters_.size()));
+        LOG_DEBUG("FillResponse: pack.parameters_.size() = " + to_string(pack.parameters_.size()));
 
         if constexpr (std::is_same_v<ResponseType, api::AngleResponse>) {
             if (pack.parameters_.at(0) > 0)
