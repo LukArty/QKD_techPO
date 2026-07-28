@@ -99,9 +99,9 @@
        <widget class="QPushButton" name="GetRotateStepBut">
         <property name="geometry">
          <rect>
-          <x>380</x>
-          <y>431</y>
-          <width>141</width>
+          <x>420</x>
+          <y>390</y>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -234,9 +234,9 @@
        <widget class="QPushButton" name="SetPlateAngleBut">
         <property name="geometry">
          <rect>
-          <x>200</x>
+          <x>221</x>
           <y>309</y>
-          <width>141</width>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -260,9 +260,9 @@
        <widget class="QPushButton" name="ReadIni">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>431</y>
-          <width>141</width>
+          <x>420</x>
+          <y>350</y>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -317,9 +317,9 @@
        <widget class="QPushButton" name="WriteIni">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>371</y>
-          <width>141</width>
+          <x>221</x>
+          <y>350</y>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -349,9 +349,9 @@
        <widget class="QPushButton" name="GetCurPlatesAnglesBut">
         <property name="geometry">
          <rect>
-          <x>380</x>
-          <y>371</y>
-          <width>141</width>
+          <x>221</x>
+          <y>390</y>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -735,9 +735,9 @@ color: black;
        <widget class="QPushButton" name="PlateAngle">
         <property name="geometry">
          <rect>
-          <x>380</x>
+          <x>420</x>
           <y>309</y>
-          <width>141</width>
+          <width>151</width>
           <height>26</height>
          </rect>
         </property>
@@ -748,8 +748,8 @@ color: black;
        <widget class="QSpinBox" name="NumberAngle">
         <property name="geometry">
          <rect>
-          <x>530</x>
-          <y>309</y>
+          <x>580</x>
+          <y>310</y>
           <width>44</width>
           <height>26</height>
          </rect>
@@ -764,9 +764,9 @@ color: black;
        <widget class="QGroupBox" name="groupBox_5">
         <property name="geometry">
          <rect>
-          <x>620</x>
+          <x>630</x>
           <y>510</y>
-          <width>551</width>
+          <width>541</width>
           <height>111</height>
          </rect>
         </property>
@@ -964,9 +964,9 @@ color: black;
         </property>
         <property name="geometry">
          <rect>
-          <x>621</x>
+          <x>631</x>
           <y>10</y>
-          <width>551</width>
+          <width>541</width>
           <height>481</height>
          </rect>
         </property>
@@ -1053,6 +1053,24 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="text">
          <string>Состояние АП</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="ReadBaseAngles">
+        <property name="geometry">
+         <rect>
+          <x>221</x>
+          <y>430</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Чтение базовых углов</string>
         </property>
        </widget>
       </widget>
@@ -3086,11 +3104,16 @@ QProgressBar::chunk {
        <widget class="QPushButton" name="CreateConfigSecret">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>60</y>
+          <x>499</x>
+          <y>16</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Задать пароль</string>
@@ -3099,21 +3122,31 @@ QProgressBar::chunk {
        <widget class="QLineEdit" name="password">
         <property name="geometry">
          <rect>
-          <x>80</x>
+          <x>77</x>
           <y>16</y>
-          <width>411</width>
-          <height>30</height>
+          <width>410</width>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
        </widget>
        <widget class="QPushButton" name="OpenConfigMode">
         <property name="geometry">
          <rect>
-          <x>170</x>
+          <x>10</x>
           <y>60</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Вход в API</string>
@@ -3124,8 +3157,8 @@ QProgressBar::chunk {
          <rect>
           <x>10</x>
           <y>16</y>
-          <width>101</width>
-          <height>30</height>
+          <width>71</width>
+          <height>26</height>
          </rect>
         </property>
         <property name="font">
@@ -3140,11 +3173,16 @@ QProgressBar::chunk {
        <widget class="QPushButton" name="CloseConfigMode">
         <property name="geometry">
          <rect>
-          <x>340</x>
+          <x>173</x>
           <y>60</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Выход из API</string>
@@ -3156,10 +3194,10 @@ QProgressBar::chunk {
         </property>
         <property name="geometry">
          <rect>
-          <x>510</x>
-          <y>20</y>
-          <width>661</width>
-          <height>191</height>
+          <x>670</x>
+          <y>16</y>
+          <width>501</width>
+          <height>331</height>
          </rect>
         </property>
         <property name="sizePolicy">
@@ -3218,11 +3256,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="GetProtocolVersion">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>100</y>
+          <x>336</x>
+          <y>60</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Версия протокола</string>
@@ -3231,11 +3274,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="FirmwareUpdate">
         <property name="geometry">
          <rect>
-          <x>510</x>
-          <y>240</y>
+          <x>499</x>
+          <y>120</y>
           <width>151</width>
-          <height>30</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Прошивка стенда</string>
@@ -3244,11 +3292,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="GetProtocolFirmwareVersion">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>100</y>
-          <width>151</width>
-          <height>31</height>
+          <x>499</x>
+          <y>60</y>
+          <width>150</width>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Версия прошивки</string>
@@ -3257,11 +3310,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="GetMaxPayloadSize">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>350</y>
+          <x>336</x>
+          <y>240</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Кол-во байт</string>
@@ -3270,11 +3328,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="GetComPortName">
         <property name="geometry">
          <rect>
-          <x>340</x>
-          <y>140</y>
+          <x>336</x>
+          <y>280</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Получение порта</string>
@@ -3284,10 +3347,15 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>140</y>
+          <y>280</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Установка порта</string>
@@ -3296,31 +3364,46 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QLineEdit" name="Port">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>140</y>
+          <x>173</x>
+          <y>280</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
        </widget>
        <widget class="QLineEdit" name="File_path">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>240</y>
-          <width>321</width>
-          <height>30</height>
+          <x>173</x>
+          <y>120</y>
+          <width>231</width>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
        </widget>
        <widget class="QPushButton" name="GetTimeoutBut">
         <property name="geometry">
          <rect>
-          <x>340</x>
-          <y>180</y>
+          <x>336</x>
+          <y>321</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Значения тайм-аута</string>
@@ -3330,10 +3413,15 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>180</y>
+          <y>321</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Установ. тайм-аут</string>
@@ -3342,11 +3430,16 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QLineEdit" name="TimeoutValue">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>180</y>
+          <x>173</x>
+          <y>321</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>0</string>
@@ -3358,8 +3451,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QLabel" name="label_75">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>220</y>
+          <x>173</x>
+          <y>100</y>
           <width>41</width>
           <height>16</height>
          </rect>
@@ -3377,10 +3470,15 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>240</y>
+          <y>120</y>
           <width>151</width>
-          <height>30</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Выбор файла</string>
@@ -3390,10 +3488,15 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>300</y>
+          <y>180</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Запись в ПЗУ </string>
@@ -3402,28 +3505,38 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QLineEdit" name="Address">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>300</y>
+          <x>173</x>
+          <y>180</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
        </widget>
        <widget class="QLineEdit" name="Value">
         <property name="geometry">
          <rect>
-          <x>340</x>
-          <y>300</y>
+          <x>336</x>
+          <y>180</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
        </widget>
        <widget class="QLabel" name="label_76">
         <property name="geometry">
          <rect>
           <x>173</x>
-          <y>280</y>
+          <y>160</y>
           <width>144</width>
           <height>16</height>
          </rect>
@@ -3440,8 +3553,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QLabel" name="label_77">
         <property name="geometry">
          <rect>
-          <x>340</x>
-          <y>280</y>
+          <x>336</x>
+          <y>160</y>
           <width>144</width>
           <height>16</height>
          </rect>
@@ -3458,15 +3571,310 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <widget class="QPushButton" name="ReadEEPROM">
         <property name="geometry">
          <rect>
-          <x>510</x>
-          <y>300</y>
+          <x>499</x>
+          <y>180</y>
           <width>151</width>
-          <height>31</height>
+          <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Запрос из ПЗУ </string>
         </property>
+       </widget>
+       <widget class="QPushButton" name="SetLaserPowerBut_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>240</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Установ. мощности</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="LaserPowerValue_2">
+        <property name="geometry">
+         <rect>
+          <x>173</x>
+          <y>240</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+        <property name="maxLength">
+         <number>3</number>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_78">
+        <property name="geometry">
+         <rect>
+          <x>173</x>
+          <y>220</y>
+          <width>144</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Значение в кодах АЦП:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_79">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>360</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Параметры углов:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="InitAngles1_2">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>390</y>
+          <width>125</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="InitAngles3_2">
+        <property name="geometry">
+         <rect>
+          <x>193</x>
+          <y>390</y>
+          <width>125</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_38">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>390</y>
+          <width>20</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>1:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_39">
+        <property name="geometry">
+         <rect>
+          <x>173</x>
+          <y>430</y>
+          <width>20</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>4:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="InitAngles2_2">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>430</y>
+          <width>125</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_40">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>430</y>
+          <width>20</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>2:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_41">
+        <property name="geometry">
+         <rect>
+          <x>173</x>
+          <y>390</y>
+          <width>20</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>3:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="InitAngles4_2">
+        <property name="geometry">
+         <rect>
+          <x>193</x>
+          <y>430</y>
+          <width>125</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="UpdateBaseAngles">
+        <property name="geometry">
+         <rect>
+          <x>336</x>
+          <y>390</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Запись базовых углов</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="ReadBaseAngles_2">
+        <property name="geometry">
+         <rect>
+          <x>336</x>
+          <y>430</y>
+          <width>151</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Чтение базовых углов</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="Type_platform">
+        <property name="geometry">
+         <rect>
+          <x>416</x>
+          <y>120</y>
+          <width>71</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <item>
+         <property name="text">
+          <string>STM</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Arduino</string>
+         </property>
+        </item>
        </widget>
       </widget>
      </widget>
@@ -3479,7 +3887,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <x>0</x>
      <y>0</y>
      <width>1213</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

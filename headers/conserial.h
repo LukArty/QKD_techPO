@@ -32,6 +32,77 @@ using namespace std;
 namespace hwe
 {
 
+// Общая структура версии
+template<typename T>
+struct Version {
+    T major = 0;
+    T minor = 0;
+    T micro = 0;
+
+    Version() = default;
+    Version(T maj, T min) : major(maj), minor(min), micro(0) {}
+    Version(T maj, T min, T mic) : major(maj), minor(min), micro(mic) {}
+
+    // Методы сравнения
+    bool operator==(const Version& other) const {
+        return major == other.major
+            && minor == other.minor
+            && micro == other.micro;
+    }
+
+    bool operator<(const Version& other) const {
+        if (major < other.major) return true;
+        if (major > other.major) return false;
+        if (minor < other.minor) return true;
+        if (minor > other.minor) return false;
+        return micro < other.micro;
+    }
+    bool operator>(const Version& other) const {
+        if (major > other.major) return true;
+        if (major < other.major) return false;
+        if (minor > other.minor) return true;
+        if (minor < other.minor) return false;
+        return micro > other.micro;
+    }
+
+    // Строковое представление
+    std::string toString() const {
+        if (micro == 0) {
+            return std::to_string(major) + "." + std::to_string(minor);
+        }
+        return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(micro);
+    }
+};
+
+// Класс протокола с использованием общей версии
+class ProtocolVersion {
+public:
+    enum Value {
+        Unknown = 1,
+        V1_0 = 2,
+        V1_2 = 3,
+        V1_5 = 4
+    };
+
+    ProtocolVersion(Value value = Value::V1_5) : value_(value) {}
+
+    Value getValue() const { return value_; }
+    operator Value() const { return value_; }
+
+    Version <uint16_t> getVersion() const {
+        switch(value_) {
+        case Unknown: return {0, 0};
+        case V1_0:    return {1, 0};
+        case V1_2:    return {1, 2};
+        case V1_5:    return {1, 5};
+        default:      return {0, 0};
+        }
+    }
+
+private:
+    Value value_;
+};
+
 
 /// @brief Интерфейс для взаимодействия с аппаратной платформой.
 class Conserial : public AbstractHardwareApi
@@ -59,6 +130,11 @@ public:
         // Другие ошибки
         InternalError = 200, // Внутренние ошибки
 
+    };
+
+    enum class BoardType : uint16_t{
+        Arduino = 0,
+        STM = 1
     };
 
     Conserial(string port = "");
@@ -114,6 +190,12 @@ public:
     @return Мощность лазера и код ошибки
     */
     virtual api::AdcResponse SetLaserPower(adc_t power);
+    /*!
+    @brief Функция установки мощности лазера в кодах ЦАП
+    @param [in] power - Мощность лазера в кодах ЦАП
+    @return Мощность лазера в кодах ЦАП и код ошибки
+    */
+    virtual api::AdcResponse DAC_SetLaserPower(adc_t power);
     /*!
     @brief Функция установки углов поворота пластин
     @param [in] angles - Углы поворотов волновых пластин для передачи сообщения.
@@ -227,6 +309,16 @@ public:
     */
     api::AdcResponse FirmwareUpdate (string path);
     /*!
+    @brief Функция обновления прошивки аппаратной платформы
+    @param [in] path - Путь до файла прошивки
+    */
+    api::AdcResponse FirmwareUpdate_Arduino (string path);
+    /*!
+    @brief Функция обновления прошивки аппаратной платформы
+    @param [in] path - Путь до файла прошивки
+    */
+    api::AdcResponse FirmwareUpdate_STM (string path);
+    /*!
     @brief Функция задания пароля для входа в технологический режим
     @param [in] passwd - Пароль для входа в тех. режим
     @return Статус операции и код ошибки
@@ -267,34 +359,38 @@ public:
     std::string GetComPortName()const;
     ///@brief Установка порта подключения стенда
     void SetComPortName(const std::string& port);
+    ///@brief Установка порта подключения стенда
+    void SetBoardType(BoardType type);
+
 
     static std::vector<std::string> GetFTDIComPorts();
 
 private:
 
-    bool firstOpenFlag = 1;
     /// @breif Значение для ожидания ответа при инициализации
     const uint32_t INIT_TIMEOUT_TIME = 900000;
 
-    enum class VersionProtocol { unknown = 1,
-                                 protocol_1_0 = 2,
-                                 protocol_1_2 = 3,
-                                 protocol_1_5 = 4 };
-    VersionProtocol version_protocol {VersionProtocol::protocol_1_5};
 
-    /// @brief Структура версии прошивки АП
-    struct versionFirmware{
-        uint16_t major = 0;
-        uint16_t minor = 0;
-        uint16_t micro = 0;
-    };
-    /// @brief Структура версии протокола
-    struct versionProtocol{
-        uint16_t version = 0;
-        uint16_t subversion = 0;
-    };
+    // enum class VersionProtocol  { unknown = 1,
+    //                              protocol_1_0 = 2,
+    //                              protocol_1_2 = 3,
+    //                              protocol_1_5 = 4 };
+    // VersionProtocol version_protocol {VersionProtocol::protocol_1_5};
+
+    // /// @brief Структура версии прошивки АП
+    // struct versionFirmware{
+    //     uint16_t major = 0;
+    //     uint16_t minor = 0;
+    //     uint16_t micro = 0;
+    // };
+    // /// @brief Структура версии протокола
+    // struct versionProtocol{
+    //     uint16_t version = 0;
+    //     uint16_t subversion = 0;
+    // };
     /// @brief Структура для хранения текущей конфигурации стенда
     struct StandOptions{
+        BoardType boardType = BoardType::STM;
         adc_t premissions = 0;
         adc_t laserState_ = 0;
         adc_t laserPower_ = 0;
@@ -319,9 +415,11 @@ private:
     };
 
     //Конфигурация
-    versionFirmware versionFirmware = {1,0,0};
-    versionProtocol versionProtocol = {1, 5};
+    ProtocolVersion v_protocol;
+    Version<uint16_t> versionFirmware = {1,0,0};
+
     Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
+
 
     std::unique_ptr<ce::ceSerial> com_;; // УКАЗАТЕЛЬ класса для соединения с МК
 
@@ -455,6 +553,7 @@ private:
         {"SendMessage", 0x42 }, //B
         {"SetLaserState", 0x43 }, //C
         {"SetLaserPower", 0x44 }, //D
+        {"DAC_SetLaserPower", 0x45}, //E
         {"SetTimeout", 0x46 },    //F
         {"GetHardwareState", 0x47 },  //G
         {"GetLaserState",  0x48}, //H
@@ -614,6 +713,9 @@ private:
         return 0;
     }
 };
+
+
+
 
 } //namespace
 #endif // CONSERIAL_H

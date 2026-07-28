@@ -183,6 +183,14 @@ private slots:
 
     void onTabChanged(int index);
 
+    void on_SetLaserPowerBut_2_clicked();
+
+    void on_UpdateBaseAngles_clicked();
+
+    void on_ReadBaseAngles_clicked();
+
+    void on_ReadBaseAngles_2_clicked();
+
 private:
     QFile test_protocol; //файл для записи результатов тестов
     QTimer *timer, *timer2; //переменые для таймера на вкладке Мониторинг
@@ -193,6 +201,7 @@ private:
 
     int previousTabIndex_ = 0;
     bool settingsUnlocked_ = false;
+    QString message;
 
 
     QStringList Random(int n);

@@ -7,9 +7,6 @@
 #include <conserial.h>
 
 
-// #define ARDUINO
-#define STM
-
 #define SERIAL_LOG
 
 namespace hwe
@@ -74,7 +71,11 @@ void Conserial::SetComPortName(const std::string& port)
 
     // Устанавливаем новый порт
     if (!port.empty()) {
-        com_->SetPort("\\\\.\\" + port);
+        #ifdef CE_WINDOWS
+            com_->SetPort("\\\\.\\" + port);
+        #else
+            com_->SetPort(port);
+        #endif
         LOG_DEBUG("Установлен порт: ", port);
     } else {
         // Если порт не указан - используем текущий
@@ -97,7 +98,6 @@ void Conserial::SetComPortName(const std::string& port)
     }
 
 }
-
 
 Conserial::~Conserial(){
     if (com_ && com_->IsOpened()) {
@@ -160,7 +160,7 @@ api::InitResponse Conserial::InitByPD()
         standOptions.maxLaserPower_ = response.maxLaserPower_;
     }
 
-    if(static_cast<int>(version_protocol)>3){
+    if(v_protocol>ProtocolVersion::V1_2){ //!!!
         standOptions.timeoutTime_ = GetTimeout().adcResponse_;
     }
     return response; // Возвращаем сформированный ответ
@@ -220,19 +220,20 @@ api::AdcResponse Conserial::SetTimeout(uint32_t timeout_ms)
 {
     LOG_FUNCTION_CALL(timeout_ms, "мс" );
     api::AdcResponse response = {};
-    if(timeout_ms >= 1000 && timeout_ms <65000) {
-        response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
-        return response;
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        if(timeout_ms >= 1000 && timeout_ms <65000) {
+            response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
+            return response;
+        }
+
+        uint16_t time_s = timeout_ms;
+
+        response = SendCommand<api::AdcResponse>("SetTimeout", time_s);
+
+        if(response.errorCode_ == 0) {
+            standOptions.timeoutTime_ = response.adcResponse_;
+        }
     }
-
-    uint16_t time_s = timeout_ms;
-
-    response = SendCommand<api::AdcResponse>("SetTimeout", time_s);
-
-    if(response.errorCode_ == 0) {
-        standOptions.timeoutTime_ = response.adcResponse_;
-    }
-
     return response;
 }
 
@@ -270,6 +271,21 @@ api::AdcResponse Conserial::SetLaserPower(adc_t power)
         standOptions.laserPower_ = response.adcResponse_;
     }
 
+    return response;
+}
+
+api::AdcResponse Conserial::DAC_SetLaserPower(adc_t power)
+{
+    LOG_FUNCTION_CALL(power);
+    api::AdcResponse response = {};
+    if (CheckStandPremmissions<api::AdcResponse>(response)){
+        if(  power > 4095) {
+            response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
+            return response;
+        }
+
+        response = SendCommand<api::AdcResponse>("DAC_SetLaserPower", power);
+    }
     return response;
 }
 
@@ -580,14 +596,14 @@ uint16_t Conserial::GetMaxPayloadSize()
 api::versionProtocolResponse Conserial::GetProtocolVersion (){
     LOG_FUNCTION_CALL();
 
-    switch (version_protocol) {
-    case VersionProtocol::unknown:
+    switch (v_protocol) {
+    case ProtocolVersion::Unknown:
         return {0,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
-    case VersionProtocol::protocol_1_2:
+    case ProtocolVersion::V1_2:
         return  {1,2, static_cast<uint16_t>(ErrorCode::Success)};
         break;
-    case VersionProtocol::protocol_1_0:
+    case ProtocolVersion::V1_0:
         return  {1,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
     default:
@@ -598,14 +614,14 @@ api::versionProtocolResponse Conserial::GetProtocolVersion (){
 
 api::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
     LOG_FUNCTION_CALL();
-    switch (version_protocol) {
-    case VersionProtocol::unknown:
+    switch (v_protocol) {
+    case ProtocolVersion::Unknown:
         return {0,0,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
-    case VersionProtocol::protocol_1_2:
+    case ProtocolVersion::V1_2:
         return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
-    case VersionProtocol::protocol_1_0:
+    case ProtocolVersion::V1_0:
         return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
     default:
@@ -614,10 +630,30 @@ api::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
     }
 }
 
+void Conserial::SetBoardType(BoardType type){
+    standOptions.boardType = type;
+}
 
-#ifdef STM
-#undef ARDUINO
-api::AdcResponse Conserial::FirmwareUpdate(std::string path)
+api::AdcResponse Conserial::FirmwareUpdate(std::string path){
+    LOG_FUNCTION_CALL();
+
+    api::AdcResponse response = {};
+    switch (standOptions.boardType) {
+    case BoardType::Arduino:
+        response = FirmwareUpdate_Arduino(path);
+        break;
+    case BoardType::STM:
+        response = FirmwareUpdate_STM(path);
+        break;
+    default:
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::AccessDenied);
+        break;
+    }
+    return response;
+}
+
+
+api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
 {
     LOG_FUNCTION_CALL();
 
@@ -734,21 +770,68 @@ api::AdcResponse Conserial::FirmwareUpdate(std::string path)
     }
     return {1, static_cast<uint16_t>(ErrorCode::Success)};
 }
-#endif
-#ifdef ARDUINO
-void Conserial::FirmwareUpdate (string path){
-    logOut(__FUNCTION__);
-    api::AdcResponse response = {};
-    if (CheckStandPremmissions<api::AdcResponse>(response)){
-        string command ="avrdude -v -p atmega328p -c arduino -P " + com_.GetPort() +" -b 115200 -D -U flash:w:\"" + path + "\":i";
-        const char * mainCommand= command.c_str();
-        if(system(mainCommand)){
-            FindProtocolVersion();
+
+
+api::AdcResponse Conserial::FirmwareUpdate_Arduino(string path){
+    LOG_FUNCTION_CALL();
+    api::AdcResponse response{};
+
+    if (!CheckStandPremmissions<api::AdcResponse>(response))
+        return response;
+
+    const std::string port = com_->GetPort();
+
+    auto flash = [&](int baudRate) -> ErrorCode
+    {
+        std::string command =
+            "avrdude -v "
+            "-p atmega328p "
+            "-c arduino "
+            "-P " + port +
+            " -b " + std::to_string(baudRate) +
+            " -D "
+            "-U flash:w:\"" + path + "\":i";
+
+        LOG_DEBUG("Executing: " + command);
+
+        int result = system(command.c_str());
+
+        if (result == 0)
+        {
+            LOG_INFO("Успешная прошивка стенда (" + std::to_string(baudRate) + " baud).");
+            return ErrorCode::Success;
         }
+
+        LOG_CRITICAL("Upload failed (" + std::to_string(baudRate) +
+               " baud), exit code = " + std::to_string(result));
+
+        return ErrorCode::BootloaderNoResponse;
+    };
+
+    ErrorCode success = ErrorCode::BootloaderNoResponse;
+
+    // Сначала пробуем новый загрузчик
+    success = flash(115200);
+
+    // Если не получилось — пробуем старый
+    if (success != ErrorCode::Success)
+    {
+        LOG_DEBUG("Попытка прошивки через старый загрузчик...");
+        success = flash(57600);
     }
-    logOut("\n");
+    switch (success) {
+    case ErrorCode::Success:
+        FindProtocolVersion();
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::Success);
+        break;
+    default:
+        response.errorCode_ = static_cast<uint16_t>(ErrorCode::BootloaderNoResponse);
+        LOG_ERROR("Невозможно прошить стенд. Загрузчик не отвечает");
+        break;
+    }
+    return response;
 }
-#endif
+
 
 
 
@@ -757,42 +840,25 @@ void Conserial::FindProtocolVersion(){
     Logger::instance().logOut("\t  *********************************");
     LOG_FUNCTION_CALL();
     int notFound = 1;
-    version_protocol = VersionProtocol::protocol_1_5;
+    v_protocol = ProtocolVersion::V1_5;
 
-    while(notFound !=0 && !(version_protocol == VersionProtocol::unknown)){
+    while(notFound !=0 && !(v_protocol == ProtocolVersion::Unknown)){
         notFound = GetLaserState().errorCode_;
         if(notFound !=0){
-            switch (version_protocol) {
-            case VersionProtocol::protocol_1_5:
-                version_protocol = VersionProtocol::protocol_1_2;
+            switch (v_protocol) {
+            case ProtocolVersion::V1_5:
+                v_protocol = ProtocolVersion::V1_2;
                 break;
-            case VersionProtocol::protocol_1_2:
-                version_protocol = VersionProtocol::protocol_1_0;
+            case ProtocolVersion::V1_2:
+                v_protocol = ProtocolVersion::V1_0;
                 break;
             default:
-                version_protocol = VersionProtocol::unknown;
+                v_protocol = ProtocolVersion::Unknown;
                 break;
             }
         }
     }
-    switch (version_protocol) {
-    case VersionProtocol::protocol_1_5:
-        versionProtocol  = {1, 5};
-        LOG_INFO("Version: 1.5");
-        break;
-    case VersionProtocol::protocol_1_2:
-        versionProtocol  = {1, 2};
-        LOG_INFO("Version: 1.2");
-        break;
-    case VersionProtocol::protocol_1_0:
-        versionProtocol  = {1, 0};
-        LOG_INFO("Version: 1.0");
-        break;
-    default:
-        versionProtocol  = {0, 0};
-        LOG_INFO("Version: unknown");
-        break;
-    }
+    LOG_INFO("Версия протокола:" + v_protocol.getVersion().toString());
     Logger::instance().logOut("\t  ********************************* \n");
 }
 
@@ -848,8 +914,8 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
     std::vector<uint8_t> packet;
 
     /*Упаковка пакета*/
-    switch (version_protocol) {
-    case VersionProtocol::protocol_1_5:{
+    switch (v_protocol) {
+    case ProtocolVersion::V1_5:{
         /*
          * st0 | st1 | pld0 | pld1 | cmd | bytes | solt |  crc | end0 | end1
          * 255 | 254 | 0 | x | 67 | x | 255 | 255
@@ -879,7 +945,7 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
         packet.push_back(0xFF);
         break;
     }
-    case VersionProtocol::protocol_1_2:{
+    case ProtocolVersion::V1_2:{
         /*
          * st0 | st1 | cmd | bytes | solt |  crc | end0 | end1
          * 255 | 254 | 67 | 0 | x | 255 | 255
@@ -906,7 +972,7 @@ uint16_t Conserial:: SendPacket (uint8_t commandName,  uint8_t * bytes, uint16_t
         packet.push_back(0xFF); //end1
         break;
     }
-    case VersionProtocol::protocol_1_0:{
+    case ProtocolVersion::V1_0:{
         /*
          * st0 | st1 | status | cmd | bytes | crc | end0 | end1
          * 255 | 254 | 0 | 67 | 37 | 255 | 255
@@ -968,8 +1034,8 @@ std::vector<uint8_t> Conserial::ReadPacket(){
     uint16_t sliding = 0;
     std::vector<uint8_t> readBytes;
 
-    switch (version_protocol) {
-    case VersionProtocol::unknown:
+    switch (v_protocol) {
+    case ProtocolVersion::Unknown:
         break;
     default:
         Logger::instance().logOut("\n"+ Logger::instance().currentDateTime() + " -- Поиск начала пакета" );
@@ -1036,8 +1102,8 @@ Conserial::UartResponse Conserial::ParsePacket(){
 
     if (!readedBytes.empty() && readedBytes.size()>2){ // Считаны байты с UART
 
-        switch (version_protocol) {
-        case VersionProtocol::protocol_1_5:{
+        switch (v_protocol) {
+        case ProtocolVersion::V1_5:{
             pack_.payload = (uint16_t) readedBytes.at(0) << 8 | (uint16_t) readedBytes.at(1);
             pack_.nameCommand_ = readedBytes.at(2);
             pack_.status_ = readedBytes.at(3);
@@ -1056,7 +1122,7 @@ Conserial::UartResponse Conserial::ParsePacket(){
             }
             break;
         }
-        case VersionProtocol::protocol_1_2:{
+        case ProtocolVersion::V1_2:{
             pack_.nameCommand_ = readedBytes.at(0);
             pack_.status_ = readedBytes.at(1);
             pack_.crc_ = readedBytes.back();
@@ -1075,7 +1141,7 @@ Conserial::UartResponse Conserial::ParsePacket(){
             }
             break;
         }
-        case VersionProtocol::protocol_1_0:{
+        case ProtocolVersion::V1_0:{
             pack_.status_ = readedBytes.at(0);
             pack_.nameCommand_ = readedBytes.at(1);
             pack_.crc_ = readedBytes.at(2);

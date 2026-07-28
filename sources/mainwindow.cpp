@@ -222,6 +222,26 @@ void MainWindow::ConsoleLog(QString text, bool bad)
     else ui->CommandConsole->append(text);
 }
 
+QString getErrorMessage(int errorCode) {
+    switch (errorCode) {
+    case 0: return "Успешное выполнение запроса";
+    case 1: return "Отсутствует соединение со стендом";
+    case 2: return "Количество принятых параметров превышает допустимый предел";
+    case 3: return "Необнаружена метка конца пакета";
+    case 4: return "Не удалось выполнить команду / Не известный ID команды";
+    case 5: return "Отказано в доступе (недостаточно прав)";
+    case 6: return "Переданы неверные параметры на вход библиотечной функции";
+    case 7: return "Аппаратная платформа в аварийном состоянии";
+    case 8: return "Несоответствие CRC";
+    case 9: return "Не считан файл прошивки";
+    case 10: return "Не отвечает бутлоадер";
+    case 11: return "Ошибка стирания памяти МК";
+    case 12: return "Ошибка записи";
+    case 13: return "Нет данных в МК";
+    case 200: return "Внутренние ошибки";
+    default: return "Неизвестный код ошибки";
+    }
+}
 
 /// @brief Функция для вывода текущих значений параметров стенда
 void MainWindow:: ParamAngles(){
@@ -289,10 +309,13 @@ void MainWindow::on_InitBut_clicked()
             ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
 
             ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
         else {
             ConsoleLog("Команда Init не выполена");
-            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
     }
     else{
@@ -313,11 +336,13 @@ void MainWindow::on_InitBut_clicked()
             ConsoleLog("Уровень максимального сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
 
             ConsoleLog("Максимальная мощность лазера: "+ QString::number (response.maxLaserPower_));
-            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
         else {
             ConsoleLog("Команда Init не выполена");
-            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
     }
     mutx = false;
@@ -368,10 +393,12 @@ void MainWindow::on_GetHardwareState_clicked(){
                 ConsoleLog("Код состояния: 7 - " + statusText);
             }
         }
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
 
     } else {
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
 
     mutx = false;
@@ -423,10 +450,12 @@ void MainWindow::on_RunSelfTestBut_clicked()
                 ConsoleLog("Код состояния: 7 - " + statusText);
             }
         }
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
 
     } else {
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     ParamAngles();
     mutx = false;
@@ -440,10 +469,11 @@ void MainWindow::on_GetErrorCodeBut_clicked()
     response = stand_.GetErrorCode();
     ConsoleLog("Выполнена команда GetErrorCode");
     if (response.errorCode_ == 0){
-
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
-    else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+    else {        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
     mutx=false;
 }
 
@@ -457,13 +487,15 @@ void MainWindow::on_GetLaserStateBut_clicked()
         ConsoleLog("Выполнена команда GetLaserState");
         ConsoleLog("Полученные значения:");
         ConsoleLog("Состояние лазера: "+ QString::number (response.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         if(response.adcResponse_ == 1){ui->laser_st->setText("ВКЛ");}
         else{ ui->laser_st->setText("ВЫКЛ");}
     }
     else {
         ConsoleLog("Команда GetLaserState не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -490,11 +522,13 @@ void MainWindow::on_SetLaserStateBut_clicked()
         ConsoleLog("Выполнена команда SetLaserState");
         ConsoleLog("Установленные значения:");
         ConsoleLog("Состояние лазера: "+ QString::number (response.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ConsoleLog("Команда SetLaserState не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         ui->laser_st->setText("ВЫКЛ");
     }
     mutx= false;
@@ -512,11 +546,37 @@ void MainWindow::on_SetLaserPowerBut_clicked()
         ConsoleLog("Выполнена команда SetLaserPower");
         ConsoleLog("Установленные значения:");
         ConsoleLog("Значение: "+ QString::number (response.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ConsoleLog("Команда SetLaserPower не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
+    }
+    mutx=false;
+}
+
+
+/// @brief установка мощности лазера
+void MainWindow::on_SetLaserPowerBut_2_clicked()
+{
+    mutx=true;
+    api::AdcResponse response;
+    QString value_ = ui ->LaserPowerValue_2 -> text();
+    response = stand_.DAC_SetLaserPower(value_.toUInt());
+    if (response.errorCode_ == 0){
+        ui->laser_pw->setText(QString::number (response.adcResponse_));
+        ui ->Console_2 -> append("Выполнена команда DAC_SetLaserPower");
+        ui ->Console_2 -> append("Установленные значения:");
+        ui ->Console_2 -> append("Значение: "+ QString::number (response.adcResponse_));
+        message = getErrorMessage(response.errorCode_);
+        ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+    }
+    else {
+        ui ->Console_2 -> append("Команда DAC_SetLaserPower не выполнена");
+        message = getErrorMessage(response.errorCode_);
+        ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     mutx=false;
 }
@@ -531,12 +591,14 @@ void MainWindow::on_GetLaserPowerBut_clicked()
         ConsoleLog("Выполнена команда GetLaserPower");
         ConsoleLog("Полученные значения:");
         ConsoleLog("Мощность лазера: "+ QString::number (response.adcResponse_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ui->laser_pw->setText(QString::number (response.adcResponse_));
     }
     else {
         ConsoleLog("Команда GetLaserPower не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -551,11 +613,13 @@ void MainWindow::on_GetRotateStepBut_clicked()
         ConsoleLog("Выполнена команда GetRotateStep");
         ConsoleLog("Полученные значения:");
         ConsoleLog("Значение шага: "+ QString::number (response.angle_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ConsoleLog("Команда GetRotateStep не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -578,12 +642,14 @@ void MainWindow::on_SetPlateAngleBut_clicked()
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.angles_.bQuart_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
         ConsoleLog("Команда SetPlatesAngles не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -601,12 +667,14 @@ void MainWindow::on_GetCurPlatesAnglesBut_clicked()
         ConsoleLog("Угол на четвертьволновой пластине Алисы: "+ QString::number (response.angles_.aQuart_));
         ConsoleLog("Угол на полуволновой пластине Боба: "+ QString::number(response.angles_.bHalf_));
         ConsoleLog("Угол на четвертьволновой пластине Боба: "+ QString::number (response.angles_.bQuart_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
         ConsoleLog("Команда GetPlatesAngles не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -625,11 +693,13 @@ void MainWindow::on_SetTimeoutBut_clicked()
     if(response.errorCode_ == 0){
         ui->Console_2->append("Выполнена команда SetTimeout");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
-        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ui->Console_2->append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ui->Console_2->append("Команда SetTimeout не выполнена");
-        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ui->Console_2->append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     mutx=false;
 }
@@ -643,11 +713,13 @@ void MainWindow::on_GetTimeoutBut_clicked()
     if(response.errorCode_ == 0){
         ui->Console_2->append("Выполнена команда GetTimeout");
         ui->Console_2->append("Значение таймаута: "+ QString::number (response.adcResponse_));
-        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ui->Console_2->append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ui->Console_2->append("Команда GetTimeout не выполнена");
-        ui->Console_2->append("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ui->Console_2->append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     mutx=false;
 }
@@ -663,11 +735,13 @@ void MainWindow::on_GetSignalLevelBut_clicked()
         ConsoleLog("Полученные значения:");
         ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.signal_.h_));
         ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.signal_.v_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ConsoleLog("Команда GetSignalLevel не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -683,11 +757,13 @@ void MainWindow::on_GetLightNoisesBut_clicked()
         ConsoleLog("Полученные значения:");
         ConsoleLog("Уровень засветки на первом фотодетекторе: "+ QString::number (response.signal_.h_));
         ConsoleLog("Уровень засветки на втором фотодетекторе: "+ QString::number (response.signal_.v_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     }
     else {
         ConsoleLog("Команда GetLightNoises не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -726,12 +802,14 @@ void MainWindow::on_SendMessageBut_clicked()
         ConsoleLog("Уровень сигнала на первом фотодетекторе: "+ QString::number (response.currentSignalLevels_.h_));
         ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.currentSignalLevels_.v_));
 
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
         ConsoleLog("Команда SendMessage не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
 }
 
@@ -823,11 +901,14 @@ void MainWindow::on_InitByButtons_clicked()
         ConsoleLog("Максимальный уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
 
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
         ConsoleLog("Команда InitByButtons не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -877,7 +958,8 @@ void MainWindow::InitByPD(float aHalf_, float aQuart_, float bHalf_, float bQuar
     ConsoleLog("Уровень максимального сигнала на втором фотодетекторе: "+ QString::number (v_max));
 
     ConsoleLog("Максимальная мощность лазера: "+ QString::number (Power));
-    ConsoleLog("Код ошибки: "+ QString::number (errorCode_));
+    message = getErrorMessage(errorCode_);
+    ConsoleLog("Код ошибки: " + QString::number(errorCode_)+ " -> " + message);
     ParamAngles();
     mutx_str=false;
 }
@@ -903,7 +985,8 @@ void MainWindow::on_InitByPD_clicked()
         }
         else {
             ConsoleLog("Команда InitByPD не выполнена");
-            ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
     }
 }
@@ -996,7 +1079,8 @@ void MainWindow::on_PulseLaser_clicked()
     }
     else {
         ConsoleLog("Импульсный режим не включен");
-        ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -1121,7 +1205,8 @@ void MainWindow::on_ScanAngles1_clicked()
         }
         else {
             ConsoleLog("Сканирование не выполнено");
-            ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
         mutx=false;
     }
@@ -1247,7 +1332,8 @@ void MainWindow::on_ScanAngles2_clicked()
         }
         else {
             ConsoleLog("Сканирование не выполнено");
-            ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
         mutx=false;
     }
@@ -1373,7 +1459,8 @@ void MainWindow::on_ScanAngles3_clicked()
         }
         else {
             ConsoleLog("Сканирование не выполнено");
-            ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
         mutx=false;
     }
@@ -1499,7 +1586,8 @@ void MainWindow::on_ScanAngles4_clicked()
         }
         else {
             ConsoleLog("Сканирование не выполнено");
-            ConsoleLog("Код ошибки: "+ QString::number (response_er.errorCode_), 1);
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
         }
         mutx=false;
     }
@@ -1645,7 +1733,10 @@ void MainWindow::on_MonitoringPD_clicked()
             ConsoleLog("Отклонение от максимума PDV: " + QString::number (((y2_max-(pdv/cout))*100)/(pdv/cout))+ " %");
             ConsoleLog("Отклонение от минимума PDV: " + QString::number ((((pdv/cout)-y2_min)*100)/(pdv/cout))+ " %");
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
+        }
         mutx = false;
     }
 
@@ -1686,11 +1777,14 @@ void MainWindow::on_GetInitParams_clicked()
         ConsoleLog("Уровень сигнала на втором фотодетекторе: "+ QString::number (response.maxSignalLevels_.v_));
 
         ConsoleLog("Мощность лазера: "+ QString::number (response.maxLaserPower_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
         ConsoleLog("Команда GetInitParams не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
     mutx=false;
 }
@@ -1822,7 +1916,10 @@ void MainWindow::on_LaserTest_clicked()
             connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(quit())); // когда закончит работу поток, удаляем и его
             pMyThread.start();
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {
+            message = getErrorMessage(response.errorCode_);
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
+        }
     }
 }
 
@@ -2613,7 +2710,8 @@ void MainWindow::on_MonitoringSend_clicked()
                 connect( ui->ScanAngles4, SIGNAL( clicked() ), this, SLOT(killLoop()) );
             }
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
     }
 }
 
@@ -2716,7 +2814,8 @@ void MainWindow::on_MonitorNoises_clicked()
             }
             ParamAngles();
         }
-        else {ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);}
+        else {message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
     }
 }
 
@@ -2924,15 +3023,17 @@ void MainWindow::on_PlateAngle_clicked()
     else{ConsoleLog("Некорректные данные");}
 
     if (response.errorCode_ == 0){
-        ConsoleLog("Выполнена команда SetPlatesAngles");
+        ConsoleLog("Выполнена команда SetPlatesAngle");
         ConsoleLog("Установленные значения:");
         ConsoleLog("Угол поворота пластины " + QString::number(num) + " на " +QString::number (response.angle_));
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         ParamAngles();
     }
     else {
-        ConsoleLog("Команда SetPlatesAngles не выполнена");
-        ConsoleLog("Код ошибки: "+ QString::number (response.errorCode_), 1);
+        ConsoleLog("Команда SetPlatesAngle не выполнена");
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
     }
 }
 
@@ -3159,7 +3260,8 @@ void MainWindow::on_CreateConfigSecret_clicked()
     QString password = ui ->password-> text();
     api::AdcResponse response;
     response = stand_.CreateConfigSecret(password.toStdString());
-    ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+    message = getErrorMessage(response.errorCode_);
+    ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     ui ->Console_2 -> append("Успешность выполнения: " + QString::number (response.adcResponse_));
 }
 
@@ -3169,11 +3271,13 @@ void MainWindow::on_OpenConfigMode_clicked()
     api::AdcResponse response;
     QString password = ui ->password-> text();
     response = stand_.OpenConfigMode(password.toStdString());
-    ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+    message = getErrorMessage(response.errorCode_);
+    ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
     if(response.errorCode_==0){
         ui ->Console_2 -> append("Успешность выполнения: " + QString::number (response.adcResponse_));
-        if(response.adcResponse_==1){ ui ->Console_2 -> append("Вход в режим API");}
-        else{ ui ->Console_2 -> append("Не верный пароль!!!");}}
+        if(response.adcResponse_ == 1){ ui ->Console_2 -> append("Вход в режим API");}
+        else{ ui ->Console_2 -> append("Не верный пароль!!!");}
+    }
 }
 
 /// @brief выход из режима API
@@ -3195,7 +3299,8 @@ void MainWindow::on_GetProtocolVersion_clicked()
     api::versionProtocolResponse response;
     response=stand_.GetProtocolVersion ();
     ui ->Console_2 -> append("Версия протокола: " + QString::number (response.version_) + "." + QString::number (response.subversion_));
-    ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+    message = getErrorMessage(response.errorCode_);
+    ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
 }
 
 /// @brief Возвращает версию прошивки
@@ -3204,7 +3309,8 @@ void MainWindow::on_GetProtocolFirmwareVersion_clicked()
     api::versionFirmwareResponse response;
     response = stand_.GetCurrentFirmwareVersion();
     ui ->Console_2 -> append("Версия прошивки: " + QString::number (response.major_) + "." + QString::number (response.minor_)+ "." +QString::number (response.micro_));
-    ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+    message = getErrorMessage(response.errorCode_);
+    ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
 }
 
 /// @brief Возращает текущий режим работы пользоваетля
@@ -3264,16 +3370,37 @@ void MainWindow::on_FirmwareUpdate_clicked()
         ui ->Console_2 -> append("Прошивка стенда не выполена");
     }
     else{
-        response=stand_.FirmwareUpdate(file.toStdString());
-        if(response.errorCode_ == 0){
-            ui ->Console_2 -> append("Прошивка стенда завершена");
-            ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+        if(ui->Type_platform->currentText() == "STM"){
+            stand_.SetBoardType(hwe::Conserial::BoardType::STM);
+            response=stand_.FirmwareUpdate(file.toStdString());
+            if(response.errorCode_ == 0){
+                ui ->Console_2 -> append("Прошивка стенда завершена");
+                ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+            }
+            else{
+                ui ->Console_2 -> append("Прошивка стенда не выполена");
+                message = getErrorMessage(response.errorCode_);
+                ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+            }
+
+        }
+        else if (ui->Type_platform->currentText() == "Arduino"){
+            stand_.SetBoardType(hwe::Conserial::BoardType::Arduino);
+            response=stand_.FirmwareUpdate(file.toStdString());
+            if(response.errorCode_ == 0){
+                ui ->Console_2 -> append("Прошивка стенда завершена");
+                message = getErrorMessage(response.errorCode_);
+                ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+            }
+            else{
+                ui ->Console_2 -> append("Прошивка стенда не выполена");
+                message = getErrorMessage(response.errorCode_);
+                ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+            }
         }
         else{
-            ui ->Console_2 -> append("Прошивка стенда не выполена");
-            ui ->Console_2 -> append("Код ошибки: " + QString::number (response.errorCode_));
+            ui ->Console_2 -> append("Прошивка стенда не выполена не указан тип платформы");
         }
-
     }
 }
 
@@ -3291,6 +3418,8 @@ void MainWindow::on_radio_admin_clicked()
         else{ui->tabWidget->setTabEnabled(3,false);}
     }
 }
+
+/// @brief Поднятия флага роли администратора
 void MainWindow::Flag_admin(){
     settingsUnlocked_ = true;
     ui->tabWidget->setTabEnabled(3, true);
@@ -3332,6 +3461,7 @@ void MainWindow::on_file_selection_clicked()
     ui ->File_path-> setText(file);
 }
 
+/// @brief Запись данных в EEPROM
 void MainWindow::on_WriteEEPROM_clicked()
 {
     api::AdcResponse response;
@@ -3351,15 +3481,18 @@ void MainWindow::on_WriteEEPROM_clicked()
             ui ->Console_2 -> append("Выполнена команда WriteEEPROM");
             ui ->Console_2 -> append("Установленные значения:");
             ui ->Console_2 -> append("Значение в ячейке: "+ QString::number (response.adcResponse_));
-            ui ->Console_2 -> append("Код ошибки: "+ QString::number (response.errorCode_));
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
         else {
             ui ->Console_2 -> append("Команда WriteEEPROM не выполнена");
-            ui ->Console_2 -> append("Код ошибки: "+ QString::number (response.errorCode_));
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
     }
 }
 
+/// @brief Чтение данных из EEPROM
 void MainWindow::on_ReadEEPROM_clicked()
 {
     api::AdcResponse response;
@@ -3374,15 +3507,18 @@ void MainWindow::on_ReadEEPROM_clicked()
             ui ->Console_2 -> append("Выполнена команда ReadEEPROM");
             ui ->Console_2 -> append("Полученные значения:");
             ui ->Console_2 -> append("Значение в ячейке: "+ QString::number (response.adcResponse_));
-            ui ->Console_2 -> append("Код ошибки: "+ QString::number (response.errorCode_));
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
         else {
             ui ->Console_2 -> append("Команда ReadEEPROM не выполнена");
-            ui ->Console_2 -> append("Код ошибки: "+ QString::number (response.errorCode_));
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
         }
     }
 }
 
+/// @brief Блокировка/разблокировка вкладки АДМИН
 void MainWindow::onTabChanged(int index)
 {
     const int protectedTabIndex = 3;
@@ -3409,3 +3545,90 @@ void MainWindow::onTabChanged(int index)
         adm->activateWindow();
     }
 }
+
+/// @brief Запись базовых углов доворота
+void MainWindow::on_UpdateBaseAngles_clicked()
+{
+    QString Angles1 = ui ->InitAngles1_2-> text();
+    QString Angles2 = ui ->InitAngles2_2-> text();
+    QString Angles3 = ui ->InitAngles3_2-> text();
+    QString Angles4 = ui ->InitAngles4_2-> text();
+
+    if(Angles1 == "" || Angles2 == "" || Angles3 == "" || Angles4 == ""){
+        ui ->Console_2 -> append("Команда UpdateBaseAngles не выполнена");
+        ui ->Console_2 -> append("Не указаны значения углов");
+    }
+    else{
+        api::WAnglesResponse response;
+        response = stand_.UpdateBaseAngle({Angles1.toFloat(), Angles2.toFloat(), Angles3.toFloat(), Angles4.toFloat()});
+
+        if (response.errorCode_ == 0){
+            ui ->Console_2 -> append("Выполнена команда UpdateBaseAngles");
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+        }
+        else {
+            ui ->Console_2 -> append("Команда UpdateBaseAngles не выполнена");
+            message = getErrorMessage(response.errorCode_);
+            ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+        }
+    }
+}
+
+/// @brief Чтение базовых углов доворота во вкладке АДМИН
+void MainWindow::on_ReadBaseAngles_2_clicked()
+{
+    api::WAnglesResponse response;
+    response = stand_.ReadBaseAngles();
+    if (response.errorCode_ == 0){
+        ui ->Console_2 -> append("Выполнена команда ReadBaseAngles");
+        ui ->Console_2 -> append("Полученные значения:");
+        ui ->Console_2 -> append("Базовый угол доворота полуволновой пластины Алисы: "+ QString::number (response.angles_.aHalf_));
+        ui ->Console_2 -> append("Базовый угол доворота четвертьволновой пластины Алисы: "+ QString::number (response.angles_.aQuart_));
+        ui ->Console_2 -> append("Базовый угол доворота полуволновой пластины Боба: "+ QString::number(response.angles_.bHalf_));
+        ui ->Console_2 -> append("Базовый угол доворота четвертьволновой пластины Боба: "+ QString::number (response.angles_.bQuart_));
+        message = getErrorMessage(response.errorCode_);
+        ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+
+        ui->InitAngles1_2->setText(QString::number (response.angles_.aHalf_));
+        ui->InitAngles1_2->setText(QString::number (response.angles_.aQuart_));
+        ui->InitAngles1_2->setText(QString::number (response.angles_.bHalf_));
+        ui->InitAngles1_2->setText(QString::number (response.angles_.bQuart_));
+    }
+    else {
+        ui ->Console_2 -> append("Команда ReadBaseAngles не выполнена");
+        message = getErrorMessage(response.errorCode_);
+        ui ->Console_2 -> append("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+    }
+
+}
+
+/// @brief Чтение базовых углов доворота во вкладке API
+void MainWindow::on_ReadBaseAngles_clicked()
+{
+    api::WAnglesResponse response;
+    response = stand_.ReadBaseAngles();
+    if (response.errorCode_ == 0){
+        ConsoleLog("Выполнена команда ReadBaseAngles");
+        ConsoleLog("Полученные значения:");
+        ConsoleLog("Базовый угол доворота полуволновой пластины Алисы: "+ QString::number (response.angles_.aHalf_));
+        ConsoleLog("Базовый угол доворота четвертьволновой пластины Алисы: "+ QString::number (response.angles_.aQuart_));
+        ConsoleLog("Базовый угол доворота полуволновой пластины Боба: "+ QString::number(response.angles_.bHalf_));
+        ConsoleLog("Базовый угол доворота четвертьволновой пластины Боба: "+ QString::number (response.angles_.bQuart_));
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message);
+
+        ui->InitAngles1->setText(QString::number (response.angles_.aHalf_));
+        ui->InitAngles2->setText(QString::number (response.angles_.aQuart_));
+        ui->InitAngles3->setText(QString::number (response.angles_.bHalf_));
+        ui->InitAngles4->setText(QString::number (response.angles_.bQuart_));
+    }
+    else {
+        ConsoleLog("Команда ReadBaseAngles не выполнена");
+        message = getErrorMessage(response.errorCode_);
+        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
+    }
+
+}
+
+

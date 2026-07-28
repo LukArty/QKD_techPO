@@ -23,34 +23,17 @@ void Adminlogin::on_Login_clicked()
 {
     api::AdcResponse response;
     QString password = ui ->Password-> text();
-    //проверка версии протокола
-    api::versionFirmwareResponse response1;
-    response1 = stand_->GetCurrentFirmwareVersion();
-    if((response1.major_ == 1 && response1.minor_ == 0 && response1.micro_ == 0)||(response1.major_ == 1 && response1.minor_ == 2 && response1.micro_ == 0) || (response1.major_ == 0 && response1.minor_ == 0 && response1.micro_ == 0)){ //для протокола 1.0 и 1.2
-        if(password == "admin"){
+    response = stand_->OpenConfigMode(password.toStdString());
+    if(response.errorCode_==0){
+        if(response.adcResponse_== 1){
             emit firstWindow();
             ui->Password->clear();
             close();
         }
-        else{                 QMessageBox::critical(this,"Ошибка!",
+        else{                     QMessageBox::critical(this,"Ошибка!",
                                   "Неверный пароль!",
                                   QMessageBox::Ok);
             ui ->Password->clear();
-        }
-    }
-    else{
-        response = stand_->OpenConfigMode(password.toStdString()); //для протокола 1.5
-        if(response.errorCode_==0){
-            if(response.adcResponse_== 1){
-                emit firstWindow();
-                ui->Password->clear();
-                close();
-            }
-            else{                 QMessageBox::critical(this,"Ошибка!",
-                                      "Неверный пароль!",
-                                      QMessageBox::Ok);
-                ui ->Password->clear();
-            }
         }
     }
 }

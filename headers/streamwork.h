@@ -58,6 +58,10 @@ private slots:
 
     void on_file_selection_clicked();
 
+    void on_SetLaserPowerBut_2_clicked();
+
+    void on_SetLaserPowerBut_clicked();
+
 private:
     Ui::MainWindow *ui;
     hwe::Conserial *stand_;

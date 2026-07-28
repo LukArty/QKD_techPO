@@ -859,3 +859,15 @@ void StreamWork::on_file_selection_clicked()
 
 }
 
+
+void StreamWork::on_SetLaserPowerBut_2_clicked()
+{
+
+}
+
+
+void StreamWork::on_SetLaserPowerBut_clicked()
+{
+
+}
+
