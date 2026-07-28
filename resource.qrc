@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>img/Polarisation_quatro_wave.png</file>
+        <file>img/Polarisation_half_wave.png</file>
+        <file>img/PD.png</file>
+        <file>img/info-graphic.png</file>
+        <file>img/Cube.png</file>
+        <file>img/19.png</file>
+    </qresource>
+</RCC>
