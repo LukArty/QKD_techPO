@@ -3149,7 +3149,7 @@ QProgressBar::chunk {
          </font>
         </property>
         <property name="text">
-         <string>Вход в API</string>
+         <string>Вход в техн. режим</string>
         </property>
        </widget>
        <widget class="QLabel" name="label_69">
@@ -3185,7 +3185,7 @@ QProgressBar::chunk {
          </font>
         </property>
         <property name="text">
-         <string>Выход из API</string>
+         <string>Выход из техн. режима</string>
         </property>
        </widget>
        <widget class="QTextEdit" name="Console_2">

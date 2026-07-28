@@ -783,6 +783,7 @@ api::AdcResponse Conserial::FirmwareUpdate_Arduino(string path){
 
     auto flash = [&](int baudRate) -> ErrorCode
     {
+        com_->Close();
         std::string command =
             "avrdude -v "
             "-p atmega328p "
@@ -819,6 +820,7 @@ api::AdcResponse Conserial::FirmwareUpdate_Arduino(string path){
         LOG_DEBUG("Попытка прошивки через старый загрузчик...");
         success = flash(57600);
     }
+
     switch (success) {
     case ErrorCode::Success:
         FindProtocolVersion();
@@ -872,9 +874,13 @@ Conserial::UartResponse Conserial::Twiting (uint8_t commandName,  uint8_t * byte
     // Проверка соединения
     if (!com_->IsOpened())
     {
+        com_-> Open();
+        if (!com_->IsOpened())
+        {
         pack.status_= static_cast<uint16_t>(ErrorCode::NoConnection);
         LOG_ERROR("Порт не открыт");
         return pack;
+        }
     }
     // Попытки отправки
     const int MAX_ATTEMPTS = 3;
