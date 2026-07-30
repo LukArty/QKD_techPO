@@ -62,6 +62,8 @@ private slots:
 
     void on_SetLaserPowerBut_clicked();
 
+    void on_COM_ComboBox_activated(int index);
+
 private:
     Ui::MainWindow *ui;
     hwe::Conserial *stand_;

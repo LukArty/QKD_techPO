@@ -15,26 +15,30 @@
 #include <helpwindow.h>
 #include <random>
 #include <QDir>
+#include "com_combobox.h"
 
 using namespace std;
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->COM_ComboBox->setStand(&stand_);
     mutx_str=false;
     mutx=false;
 
-    QString port;
+    /*QString port;
     port = readPortFromIni("./config.ini");
     if (port.isEmpty()) {
         port = "COM3";
     }
 
     stand_.SetComPortName(port.toStdString().c_str());
-    stand_.FindProtocolVersion();
+    stand_.FindProtocolVersion();*/
+
+
+
 
     ///Начальные параметры
     ParamAngles();
@@ -109,6 +113,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
     previousTabIndex_ = ui->tabWidget->currentIndex();
+
+
+    //connect(ui->COM_ComboBox, &QComboBox::activated, this, &COM_combobox::showPopup);
 
     connect(ui->protocol_name, QOverload<int>::of(&QComboBox::currentIndexChanged),
         [this](int index) {
@@ -192,11 +199,7 @@ QString MainWindow::readPortFromIni(const QString& iniFilePath)
         qWarning() << "INI file not found:" << iniFilePath;
         return QString();
     }
-
-    // Создаем объект QSettings для работы с INI файлом
     QSettings settings(iniFilePath, QSettings::IniFormat);
-
-    // Читаем значение порта (секция "Settings", ключ "port")
     QString port = settings.value("Settings/port", "COM1").toString();
 
     qDebug() << "Port read from INI file:" << port;
@@ -3415,7 +3418,6 @@ void MainWindow::on_radio_admin_clicked()
             adm->show();
             connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
         }
-        else{ui->tabWidget->setTabEnabled(3,false);}
     }
 }
 

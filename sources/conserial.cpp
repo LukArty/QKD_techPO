@@ -1277,6 +1277,8 @@ WAngles<angle_t> Conserial::CalcAngles(WAngles<adc_t> steps)
 }
 
 std::vector<std::string> Conserial::GetFTDIComPorts() {
+
+    //com_->Close();
     std::vector<std::string> comPorts;  // Вектор для хранения найденных портов
     FT_STATUS ftStatus;                  // Статус выполнения операций FTDI
     DWORD numDevices = 0;                // Количество найденных устройств
@@ -1305,6 +1307,12 @@ std::vector<std::string> Conserial::GetFTDIComPorts() {
 
             // Получаем номер COM-порта
             ftStatus = FT_GetComPortNumber(ftHandle, &comPortNumber);
+
+            std::cout << "FT_GetComPortNumber: status = "
+                      << ftStatus
+                      << ", COM = "
+                      << comPortNumber
+                      << std::endl;
 
             // Если порт найден (не -1), добавляем его в список
             if (ftStatus == FT_OK && comPortNumber != -1) {

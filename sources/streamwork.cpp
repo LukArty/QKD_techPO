@@ -871,3 +871,9 @@ void StreamWork::on_SetLaserPowerBut_clicked()
 
 }
 
+
+void StreamWork::on_COM_ComboBox_activated(int index)
+{
+
+}
+

@@ -363,7 +363,7 @@ public:
     void SetBoardType(BoardType type);
 
 
-    static std::vector<std::string> GetFTDIComPorts();
+    std::vector<std::string> GetFTDIComPorts();
 
 private:
 
