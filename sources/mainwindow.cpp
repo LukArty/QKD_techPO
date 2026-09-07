@@ -114,6 +114,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
     previousTabIndex_ = ui->tabWidget->currentIndex();
 
+    ///Настройка легенды
+    ui->graph->legend->setVisible(true);
+    ui->graph->legend->setMargins(QMargins(3, 3, 3, 3));
+    ui->graph->legend->setFont(QFont("Arial", 8));
+    ui->graph->axisRect()->insetLayout()->addElement( ui->graph->legend, Qt::AlignTop | Qt::AlignRight);
+
 
     //connect(ui->COM_ComboBox, &QComboBox::activated, this, &COM_combobox::showPopup);
 
@@ -1007,10 +1013,12 @@ void MainWindow::on_PulseLaser_clicked()
     //отрисовка графика
     ui->graph->addGraph();
     ui->graph->graph(0)->setPen(QPen(Qt::blue));
+    ui->graph->graph(0)->setName("Уровень сигнала PDH");
     ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
     ui->graph->addGraph();
     ui->graph->graph(1)->setPen(QPen(Qt::red));
+    ui->graph->graph(1)->setName("Уровень сигнала PDV");
     ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
     ui->graph->xAxis->setLabel(" ");
     ui->graph->yAxis->setLabel("Уровень сигнала");
@@ -1109,9 +1117,11 @@ void MainWindow::on_ScanAngles1_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
@@ -1236,9 +1246,11 @@ void MainWindow::on_ScanAngles2_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
@@ -1363,9 +1375,11 @@ void MainWindow::on_ScanAngles3_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
@@ -1490,9 +1504,11 @@ void MainWindow::on_ScanAngles4_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
@@ -1611,10 +1627,12 @@ void MainWindow::on_MonitoringPD_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         ui->graph->xAxis->setLabel("");
@@ -1887,10 +1905,12 @@ void MainWindow::on_LaserTest_clicked()
         //отрисовка графика
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
         ui->graph->xAxis->setLabel("Мощность лазера");
         ui->graph->yAxis->setLabel("Уровень сигнала");
@@ -2631,10 +2651,12 @@ void MainWindow::on_MonitoringSend_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         ui->graph->xAxis->setLabel("Номер посылки");
@@ -2731,14 +2753,17 @@ void MainWindow::on_MonitorNoises_clicked()
 
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала с PD без засветки");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала с PD");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(2)->setPen(QPen(Qt::green));
+        ui->graph->graph(2)->setName("Уровень засветки на PD");
         ui->graph->graph(2)->setBrush(QBrush(QColor(0, 255, 0, 20)));
 
         ui->graph->xAxis->setLabel(" ");
@@ -2776,12 +2801,11 @@ void MainWindow::on_MonitorNoises_clicked()
                     y2.push_back(y1_);
                     y3.push_back(n1_);
                     ui ->Nos_PDH -> setText(QString::number (response.currentLightNoises_.h_));
+                    ui->Cur_PDH-> setText(QString::number (response.currentSignalLevels_.h_));
                     if(y1_ > y1_max){
                         y1_max =y1_;
                     }
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
+                    ui->graph->yAxis->setRange(0 ,y1_max + 10);
                 }
                 else // выводятся значения PDV
                 {
@@ -2790,18 +2814,14 @@ void MainWindow::on_MonitorNoises_clicked()
                     y2.push_back(y2_);
                     y3.push_back(n2_);
                     ui ->Nos_PDV -> setText(QString::number (response.currentLightNoises_.v_));
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
+                    ui->Cur_PDV-> setText(QString::number (response.currentSignalLevels_.v_));
                     if(y2_ > y2_max){
                         y2_max =y2_;
                     }
+                    ui->graph->yAxis->setRange(0 ,y2_max + 10);
                 }
                 if (cout < 20){ui->graph->xAxis->setRange(0 ,20);}
                 else{ui->graph->xAxis->setRange(0 ,cout);}
-
-                if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
 
                 ui->graph->graph(0)->setData(x,y1);
                 ui->graph->graph(1)->setData(x,y2);
@@ -3216,10 +3236,12 @@ void MainWindow::on_Test_monitor_clicked()
         ui->graph->yAxis->setRange(0,3000);
         ui->graph->addGraph();
         ui->graph->graph(0)->setPen(QPen(Qt::blue));
+        ui->graph->graph(0)->setName("Уровень сигнала PDH");
         ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
         ui->graph->addGraph();
         ui->graph->graph(1)->setPen(QPen(Qt::red));
+        ui->graph->graph(1)->setName("Уровень сигнала PDV");
         ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
 
         ui->graph->xAxis->setLabel("Кол-во снятых показателей");

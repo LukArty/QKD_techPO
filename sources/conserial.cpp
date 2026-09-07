@@ -161,6 +161,12 @@ api::InitResponse Conserial::InitByPD()
     }
 
     if(v_protocol>ProtocolVersion::V1_2){ //!!!
+
+        auto curHWTimeOut = GetTimeout().adcResponse_;
+
+        if (curHWTimeOut <= 0){ // ЕСЛИ в прошивке нет значения или записан 0
+            SetTimeout(2000);
+        }
         standOptions.timeoutTime_ = GetTimeout().adcResponse_;
     }
     return response; // Возвращаем сформированный ответ
@@ -555,7 +561,7 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd)
 {
     LOG_FUNCTION_CALL();
     api::AdcResponse response = {0,0};
-    if (versionFirmware.major <= 1 && versionFirmware.micro<=5){
+    if (versionFirmware.major <= 1 && versionFirmware.minor<5){
         if (passwd == "admin"){
             response.adcResponse_ = 1;
             response.errorCode_   = static_cast<uint16_t>(ErrorCode::Success);
@@ -607,27 +613,43 @@ api::versionProtocolResponse Conserial::GetProtocolVersion (){
         return  {1,0, static_cast<uint16_t>(ErrorCode::Success)};
         break;
     default:
-        return SendCommand<api::versionProtocolResponse>("GetProtocolVersion");
+        api::versionProtocolResponse response = SendCommand<api::versionProtocolResponse>("GetProtocolVersion");
+        if (response.errorCode_ == 0 ){
+            // v_protocol = { response.version_, response.subversion_};
+        }
+        return response;
         break;
     }
+    // return {versionFirmware.version_,
+    //         versionFirmware.subversion_,
+    //         static_cast<uint16_t>(ErrorCode::Success)} ;
 }
 
 api::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
     LOG_FUNCTION_CALL();
     switch (v_protocol) {
     case ProtocolVersion::Unknown:
-        return {0,0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        versionFirmware = {0,0,0};
         break;
     case ProtocolVersion::V1_2:
-        return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        versionFirmware = {1,2,0};
+
         break;
     case ProtocolVersion::V1_0:
-        return  {1,0,0, static_cast<uint16_t>(ErrorCode::Success)};
+        versionFirmware = {1,0,0};
         break;
     default:
-        return SendCommand<api::versionFirmwareResponse>("GetCurrentFirmwareVersion");
+        api::versionFirmwareResponse response = SendCommand<api::versionFirmwareResponse>("GetCurrentFirmwareVersion");
+        if (response.errorCode_ == 0 ){
+            versionFirmware = { response.major_, response.minor_, response.micro_};
+        }
+        return response;
         break;
     }
+    return {versionFirmware.major,
+            versionFirmware.minor,
+            versionFirmware.micro,
+            static_cast<uint16_t>(ErrorCode::Success)} ;
 }
 
 void Conserial::SetBoardType(BoardType type){

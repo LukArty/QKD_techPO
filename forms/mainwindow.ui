@@ -1093,19 +1093,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <string/>
        </property>
       </widget>
-      <widget class="QLabel" name="label_8">
-       <property name="geometry">
-        <rect>
-         <x>1080</x>
-         <y>0</y>
-         <width>81</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/new/prefix1/img/PD.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
      </widget>
      <widget class="QPushButton" name="ScanAngles1">
       <property name="geometry">
@@ -3901,7 +3888,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <x>0</x>
      <y>0</y>
      <width>1213</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

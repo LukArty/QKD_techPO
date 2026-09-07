@@ -24,17 +24,22 @@ void Adminlogin::on_Login_clicked()
     api::AdcResponse response;
     QString password = ui ->Password-> text();
     response = stand_->OpenConfigMode(password.toStdString());
-    if(response.errorCode_==0){
-        if(response.adcResponse_== 1){
-            emit firstWindow();
-            ui->Password->clear();
-            close();
-        }
-        else{                     QMessageBox::critical(this,"Ошибка!",
-                                  "Неверный пароль!",
-                                  QMessageBox::Ok);
-            ui ->Password->clear();
-        }
+    if(response.errorCode_==0 && response.adcResponse_== 1){
+        emit firstWindow();
+        ui->Password->clear();
+        close();
+    }
+    else if (response.errorCode_==5 || response.adcResponse_== 0){
+        QMessageBox::critical(this,"Ошибка!",
+                              "Неверный пароль!",
+                              QMessageBox::Ok);
+        ui ->Password->clear();
+    }
+    else {
+        QMessageBox::critical(this,"Ошибка!",
+                              "Код ошибки: ",
+                              QMessageBox::Ok);
+        ui ->Password->clear();
     }
 }
 

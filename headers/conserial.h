@@ -416,7 +416,7 @@ private:
 
     //Конфигурация
     ProtocolVersion v_protocol;
-    Version<uint16_t> versionFirmware = {1,0,0};
+    Version<uint16_t> versionFirmware = {1,5,0};
 
     Conserial::StandOptions standOptions; // Структура, хранящая текущее состояние стенда
 
@@ -594,7 +594,9 @@ private:
         LOG_DEBUG("Отправленная команда: " + cmd);
 
         ResponseType response{};
+
         auto bytes = PackToBytes(args...);
+
         UartResponse pack{};
 
         try {
@@ -612,6 +614,9 @@ private:
         }
 
         size_t expectedParams = GetExpectedParams<ResponseType>();
+
+        cout << "GGGG" << pack.parameters_.size()  << "///" << expectedParams;
+        // LOG_DEBUG(&"Size " + pack.parameters_.size() + "?" + expectedParams);
         if(pack.parameters_.size() != expectedParams) {
             response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
             return response;
