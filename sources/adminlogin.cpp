@@ -30,15 +30,16 @@ void Adminlogin::on_Login_clicked()
         close();
     }
     else if (response.errorCode_==5 || response.adcResponse_== 0){
-        QMessageBox::critical(this,"Ошибка!",
-                              "Неверный пароль!",
-                              QMessageBox::Ok);
+        QMessageBox::critical(this, "Ошибка!",
+                            "Неверный пароль!\nКод ошибки: " +
+                            QString::number(response.errorCode_),
+                            QMessageBox::Ok);
         ui ->Password->clear();
     }
     else {
-        QMessageBox::critical(this,"Ошибка!",
-                              "Код ошибки: ",
-                              QMessageBox::Ok);
+        QMessageBox::critical(this, "Ошибка!",
+                            "Код ошибки: " + QString::number(response.errorCode_),
+                            QMessageBox::Ok);
         ui ->Password->clear();
     }
 }

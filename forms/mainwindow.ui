@@ -3424,6 +3424,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="text">
        <string>0</string>
       </property>
+      <property name="maxLength">
+       <number>5</number>
+      </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
@@ -3614,7 +3617,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>0</string>
       </property>
       <property name="maxLength">
-       <number>3</number>
+       <number>4</number>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -3635,7 +3638,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        </font>
       </property>
       <property name="text">
-       <string>Значение в кодах АЦП:</string>
+       <string>Значение в кодах ЦAП:</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_79">

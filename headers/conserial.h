@@ -99,6 +99,21 @@ public:
         }
     }
 
+    void setVersion(Version <uint16_t> version) {
+        if (version.major == 1 && version.minor == 0) {
+            value_ = V1_0;
+        }
+        else if (version.major == 1 && version.minor == 2) {
+            value_ = V1_2;
+        }
+        else if (version.major == 1 && version.minor == 5) {
+            value_ = V1_5;
+        }
+        else {
+            value_ = Unknown;
+        }
+    }
+
 private:
     Value value_;
 };
@@ -370,24 +385,6 @@ private:
     /// @breif Значение для ожидания ответа при инициализации
     const uint32_t INIT_TIMEOUT_TIME = 900000;
 
-
-    // enum class VersionProtocol  { unknown = 1,
-    //                              protocol_1_0 = 2,
-    //                              protocol_1_2 = 3,
-    //                              protocol_1_5 = 4 };
-    // VersionProtocol version_protocol {VersionProtocol::protocol_1_5};
-
-    // /// @brief Структура версии прошивки АП
-    // struct versionFirmware{
-    //     uint16_t major = 0;
-    //     uint16_t minor = 0;
-    //     uint16_t micro = 0;
-    // };
-    // /// @brief Структура версии протокола
-    // struct versionProtocol{
-    //     uint16_t version = 0;
-    //     uint16_t subversion = 0;
-    // };
     /// @brief Структура для хранения текущей конфигурации стенда
     struct StandOptions{
         BoardType boardType = BoardType::STM;
@@ -614,9 +611,8 @@ private:
         }
 
         size_t expectedParams = GetExpectedParams<ResponseType>();
-
-        cout << "GGGG" << pack.parameters_.size()  << "///" << expectedParams;
-        // LOG_DEBUG(&"Size " + pack.parameters_.size() + "?" + expectedParams);
+        // cout << "GGGG" << pack.parameters_.size()  << "///" << expectedParams;
+        LOG_DEBUG("Size ", pack.parameters_.size(), "//" , expectedParams);
         if(pack.parameters_.size() != expectedParams) {
             response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidResponse);
             return response;

@@ -124,44 +124,44 @@ MainWindow::MainWindow(QWidget *parent)
     //connect(ui->COM_ComboBox, &QComboBox::activated, this, &COM_combobox::showPopup);
 
     connect(ui->protocol_name, QOverload<int>::of(&QComboBox::currentIndexChanged),
-        [this](int index) {
-            if (index == 1) {
-                ui->aHalf_10->setEnabled(false);
-                ui->aHalf_11->setEnabled(false);
-                ui->aQuart_10->setEnabled(false);
-                ui->aQuart_11->setEnabled(false);
+            [this](int index) {
+                if (index == 1) {
+                    ui->aHalf_10->setEnabled(false);
+                    ui->aHalf_11->setEnabled(false);
+                    ui->aQuart_10->setEnabled(false);
+                    ui->aQuart_11->setEnabled(false);
 
-                ui->bHalf_10->setEnabled(false);
-                ui->bHalf_11->setEnabled(false);
-                ui->bQuart_10->setEnabled(false);
-                ui->bQuart_11->setEnabled(false);
+                    ui->bHalf_10->setEnabled(false);
+                    ui->bHalf_11->setEnabled(false);
+                    ui->bQuart_10->setEnabled(false);
+                    ui->bQuart_11->setEnabled(false);
 
-                ui->PH_10->setEnabled(false);
-                ui->PH_11->setEnabled(false);
-                ui->PV_10->setEnabled(false);
-                ui->PV_11->setEnabled(false);
-                ui->Evacheck ->setEnabled(false);
+                    ui->PH_10->setEnabled(false);
+                    ui->PH_11->setEnabled(false);
+                    ui->PV_10->setEnabled(false);
+                    ui->PV_11->setEnabled(false);
+                    ui->Evacheck ->setEnabled(false);
 
-            }
-            else {
-                ui->aHalf_10->setEnabled(true);
-                ui->aHalf_11->setEnabled(true);
-                ui->aQuart_10->setEnabled(true);
-                ui->aQuart_11->setEnabled(true);
+                }
+                else {
+                    ui->aHalf_10->setEnabled(true);
+                    ui->aHalf_11->setEnabled(true);
+                    ui->aQuart_10->setEnabled(true);
+                    ui->aQuart_11->setEnabled(true);
 
-                ui->bHalf_10->setEnabled(true);
-                ui->bHalf_11->setEnabled(true);
-                ui->bQuart_10->setEnabled(true);
-                ui->bQuart_11->setEnabled(true);
+                    ui->bHalf_10->setEnabled(true);
+                    ui->bHalf_11->setEnabled(true);
+                    ui->bQuart_10->setEnabled(true);
+                    ui->bQuart_11->setEnabled(true);
 
-                ui->PH_10->setEnabled(true);
-                ui->PH_11->setEnabled(true);
-                ui->PV_10->setEnabled(true);
-                ui->PV_11->setEnabled(true);
+                    ui->PH_10->setEnabled(true);
+                    ui->PH_11->setEnabled(true);
+                    ui->PV_10->setEnabled(true);
+                    ui->PV_11->setEnabled(true);
 
-                if (index == 0){ui->Evacheck ->setEnabled(true);}
-            }
-        });
+                    if (index == 0){ui->Evacheck ->setEnabled(true);}
+                }
+            });
 }
 
 /// @brief обработчик нажатия клавишиae
@@ -2177,7 +2177,7 @@ void MainWindow::on_Start_protocol_clicked()
                         connect(pStreamWork,SIGNAL(finished()),this,SLOT(Output_bit()));
                         connect(pStreamWork, &StreamWork::finished, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
                         connect(pStreamWork, SIGNAL(finished()), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
-                       // connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
+                        // connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
                         pMyThread.start();
                     }
                 }
@@ -2736,7 +2736,7 @@ void MainWindow::on_MonitoringSend_clicked()
             }
         }
         else {message = getErrorMessage(response.errorCode_);
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
     }
 }
 
@@ -2838,7 +2838,7 @@ void MainWindow::on_MonitorNoises_clicked()
             ParamAngles();
         }
         else {message = getErrorMessage(response.errorCode_);
-        ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
+            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);}
     }
 }
 
@@ -3654,5 +3654,4 @@ void MainWindow::on_ReadBaseAngles_clicked()
     }
 
 }
-
 

@@ -51,3 +51,4 @@ bool send_cmd(FT_HANDLE ft, uint8_t cmd);
 bool bl_mass_erase(FT_HANDLE ft);
 bool bl_write(FT_HANDLE ft, uint32_t addr, uint8_t* data, int len);
 bool bl_go(FT_HANDLE ft, uint32_t addr);
+void on_exit(FT_HANDLE ft_handler, FILE *file_handler);

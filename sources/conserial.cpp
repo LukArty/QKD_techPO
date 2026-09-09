@@ -224,10 +224,10 @@ api::SendMessageResponse Conserial::Sendmessage(WAngles<angle_t> angles, adc_t p
 
 api::AdcResponse Conserial::SetTimeout(uint32_t timeout_ms)
 {
-    LOG_FUNCTION_CALL(timeout_ms, "мс" );
+    LOG_FUNCTION_CALL(timeout_ms);
     api::AdcResponse response = {};
     if (CheckStandPremmissions<api::AdcResponse>(response)){
-        if(timeout_ms >= 1000 && timeout_ms <65000) {
+        if(timeout_ms <= 1000 || timeout_ms > 65000) {
             response.errorCode_ = static_cast<uint16_t>(ErrorCode::InvalidInput);
             return response;
         }
@@ -236,7 +236,7 @@ api::AdcResponse Conserial::SetTimeout(uint32_t timeout_ms)
 
         response = SendCommand<api::AdcResponse>("SetTimeout", time_s);
 
-        if(response.errorCode_ == 0) {
+        if(response.errorCode_ == 0 && response.adcResponse_>1000) {
             standOptions.timeoutTime_ = response.adcResponse_;
         }
     }
@@ -576,7 +576,9 @@ api::AdcResponse Conserial::OpenConfigMode(string passwd)
     }
 
     std::vector<uint8_t> passwordBytes=PreparePasswordBytes(passwd);
-    return SendCommand<api::AdcResponse>("OpenConfigMode", passwordBytes);
+    response = SendCommand<api::AdcResponse>("OpenConfigMode", passwordBytes);
+    standOptions.premissions = response.adcResponse_;
+    return response;
 }
 
 
@@ -602,27 +604,16 @@ uint16_t Conserial::GetMaxPayloadSize()
 api::versionProtocolResponse Conserial::GetProtocolVersion (){
     LOG_FUNCTION_CALL();
 
-    switch (v_protocol) {
-    case ProtocolVersion::Unknown:
-        return {0,0, static_cast<uint16_t>(ErrorCode::Success)};
-        break;
-    case ProtocolVersion::V1_2:
-        return  {1,2, static_cast<uint16_t>(ErrorCode::Success)};
-        break;
-    case ProtocolVersion::V1_0:
-        return  {1,0, static_cast<uint16_t>(ErrorCode::Success)};
-        break;
-    default:
+    if (versionFirmware.major>= 1 && versionFirmware.minor>=5){
         api::versionProtocolResponse response = SendCommand<api::versionProtocolResponse>("GetProtocolVersion");
         if (response.errorCode_ == 0 ){
-            // v_protocol = { response.version_, response.subversion_};
+            v_protocol.setVersion(Version<uint16_t>(response.version_,response.subversion_));
         }
-        return response;
-        break;
     }
-    // return {versionFirmware.version_,
-    //         versionFirmware.subversion_,
-    //         static_cast<uint16_t>(ErrorCode::Success)} ;
+
+    return {v_protocol.getVersion().major,
+            v_protocol.getVersion().minor,
+            static_cast<uint16_t>(ErrorCode::Success)} ;
 }
 
 api::versionFirmwareResponse Conserial::GetCurrentFirmwareVersion(){
@@ -704,13 +695,13 @@ api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
         // как в main (2).c — первый FTDI в системе
         if (FT_Open(0, &ft) != FT_OK) {
             LOG_ERROR("Не удалось открыть FTDI устройство");
-            fclose(bin);
+            on_exit(ft, bin);
             return {0, static_cast<uint16_t>(ErrorCode::NoConnection)};
         }
 
         /* ==== Настройка порта ==== */
         FT_SetBaudRate(ft, 115200);
-        FT_SetDataCharacteristics(ft, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_NONE);
+        FT_SetDataCharacteristics(ft, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_ODD);
         FT_SetTimeouts(ft, 1000, 1000);
 
         LOG_ERROR("FTDI сконфигурирован: 115200, 8N1");
@@ -721,18 +712,17 @@ api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
 
         FT_SetDtr(ft);
         sleep_ms(50);
-        FT_ClrRts(ft);
-        sleep_ms(50);
         FT_SetRts(ft);
-        sleep_ms(50);
+        sleep_ms(100);
+        FT_ClrRts(ft);
+        sleep_ms(100);
 
         /* ==== Инициализация STM32 ROM Bootloader ==== */
         uint8_t init = 0x7F;
         uart_write(ft, &init, 1);
         if (!wait_ack(ft, 1000)) {
             LOG_CRITICAL("Загрузчик не отвечает");
-            FT_Close(ft);
-            fclose(bin);
+            on_exit(ft, bin);
             return {0, static_cast<uint16_t>(ErrorCode::BootloaderNoResponse)};
         }
 
@@ -743,8 +733,7 @@ api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
         LOG_INFO("Стирание FLASH...");
         if (!bl_mass_erase(ft)) {
             LOG_CRITICAL("Ошибка стирания FLASH");
-            FT_Close(ft);
-            fclose(bin);
+            on_exit(ft, bin);
             return {0, static_cast<uint16_t>(ErrorCode::FlashEraseFailed)};
         }
 
@@ -762,8 +751,7 @@ api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
             if (!bl_write(ft, addr, buf, (int)r)) {
                 ss << std::hex << addr;
                 LOG_CRITICAL("Ошибка записи @0x" + ss.str());
-                FT_Close(ft);
-                fclose(bin);
+                on_exit(ft, bin);
                 return {0, static_cast<uint16_t>(ErrorCode::FlashWriteFailed)};
             }
 
@@ -779,10 +767,10 @@ api::AdcResponse Conserial::FirmwareUpdate_STM(std::string path)
 
         FT_ClrDtr(ft);
         sleep_ms(50);
-        FT_ClrRts(ft);
-        sleep_ms(50);
         FT_SetRts(ft);
-        sleep_ms(50);
+        sleep_ms(100);
+        FT_ClrRts(ft);
+        sleep_ms(100);
 
         FT_Close(ft);
         fclose(bin);
@@ -882,7 +870,10 @@ void Conserial::FindProtocolVersion(){
             }
         }
     }
+    GetCurrentFirmwareVersion();
+
     LOG_INFO("Версия протокола:" + v_protocol.getVersion().toString());
+    LOG_INFO("Версия прошивки:" + versionFirmware.toString());
     Logger::instance().logOut("\t  ********************************* \n");
 }
 

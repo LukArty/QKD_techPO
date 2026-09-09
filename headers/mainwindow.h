@@ -27,7 +27,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-     void Flag_admin();
+    void Flag_admin();
 
 private slots:
 

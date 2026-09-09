@@ -51,11 +51,11 @@ bool bl_mass_erase(FT_HANDLE ft)
         uart_write(ft, buf, 3);
 
         if (!wait_ack(ft, 1000))
-            return false;
+            return 0;
         if (!wait_ack(ft, 20000))
-            return false;
+            return 0;
 
-        return true;
+        return 1;
     }
 
     /* ==== STANDARD ERASE ==== */
@@ -66,7 +66,23 @@ bool bl_mass_erase(FT_HANDLE ft)
     buf[1] = 0x00;
 
     uart_write(ft, buf, 2);
-    return wait_ack(ft, 20000);
+
+    if (!wait_ack(ft, 20000))
+        return 0;
+
+    return 1;
+}
+
+void on_exit(FT_HANDLE ft_handler, FILE *file_handler) {
+    FT_ClrDtr(ft_handler);
+    Sleep(50);
+    FT_SetRts(ft_handler);
+    Sleep(100);
+    FT_ClrRts(ft_handler);
+    Sleep(100);
+
+    FT_Close(ft_handler);
+    fclose(file_handler);
 }
 
 bool bl_write(FT_HANDLE ft, uint32_t addr, uint8_t* data, int len)
