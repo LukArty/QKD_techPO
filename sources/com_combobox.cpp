@@ -5,12 +5,14 @@
 COM_combobox::COM_combobox(QWidget* parent) : QComboBox(parent) {
     connect(this, QOverload<int>::of(&QComboBox::activated),
             this, &COM_combobox::on_COM_ComboBox_activated);
-    updateItems();
 }
 
 void COM_combobox::setStand(hwe::Conserial* stand)
 {
     stand_ = stand;
+    if (stand_) {
+        updateItems();
+    }
 }
 
 void COM_combobox::showPopup() {
@@ -20,7 +22,7 @@ void COM_combobox::showPopup() {
 
 void COM_combobox::updateItems()
 {
-    QString previousPort  = currentText();
+    QString previousPort = currentText();
 
     std::vector<std::string> comPorts = stand_->GetFTDIComPorts();
 
@@ -35,7 +37,7 @@ void COM_combobox::updateItems()
     clear();
     addItems(comList);
 
-    int index = findText(previousPort );
+    int index = findText(previousPort);
 
     if (index >= 0) {
         setCurrentIndex(index);
@@ -45,6 +47,21 @@ void COM_combobox::updateItems()
     }
 
     blockSignals(false);
+
+    // Автоматически подключаемся к выбранному порту
+    if (currentIndex() >= 0) {
+        QString port = currentText();
+
+        qDebug() << "Автоматическое подключение к COM-порту:" << port;
+
+        QSettings settings("./config.ini", QSettings::IniFormat);
+        settings.beginGroup("Settings");
+        settings.setValue("port", port);
+        settings.endGroup();
+        settings.sync();
+
+        stand_->SetComPortName(port.toStdString());
+    }
 }
 
 void COM_combobox::on_COM_ComboBox_activated(int index)
@@ -64,6 +81,13 @@ void COM_combobox::on_COM_ComboBox_activated(int index)
     settings.sync();
 
     stand_->SetComPortName(port.toStdString());
+    emit comPortChanged(port);
+
+}
+
+QString COM_combobox::getComPortName() const
+{
+    return currentText();
 }
 
 

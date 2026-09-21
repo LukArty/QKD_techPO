@@ -42,5 +42,6 @@ void Adminlogin::on_Login_clicked()
                             QMessageBox::Ok);
         ui ->Password->clear();
     }
+    //emit firstWindow();
 }
 

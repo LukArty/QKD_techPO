@@ -38,6 +38,7 @@ private slots:
     void Output_bit();
     void Output_bit_write();
     void Output_bit_write_eva();
+    void scanAngle(int plateNumber);
 
     /// @brief инициализация по ФД
     void InitByPD(float, float, float,float, int, int, int, int, int, int);
@@ -219,6 +220,8 @@ private:
     QShortcut       *keyCNTR1, *keyCNTR2, *keyCNTR3, *keyCNTR4, *keyAdmin, *keyGameMod;    // объект горячей клавиши
     QThread pMyThread, pMyThread2;
     StreamWork *pStreamWork;
+
+    bool closingAdminMode_;
 
 };
 #endif // MAINWINDOW_H

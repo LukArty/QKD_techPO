@@ -12,8 +12,12 @@ public:
     void showPopup() override;
     void on_COM_ComboBox_activated(int index);
     void setStand(hwe::Conserial* stand);
+    QString getComPortName() const;
 
 protected:
+
+signals:
+    void comPortChanged(const QString& portName);
 
 
 private slots:

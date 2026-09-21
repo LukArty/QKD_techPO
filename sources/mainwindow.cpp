@@ -7,7 +7,6 @@
 #include <QFileInfo>
 #include <QTextStream>
 #include <QIntValidator>
-//#include <iostream>
 #include <string>
 #include <unistd.h>
 #include <conserial.h>
@@ -25,24 +24,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->COM_ComboBox->setStand(&stand_);
+    ui->label_COM->setText("Приложение подключено к " + ui->COM_ComboBox->getComPortName());
+    connect(ui->COM_ComboBox, &COM_combobox::comPortChanged, this, [this](const QString& port){
+                ui->label_COM->setText("Приложение подключено к " + port);
+            });
     mutx_str=false;
     mutx=false;
 
-    /*QString port;
-    port = readPortFromIni("./config.ini");
-    if (port.isEmpty()) {
-        port = "COM3";
-    }
-
-    stand_.SetComPortName(port.toStdString().c_str());
-    stand_.FindProtocolVersion();*/
-
-
-
-
     ///Начальные параметры
     ParamAngles();
-
 
     /// ввод только целых чисел
     ui->Interval->setValidator(new QIntValidator(this));
@@ -57,13 +47,19 @@ MainWindow::MainWindow(QWidget *parent)
     ui ->InitByButtons->setEnabled(false);
     ui ->InitBut->setEnabled(false);
     ui ->Timer_->setEnabled(false);
-    //ui->tabWidget->setTabEnabled(3,false);
-    connect(ui->tabWidget, &QTabWidget::currentChanged,
-            this, &MainWindow::onTabChanged);
+
+    ///Подключение сигналов
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
+    ///Запуск функций через Enter
+    connect(ui->LaserPowerValue, SIGNAL(returnPressed()), this, SLOT(on_SetLaserPowerBut_clicked()));
+    connect(ui->AutoLine, SIGNAL(returnPressed()), this, SLOT(on_Auto_Filing_clicked()));
+    connect(ui->TimeoutValue, SIGNAL(returnPressed()), this, SLOT(on_SetTimeoutBut_clicked()));
+    connect(ui->Port, SIGNAL(returnPressed()), this, SLOT(on_SetComPortName_clicked()));
+    connect(ui->Stop_monitoring, &QPushButton::clicked, this, &MainWindow::killLoop);
 
     ///Значения по умолчанию
     ui->radio_ElectionPD->setDown(true);
-    ui ->Interval -> setText("180"); //интервал по-умолчанию
+    ui ->Interval -> setText("180");
     ui->graph->xAxis->setRange(0,180);
     ui->graph->yAxis->setRange(0,3000);
     ui->progressBar->setValue(0);
@@ -76,38 +72,24 @@ MainWindow::MainWindow(QWidget *parent)
     ui->Protocol_test->hide();
     ui->Quantity_test->hide();
 
-    ///Запуск функций через Enter
-    connect(ui->LaserPowerValue, SIGNAL(returnPressed()), this, SLOT(on_SetLaserPowerBut_clicked()));
-    connect(ui->AutoLine, SIGNAL(returnPressed()), this, SLOT(on_Auto_Filing_clicked()));
-    connect(ui->TimeoutValue, SIGNAL(returnPressed()), this, SLOT(on_SetTimeoutBut_clicked()));
-    connect(ui->Port, SIGNAL(returnPressed()), this, SLOT(on_SetComPortName_clicked()));
-
     ///Переключения между вкладками
-    // Инициализируем объект
     keyCNTR1 = new QShortcut(this);
     keyCNTR2 = new QShortcut(this);
     keyCNTR3 = new QShortcut(this);
     keyCNTR4 = new QShortcut(this);
-    keyAdmin = new QShortcut(this);
-
-    // Устанавливаем сочетание клавиш
     keyCNTR1->setKey((Qt::CTRL) | Qt::Key_1);
     keyCNTR2->setKey(Qt::CTRL | Qt::Key_2);
     keyCNTR3->setKey(Qt::CTRL | Qt::Key_3);
     keyCNTR4->setKey(Qt::CTRL | Qt::Key_4);
-    keyAdmin ->setKey(Qt::SHIFT | Qt::Key_A | Qt::ALT);
-
-    //обработчик нажатия клавиши
     connect(keyCNTR1, SIGNAL(activated()), this, SLOT(slotShortcutCtrl1()));
     connect(keyCNTR2, SIGNAL(activated()), this, SLOT(slotShortcutCtrl2()));
     connect(keyCNTR3, SIGNAL(activated()), this, SLOT(slotShortcutCtrl3()));
     connect(keyCNTR4, SIGNAL(activated()), this, SLOT(slotShortcutCtrl4()));
-    connect(keyAdmin, SIGNAL(activated()), this, SLOT(slotShortcutAdmin()));
 
     this->test_protocol.setFileName("./test_protocol.txt");
-    ui->Console_2->setReadOnly(false);  // Разблокировать
 
-    // Инициализируем окно Adminlogin
+    /// Работа с вкладкой "Админ"
+    ui->Console_2->setReadOnly(false);
     adm = new Adminlogin();
     adm->Adminlogin_init(&stand_);
     connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
@@ -119,9 +101,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->graph->legend->setMargins(QMargins(3, 3, 3, 3));
     ui->graph->legend->setFont(QFont("Arial", 8));
     ui->graph->axisRect()->insetLayout()->addElement( ui->graph->legend, Qt::AlignTop | Qt::AlignRight);
-
-
-    //connect(ui->COM_ComboBox, &QComboBox::activated, this, &COM_combobox::showPopup);
 
     connect(ui->protocol_name, QOverload<int>::of(&QComboBox::currentIndexChanged),
             [this](int index) {
@@ -161,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent)
 
                     if (index == 0){ui->Evacheck ->setEnabled(true);}
                 }
-            });
+    });
 }
 
 /// @brief обработчик нажатия клавишиae
@@ -182,10 +161,9 @@ void MainWindow::slotShortcutCtrl4()
     if(ui->radio_admin->isChecked()){
         ui->tabWidget->setCurrentIndex(3); }
 }
-void MainWindow::slotShortcutAdmin()
-{
-    ui->radio_admin->setDown(true);
-    ui->radio_admin->click();
+
+void MainWindow::slotShortcutAdmin(){
+
 }
 
 MainWindow::~MainWindow()
@@ -200,16 +178,13 @@ MainWindow::~MainWindow()
 // Функция для чтения порта из INI-файла
 QString MainWindow::readPortFromIni(const QString& iniFilePath)
 {
-    // Проверяем существование файла
     if (!QFile::exists(iniFilePath)) {
         qWarning() << "INI file not found:" << iniFilePath;
         return QString();
     }
     QSettings settings(iniFilePath, QSettings::IniFormat);
     QString port = settings.value("Settings/port", "COM1").toString();
-
     qDebug() << "Port read from INI file:" << port;
-
     return port;
 }
 
@@ -777,7 +752,6 @@ void MainWindow::on_GetLightNoisesBut_clicked()
     mutx=false;
 }
 
-
 /// @brief Функция отправки битовой последовательности
 void MainWindow::on_SendMessageBut_clicked()
 {
@@ -985,10 +959,10 @@ void MainWindow::on_InitByPD_clicked()
             pStreamWork->moveToThread(&pMyThread);
 
             connect(&pMyThread,SIGNAL(started()),pStreamWork,SLOT(InitByPD())); //выполнение протокола
-            connect(pStreamWork,SIGNAL(finished1(float, float, float,float, int, int, int, int, int, int)),this,SLOT(InitByPD(float, float, float,float, int, int, int, int, int, int)));
+            connect(pStreamWork,SIGNAL(finished1(float,float,float,float,int,int,int,int,int,int)),this,SLOT(InitByPD(float,float,float,float,int,int,int,int,int,int)));
 
             connect(pStreamWork, &StreamWork::finished1, &pMyThread, &QThread::quit); //отправляем команду на завершение потока
-            connect(pStreamWork, SIGNAL(finished1(float, float, float,float, int, int, int, int, int, int)), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
+            connect(pStreamWork, SIGNAL(finished1(float,float,float,float,int,int,int,int,int,int)), pStreamWork, SLOT(deleteLater())); // удаляем экземпляр обработчика
             //connect(&pMyThread, SIGNAL(finished()), &pMyThread, SLOT(terminate())); // когда закончит работу поток, удаляем и его
             pMyThread.start();
         }
@@ -1096,520 +1070,176 @@ void MainWindow::on_PulseLaser_clicked()
     mutx=false;
 }
 
+/// @brief Универсальная функция для сканирования по пластинам
+void MainWindow::scanAngle(int plateNumber)
+{
+    if (mutx_str)
+        return;
+
+    mutx = true;
+
+    // Очистка предыдущего графика
+    ui->graph->clearGraphs();
+    x.clear();
+    y1.clear();
+    y2.clear();
+
+    // Параметры графика
+    int interval = ui->Interval->text().toInt();
+
+    if (interval == 0) {
+        interval = 180;
+        ui->Interval->setText("180");
+    }
+
+    ui->graph->xAxis->setRange(0, interval);
+    ui->graph->yAxis->setRange(0, 3000);
+    ui->graph->xAxis->setLabel("Угол поворота пластины");
+    ui->graph->yAxis->setLabel("Уровень сигнала");
+
+    ui->graph->addGraph();
+    ui->graph->graph(0)->setPen(QPen(Qt::blue));
+    ui->graph->graph(0)->setName("Уровень сигнала PDH");
+    ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
+    ui->graph->addGraph();
+    ui->graph->graph(1)->setPen(QPen(Qt::red));
+    ui->graph->graph(1)->setName("Уровень сигнала PDV");
+    ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+
+    QSharedPointer<QCPAxisTickerFixed> fixedTicker( new QCPAxisTickerFixed);
+
+    ui->graph->xAxis->setTicker(fixedTicker);
+    fixedTicker->setTickStep(interval / 18.0);
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+
+    // Текущие положения пластин
+    float step = stand_.GetRotateStep().angle_;
+
+    float angles1 = AngleCheck(ui->Angles1->value(), step);
+    float angles2 = AngleCheck(ui->Angles2->value(), step);
+    float angles3 = AngleCheck(ui->Angles3->value(), step);
+    float angles4 = AngleCheck(ui->Angles4->value(), step);
+
+    ui->Angles1->setValue(angles1);
+    ui->Angles2->setValue(angles2);
+    ui->Angles3->setValue(angles3);
+    ui->Angles4->setValue(angles4);
+
+    // Параметры сканирования
+    double h = ui->Step_scan->value();
+    api::SendMessageResponse response;
+    api::AdcResponse responsePower = stand_.GetLaserPower();
+    double Power = responsePower.adcResponse_;
+
+    Flag_ = false;
+
+    int y1_max = 0;
+    int y1_min = 100000;
+    int y2_max = 0;
+    int y2_min = 100000;
+
+    api::AdcResponse responseError = stand_.GetErrorCode();
+
+    if (responseError.errorCode_ != 0) {
+        ConsoleLog("Сканирование не выполнено");
+        message = getErrorMessage(responseError.errorCode_);
+        ConsoleLog( "Код ошибки: " + QString::number(responseError.errorCode_) + " -> " + message, 1);
+        mutx = false;
+        return;
+    }
+
+    // Сканирование
+    for (float angle = 0; angle <= interval; angle += h)
+    {
+        if (Flag_)
+            break;
+
+        if (plateNumber == 1){
+            response = stand_.Sendmessage({angle,angles2,angles3,angles4},Power);
+        }
+        else if (plateNumber == 2){
+            response = stand_.Sendmessage({angles1,angle,angles3,angles4},Power);
+        }
+        else if (plateNumber == 3){
+            response = stand_.Sendmessage({angles1,angles2,angle,angles4},Power);
+        }
+        else if (plateNumber == 4){
+            response = stand_.Sendmessage({angles1,angles2,angles3,angle},Power);
+        }
+
+        // Данные фотодетекторов
+        int signalH = response.currentSignalLevels_.h_;
+        int signalV = response.currentSignalLevels_.v_;
+
+        x.push_back(angle);
+        y1.push_back(signalH);
+        y2.push_back(signalV);
+
+        // Максимумы
+        if (signalH > y1_max)
+            y1_max = signalH;
+
+        if (signalV > y2_max)
+            y2_max = signalV;
+
+        // Минимумы
+        if (signalH < y1_min)
+            y1_min = signalH;
+
+        if (signalV < y2_min)
+            y2_min = signalV;
+
+        // Вывод значений
+        ui->PDH_max->setText(QString::number(y1_max));
+        ui->PDH_min->setText(QString::number(y1_min));
+        ui->PDV_max->setText(QString::number(y2_max));
+        ui->PDV_min->setText(QString::number(y2_min));
+        ui->Cur_PDH->setText(QString::number(signalH));
+        ui->Cur_PDV->setText(QString::number(signalV));
+
+        int maxSignal = std::max(y1_max, y2_max);
+        ui->graph->yAxis->setRange(0, maxSignal + 10);
+        ui->graph->graph(0)->setData(x, y1);
+        ui->graph->graph(1)->setData(x, y2);
+        ui->graph->replot();
+
+        QApplication::processEvents();
+    }
+
+    // Возвращаем пластины в исходные положения
+    stand_.SetPlatesAngles({ angles1, angles2, angles3, angles4});
+
+    api::SLevelsResponse responseFinal = stand_.GetSignalLevels();
+    ui->Cur_PDH->setText(QString::number(responseFinal.signal_.h_));
+    ui->Cur_PDV->setText(QString::number(responseFinal.signal_.v_));
+
+    ParamAngles();
+
+    mutx = false;
+}
 
 void MainWindow::on_ScanAngles1_clicked()
 {
-    if(mutx_str==false){
-        mutx=true;
-        //очистка предыдущего графика
-        ui->graph->clearGraphs();
-        x.clear();
-        y1.clear();
-        y2.clear();
-
-        //отрисовка графика
-        int interval = ui ->Interval-> text().toInt();
-        if(interval == 0){interval=180; ui ->Interval-> setText("180");}
-        ui->graph->xAxis->setRange(0,interval);
-        ui->graph->yAxis->setRange(0,3000);
-        ui->graph->xAxis->setLabel("Угол поворота пластины");
-        ui->graph->yAxis->setLabel("Уровень сигнала");
-
-        ui->graph->addGraph();
-        ui->graph->graph(0)->setPen(QPen(Qt::blue));
-        ui->graph->graph(0)->setName("Уровень сигнала PDH");
-        ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-        ui->graph->addGraph();
-        ui->graph->graph(1)->setPen(QPen(Qt::red));
-        ui->graph->graph(1)->setName("Уровень сигнала PDV");
-        ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-        QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
-        ui->graph->xAxis->setTicker(fixedTicker);
-        fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
-        fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
-
-        api::SendMessageResponse response; //для проведния SendMessage
-        api::AdcResponse response_1; //для определения мощности лазера
-        //считывание углов и проверка кратности
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-
-        double h = (ui ->Step_scan-> value());//значение шага
-        response_1 = stand_.GetLaserPower();
-        double Power = response_1.adcResponse_;
-        Flag_ = false;
-
-        int y1_max = 0,y1_ = 0, y1_min = 100000;
-        int y2_max = 0,y2_ = 0, y2_min = 100000;
-        QString PDH_max,PDH_min, PDV_max,PDV_min;
-        QFile fileOut("./ScanAngles1.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
-
-        api::AdcResponse response_er;
-        response_er = stand_.GetErrorCode();
-        if(response_er.errorCode_ == 0){
-            for (float angles=0; angles <= interval;angles +=h)
-            {
-                if( Flag_ == false){
-                    response = stand_.Sendmessage({angles,angles2,angles3,angles4},Power);
-
-                    x.push_back(angles);
-                    y1_ = response.currentSignalLevels_.h_;
-                    y2_ = response.currentSignalLevels_.v_;
-                    y1.push_back(y1_);
-                    y2.push_back(y2_);
-
-                    writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                    writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                    writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
-
-
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
-                    if (y1_ < y1_min){
-                        y1_min =y1_;
-                    }
-
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
-                    if (y2_ < y2_min){
-                        y2_min =y2_;
-                    }
-
-                    PDH_max = QString::number(y1_max);
-                    PDH_min = QString::number(y1_min);
-                    PDV_max = QString::number(y2_max);
-                    PDV_min = QString::number(y2_min);
-                    ui ->PDH_max -> setText(PDH_max);
-                    ui ->PDH_min -> setText(PDH_min);
-                    ui ->PDV_max -> setText(PDV_max);
-                    ui ->PDV_min -> setText(PDV_min);
-                    ui ->Cur_PDH -> setText(QString::number(y1_));
-                    ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                    if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                    else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
-                    ui->graph->graph(0)->setData(x,y1);
-                    ui->graph->graph(1)->setData(x,y2);
-                    ui->graph->replot();
-
-                    QApplication::processEvents();
-                    connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                    connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                }
-            }
-            api::SLevelsResponse response_3;
-            stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
-            response_3 = stand_.GetSignalLevels();
-            ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
-            ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
-            ParamAngles();
-        }
-        else {
-            ConsoleLog("Сканирование не выполнено");
-            message = getErrorMessage(response.errorCode_);
-            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
-        }
-        mutx=false;
-    }
+    scanAngle(1);
 }
 
 /// @brief Сканирование по 2 пластине
 void MainWindow::on_ScanAngles2_clicked()
 {
-    if(mutx_str==false){
-        mutx=true;
-        //очистка предыдущего графика
-        ui->graph->clearGraphs();
-        x.clear();
-        y1.clear();
-        y2.clear();
-
-        //отрисовка графика
-        int interval = ui ->Interval-> text().toInt();
-        if(interval == 0){interval=180; ui ->Interval-> setText("180");}
-        ui->graph->xAxis->setRange(0,interval);
-        ui->graph->yAxis->setRange(0,3000);
-        ui->graph->xAxis->setLabel("Угол поворота пластины");
-        ui->graph->yAxis->setLabel("Уровень сигнала");
-
-        ui->graph->addGraph();
-        ui->graph->graph(0)->setPen(QPen(Qt::blue));
-        ui->graph->graph(0)->setName("Уровень сигнала PDH");
-        ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-        ui->graph->addGraph();
-        ui->graph->graph(1)->setPen(QPen(Qt::red));
-        ui->graph->graph(1)->setName("Уровень сигнала PDV");
-        ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-        QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
-        ui->graph->xAxis->setTicker(fixedTicker);
-        fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
-        fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
-
-        api::SendMessageResponse response; //для проведния SendMessage
-        api::AdcResponse response_1; //для определения мощности лазера
-        //считывание углов и проверка кратности
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-
-        double h = (ui ->Step_scan-> value());//значение шага
-        response_1 = stand_.GetLaserPower();
-        double Power = response_1.adcResponse_;
-        Flag_ = false;
-
-        int y1_max = 0,y1_ = 0, y1_min = 100000;
-        int y2_max = 0,y2_ = 0, y2_min = 100000;
-        QString PDH_max,PDH_min, PDV_max,PDV_min;
-        QFile fileOut("./ScanAngles1.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
-
-        api::AdcResponse response_er;
-        response_er = stand_.GetErrorCode();
-        if(response_er.errorCode_ == 0){
-            for (float angles=0; angles <= interval;angles +=h)
-            {
-                if( Flag_ == false){
-                    response = stand_.Sendmessage({angles1,angles,angles3,angles4},Power);
-
-                    x.push_back(angles);
-                    y1_ = response.currentSignalLevels_.h_;
-                    y2_ = response.currentSignalLevels_.v_;
-                    y1.push_back(y1_);
-                    y2.push_back(y2_);
-
-                    writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                    writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                    writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
-
-
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
-                    if (y1_ < y1_min){
-                        y1_min =y1_;
-                    }
-
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
-                    if (y2_ < y2_min){
-                        y2_min =y2_;
-                    }
-
-                    PDH_max = QString::number(y1_max);
-                    PDH_min = QString::number(y1_min);
-                    PDV_max = QString::number(y2_max);
-                    PDV_min = QString::number(y2_min);
-                    ui ->PDH_max -> setText(PDH_max);
-                    ui ->PDH_min -> setText(PDH_min);
-                    ui ->PDV_max -> setText(PDV_max);
-                    ui ->PDV_min -> setText(PDV_min);
-                    ui ->Cur_PDH -> setText(QString::number(y1_));
-                    ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                    if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                    else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
-                    ui->graph->graph(0)->setData(x,y1);
-                    ui->graph->graph(1)->setData(x,y2);
-                    ui->graph->replot();
-
-                    QApplication::processEvents();
-                    connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                    connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                }
-            }
-            api::SLevelsResponse response_3;
-            stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
-            response_3 = stand_.GetSignalLevels();
-            ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
-            ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
-            ParamAngles();
-        }
-        else {
-            ConsoleLog("Сканирование не выполнено");
-            message = getErrorMessage(response.errorCode_);
-            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
-        }
-        mutx=false;
-    }
+    scanAngle(2);
 }
 
 /// @brief Сканирование по 3 пластине
 void MainWindow::on_ScanAngles3_clicked()
 {
-    if(mutx_str==false){
-        mutx=true;
-        //очистка предыдущего графика
-        ui->graph->clearGraphs();
-        x.clear();
-        y1.clear();
-        y2.clear();
-
-        //отрисовка графика
-        int interval = ui ->Interval-> text().toInt();
-        if(interval == 0){interval=180; ui ->Interval-> setText("180");}
-        ui->graph->xAxis->setRange(0,interval);
-        ui->graph->yAxis->setRange(0,3000);
-        ui->graph->xAxis->setLabel("Угол поворота пластины");
-        ui->graph->yAxis->setLabel("Уровень сигнала");
-
-        ui->graph->addGraph();
-        ui->graph->graph(0)->setPen(QPen(Qt::blue));
-        ui->graph->graph(0)->setName("Уровень сигнала PDH");
-        ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-        ui->graph->addGraph();
-        ui->graph->graph(1)->setPen(QPen(Qt::red));
-        ui->graph->graph(1)->setName("Уровень сигнала PDV");
-        ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-        QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
-        ui->graph->xAxis->setTicker(fixedTicker);
-        fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
-        fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
-
-        api::SendMessageResponse response; //для проведния SendMessage
-        api::AdcResponse response_1; //для определения мощности лазера
-        //считывание углов и проверка кратности
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-
-        double h = (ui ->Step_scan-> value());//значение шага
-        response_1 = stand_.GetLaserPower();
-        double Power = response_1.adcResponse_;
-        Flag_ = false;
-
-        int y1_max = 0,y1_ = 0, y1_min = 100000;
-        int y2_max = 0,y2_ = 0, y2_min = 100000;
-        QString PDH_max,PDH_min, PDV_max,PDV_min;
-        QFile fileOut("./ScanAngles1.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
-
-        api::AdcResponse response_er;
-        response_er = stand_.GetErrorCode();
-        if(response_er.errorCode_ == 0){
-            for (float angles=0; angles <= interval;angles +=h)
-            {
-                if( Flag_ == false){
-                    response = stand_.Sendmessage({angles1,angles2,angles,angles4},Power);
-
-                    x.push_back(angles);
-                    y1_ = response.currentSignalLevels_.h_;
-                    y2_ = response.currentSignalLevels_.v_;
-                    y1.push_back(y1_);
-                    y2.push_back(y2_);
-
-                    writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                    writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                    writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
-
-
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
-                    if (y1_ < y1_min){
-                        y1_min =y1_;
-                    }
-
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
-                    if (y2_ < y2_min){
-                        y2_min =y2_;
-                    }
-
-                    PDH_max = QString::number(y1_max);
-                    PDH_min = QString::number(y1_min);
-                    PDV_max = QString::number(y2_max);
-                    PDV_min = QString::number(y2_min);
-                    ui ->PDH_max -> setText(PDH_max);
-                    ui ->PDH_min -> setText(PDH_min);
-                    ui ->PDV_max -> setText(PDV_max);
-                    ui ->PDV_min -> setText(PDV_min);
-                    ui ->Cur_PDH -> setText(QString::number(y1_));
-                    ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                    if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                    else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
-                    ui->graph->graph(0)->setData(x,y1);
-                    ui->graph->graph(1)->setData(x,y2);
-                    ui->graph->replot();
-
-                    QApplication::processEvents();
-                    connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                    connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                }
-            }
-            api::SLevelsResponse response_3;
-            stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
-            response_3 = stand_.GetSignalLevels();
-            ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
-            ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
-            ParamAngles();
-        }
-        else {
-            ConsoleLog("Сканирование не выполнено");
-            message = getErrorMessage(response.errorCode_);
-            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
-        }
-        mutx=false;
-    }
+    scanAngle(3);
 }
 
 /// @brief Сканирование по 4 пластине
 void MainWindow::on_ScanAngles4_clicked()
 {
-    if(mutx_str==false){
-        mutx=true;
-        //очистка предыдущего графика
-        ui->graph->clearGraphs();
-        x.clear();
-        y1.clear();
-        y2.clear();
-
-        //отрисовка графика
-        int interval = ui ->Interval-> text().toInt();
-        if(interval == 0){interval=180; ui ->Interval-> setText("180");}
-        ui->graph->xAxis->setRange(0,interval);
-        ui->graph->yAxis->setRange(0,3000);
-        ui->graph->xAxis->setLabel("Угол поворота пластины");
-        ui->graph->yAxis->setLabel("Уровень сигнала");
-
-        ui->graph->addGraph();
-        ui->graph->graph(0)->setPen(QPen(Qt::blue));
-        ui->graph->graph(0)->setName("Уровень сигнала PDH");
-        ui->graph->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20)));
-        ui->graph->addGraph();
-        ui->graph->graph(1)->setPen(QPen(Qt::red));
-        ui->graph->graph(1)->setName("Уровень сигнала PDV");
-        ui->graph->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-        QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
-        ui->graph->xAxis->setTicker(fixedTicker);
-        fixedTicker->setTickStep(interval/18.0); // шаг тика должен быть 10,0 или 20,0
-        fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
-
-        api::SendMessageResponse response; //для проведния SendMessage
-        api::AdcResponse response_1; //для определения мощности лазера
-        //считывание углов и проверка кратности
-        float step = stand_.GetRotateStep().angle_;
-        float angles1 = AngleCheck((ui ->Angles1 -> value()), step);
-        ui ->Angles1 -> setValue(angles1);
-        float angles2 = AngleCheck((ui ->Angles2 -> value()), step);
-        ui ->Angles2 -> setValue(angles2);
-        float angles3 = AngleCheck((ui ->Angles3 -> value()), step);
-        ui ->Angles3 -> setValue(angles3);
-        float angles4 = AngleCheck((ui ->Angles4 -> value()), step);
-        ui ->Angles4 -> setValue(angles4);
-
-        double h = (ui ->Step_scan-> value());//значение шага
-        response_1 = stand_.GetLaserPower();
-        double Power = response_1.adcResponse_;
-        Flag_ = false;
-
-        int y1_max = 0,y1_ = 0, y1_min = 100000;
-        int y2_max = 0,y2_ = 0, y2_min = 100000;
-        QString PDH_max,PDH_min, PDV_max,PDV_min;
-        QFile fileOut("./ScanAngles1.txt");
-        fileOut.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream writeStream (&fileOut);
-
-        api::AdcResponse response_er;
-        response_er = stand_.GetErrorCode();
-        if(response_er.errorCode_ == 0){
-            for (float angles=0; angles <= interval;angles +=h)
-            {
-                if( Flag_ == false){
-                    response = stand_.Sendmessage({angles1,angles2,angles3,angles},Power);
-
-                    x.push_back(angles);
-                    y1_ = response.currentSignalLevels_.h_;
-                    y2_ = response.currentSignalLevels_.v_;
-                    y1.push_back(y1_);
-                    y2.push_back(y2_);
-
-                    writeStream << ("Angels: " + (QString::number(angles)).toUtf8() + "\n");
-                    writeStream <<("PDH: " + (QString::number(y1_)).toUtf8()+ "\n");
-                    writeStream << ("PDV: " + (QString::number(y2_)).toUtf8() + "\n");
-
-
-                    if(y1_ > y1_max){
-                        y1_max =y1_;
-                    }
-                    if (y1_ < y1_min){
-                        y1_min =y1_;
-                    }
-
-                    if(y2_ > y2_max){
-                        y2_max =y2_;
-                    }
-                    if (y2_ < y2_min){
-                        y2_min =y2_;
-                    }
-
-                    PDH_max = QString::number(y1_max);
-                    PDH_min = QString::number(y1_min);
-                    PDV_max = QString::number(y2_max);
-                    PDV_min = QString::number(y2_min);
-                    ui ->PDH_max -> setText(PDH_max);
-                    ui ->PDH_min -> setText(PDH_min);
-                    ui ->PDV_max -> setText(PDV_max);
-                    ui ->PDV_min -> setText(PDV_min);
-                    ui ->Cur_PDH -> setText(QString::number(y1_));
-                    ui ->Cur_PDV -> setText(QString::number(y2_));
-
-                    if (y1_max>y2_max){ui->graph->yAxis->setRange(0 ,y1_max + 10);}
-                    else{ui->graph->yAxis->setRange(0 ,y2_max + 10);}
-                    ui->graph->graph(0)->setData(x,y1);
-                    ui->graph->graph(1)->setData(x,y2);
-                    ui->graph->replot();
-
-                    QApplication::processEvents();
-                    connect( ui->Stop_monitoring, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                    connect( ui->LaserTest, SIGNAL( clicked() ), this, SLOT(killLoop()) );
-                }
-            }
-            api::SLevelsResponse response_3;
-            stand_.SetPlatesAngles({angles1, angles2, angles3, angles4});
-            response_3 = stand_.GetSignalLevels();
-            ui ->Cur_PDH -> setText(QString::number(response_3.signal_.h_));
-            ui ->Cur_PDV -> setText(QString::number(response_3.signal_.v_));
-            ParamAngles();
-        }
-        else {
-            ConsoleLog("Сканирование не выполнено");
-            message = getErrorMessage(response.errorCode_);
-            ConsoleLog("Код ошибки: " + QString::number(response.errorCode_)+ " -> " + message, 1);
-        }
-        mutx=false;
-    }
+    scanAngle(4);
 }
 
 /// @brief Мониторинг по фодотедекторам (постоянное снятие показателей с фд)
@@ -1661,8 +1291,8 @@ void MainWindow::on_MonitoringPD_clicked()
         Flag_ = false;
 
         int cout = 0;
-        float y1_max = 0,y1_ = 0, y1_min =100000, pdh=0;
-        float y2_max = 0,y2_ = 0, y2_min =100000, pdv=0;
+        float y1_max = 0,y1_ = 0, y1_min = 100000, pdh = 0;
+        float y2_max = 0,y2_ = 0, y2_min = 100000, pdv = 0;
         QString PDH_max,PDH_min, PDV_max,PDV_min;
         if(response.errorCode_ == 0){
             if(ui->timer_check->isChecked()){
@@ -1682,24 +1312,16 @@ void MainWindow::on_MonitoringPD_clicked()
                 y1.push_back(y1_);
                 y2.push_back(y2_);
 
-                /*if(y1_ == 0 || y2_ == 0){
-                response = stand_.GetSignalLevels();
-                y1_ = response.signal_.h_;
-                y2_ = response.signal_.v_;
-                y1.push_back(y1_);
-                y2.push_back(y2_);
-            }*/
-
-                pdh=pdh+response.signal_.h_;;
-                pdv=pdv+response.signal_.v_;
+                pdh = pdh + response.signal_.h_;
+                pdv = pdv + response.signal_.v_;
 
                 response_1 = stand_.GetLaserPower();
 
                 if(y1_ > y1_max){
-                    y1_max =y1_;
+                    y1_max = y1_;
                 }
                 if (y1_ < y1_min){
-                    y1_min =y1_;
+                    y1_min = y1_;
                 }
 
                 if(y2_ > y2_max){
@@ -3309,13 +2931,14 @@ void MainWindow::on_OpenConfigMode_clicked()
 void MainWindow::on_CloseConfigMode_clicked()
 {
     stand_.CloseConfigMode();
-    ui ->Console_2 -> append("Выход из режима API");
-    ui ->Console_2 ->clear();
-    ui ->password->clear();
-    ui->radio_admin->setChecked(false);
-    ui->tabWidget->setCurrentIndex(0);
+    ui->Console_2->clear();
+    ui->Console_2->append("Выход из режима API");
+    ui->password->clear();
     settingsUnlocked_ = false;
-
+    ui->radio_admin->setDown(false);
+    ui->tabWidget->setCurrentIndex(0);
+    previousTabIndex_ = 0;
+    ui->radio_admin->update();
 }
 
 /// @brief Возращает версию протокола
@@ -3434,12 +3057,12 @@ void MainWindow::on_radio_admin_clicked()
 {
     if(mutx_str==false){
         // Инициализируем окно Adminlogin
-        adm = new Adminlogin();
-        adm->Adminlogin_init(&stand_);
-        if (ui->radio_admin->isChecked()){
-            adm->show();
-            connect(adm, &Adminlogin::firstWindow, this, &MainWindow::Flag_admin);
+        if (stand_.GetCurrentMode() != 1){
+            if (ui->radio_admin->isChecked()){
+                adm->show();
+            }
         }
+        else { Flag_admin(); }
     }
 }
 
@@ -3554,7 +3177,6 @@ void MainWindow::onTabChanged(int index)
 
     if (settingsUnlocked_) {
         previousTabIndex_ = index;
-        ui->tabWidget->setCurrentIndex(3);
         ui->radio_admin->setChecked(true);
         return;
     }
