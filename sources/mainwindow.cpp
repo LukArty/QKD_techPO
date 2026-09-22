@@ -41,6 +41,40 @@ MainWindow::MainWindow(QWidget *parent)
     ui->AutoLine->setValidator(new QIntValidator(this));
     ui->Quantity_test->setValidator(new QIntValidator(this));
 
+    //new
+    // Вертикальная линия-курсор
+    cursorLine_ = new QCPItemLine(ui->graph);
+
+    cursorLine_->start->setType(QCPItemPosition::ptPlotCoords);
+    cursorLine_->end->setType(QCPItemPosition::ptPlotCoords);
+
+    cursorLine_->setPen(QPen(Qt::black, 1, Qt::DashLine));
+    cursorLine_->setVisible(false);
+
+    // Информационное окно
+    tracer_ = new QCPItemTracer(ui->graph);
+    tracer_->setStyle(QCPItemTracer::tsCircle);
+    tracer_->setSize(8);
+    tracer_->setVisible(false);
+
+    graphText_ = new QCPItemText(ui->graph);
+    graphText_->setPositionAlignment(Qt::AlignLeft | Qt::AlignTop);
+    graphText_->setTextAlignment(Qt::AlignLeft);
+    graphText_->setPadding(QMargins(6, 4, 6, 4));
+    graphText_->setBrush(QBrush(QColor(255, 255, 255, 230)));
+    graphText_->setPen(QPen(Qt::black));
+    graphText_->setColor(Qt::black);
+    graphText_->setFont(QFont("Arial", 10));
+    graphText_->setVisible(false);
+
+    // Отслеживаем движение мыши по графику
+    ui->graph->setMouseTracking(true);
+    connect(ui->graph,
+            &QCustomPlot::mouseMove,
+            this,
+            &MainWindow::showGraphValues);
+    //new
+
     ///Неактивные кнопки, вкладки и текстовые поля
     ui ->EvaBasis->setEnabled(false);
     ui ->EvaBit->setEnabled(false);
@@ -173,6 +207,70 @@ MainWindow::~MainWindow()
     stand_.SetLaserState(0); //перевод лазер в состояние выкл
     delete ui;
 
+}
+
+//new
+void MainWindow::showGraphValues(QMouseEvent *event)
+{
+    if (x.isEmpty() || y1.isEmpty() || y2.isEmpty())
+        return;
+
+    double mouseX = ui->graph->xAxis->pixelToCoord(event->pos().x());
+    double mouseY = ui->graph->yAxis->pixelToCoord(event->pos().y());
+
+    // Если мышь находится за пределами диапазона измерений
+    if (mouseX < x.front() || mouseX > x.back()) {
+        cursorLine_->setVisible(false);
+        graphText_->setVisible(false);
+
+        ui->graph->replot(QCustomPlot::rpQueuedReplot);
+        return;
+    }
+
+    // Ищем ближайшую точку измерения
+    auto it = std::lower_bound(x.begin(), x.end(), mouseX);
+    int index = std::distance(x.begin(), it);
+    if (index > 0 && index < x.size()) {
+        double leftDistance = std::abs(x[index - 1] - mouseX);
+        double rightDistance = std::abs(x[index] - mouseX);
+        if (leftDistance < rightDistance)
+            --index;
+    }
+
+    double angle = x[index];
+    double pdh   = y1[index];
+    double pdv   = y2[index];
+
+    double yMin = ui->graph->yAxis->range().lower;
+    double yMax = ui->graph->yAxis->range().upper;
+    cursorLine_->start->setCoords(angle, yMin);
+    cursorLine_->end->setCoords(angle, yMax);
+    cursorLine_->setVisible(true);
+
+    graphText_->setText(
+        QString("Знач. по X: %1\n"
+                "PDH: %2\n"
+                "PDV: %3")
+            .arg(angle, 0, 'f', 1)
+            .arg(pdh,   0, 'f', 3)
+            .arg(pdv,   0, 'f', 3)
+    );
+
+    double xMax = ui->graph->xAxis->range().upper;
+    double xMin = ui->graph->xAxis->range().lower;
+    double textX = angle;
+
+    if (angle > xMax - (xMax - xMin) * 0.25) {
+        graphText_->setPositionAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+    }
+    else {
+        graphText_->setPositionAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+
+    graphText_->position->setCoords(textX, mouseY);
+    graphText_->setVisible(true);
+    ui->graph->replot(QCustomPlot::rpQueuedReplot);
 }
 
 // Функция для чтения порта из INI-файла

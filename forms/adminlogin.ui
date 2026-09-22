@@ -68,6 +68,31 @@
      <enum>QLineEdit::Password</enum>
     </property>
    </widget>
+   <widget class="QToolButton" name="showPasswordButton">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>60</y>
+      <width>30</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QToolButton#showPasswordButton {
+    background: transparent;
+    border: none;
+}</string>
+    </property>
+    <property name="text">
+     <string>🙈</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -75,7 +100,7 @@
      <x>0</x>
      <y>0</y>
      <width>400</width>
-     <height>23</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

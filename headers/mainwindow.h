@@ -39,6 +39,7 @@ private slots:
     void Output_bit_write();
     void Output_bit_write_eva();
     void scanAngle(int plateNumber);
+    void showGraphValues(QMouseEvent *event);
 
     /// @brief инициализация по ФД
     void InitByPD(float, float, float,float, int, int, int, int, int, int);
@@ -194,6 +195,10 @@ private slots:
     void on_ReadBaseAngles_2_clicked();
 
 private:
+    QCPItemTracer *tracer_;
+    QCPItemText *graphText_;
+    QCPItemLine *cursorLine_;
+
     QFile test_protocol; //файл для записи результатов тестов
     QTimer *timer, *timer2; //переменые для таймера на вкладке Мониторинг
     int m,s, number=0;

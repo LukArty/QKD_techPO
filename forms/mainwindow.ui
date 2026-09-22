@@ -1066,6 +1066,19 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Чтение базовых углов</string>
       </property>
      </widget>
+     <widget class="QLabel" name="label_COM">
+      <property name="geometry">
+       <rect>
+        <x>932</x>
+        <y>620</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Приложение подключено к...</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">

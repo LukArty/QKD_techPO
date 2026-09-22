@@ -1,6 +1,7 @@
 #include <adminlogin.h>
 #include <ui_adminlogin.h>
 #include <QMessageBox>
+#include <QTimer>
 
 Adminlogin::Adminlogin(QWidget *parent)
     : QMainWindow(parent)
@@ -43,5 +44,17 @@ void Adminlogin::on_Login_clicked()
         ui ->Password->clear();
     }
     //emit firstWindow();
+}
+
+
+void Adminlogin::on_showPasswordButton_clicked()
+{
+    ui->Password->setEchoMode(QLineEdit::Normal);
+    ui->showPasswordButton->setText("🙉");
+    QTimer::singleShot(1000, this, [this]()
+    {
+        ui->Password->setEchoMode(QLineEdit::Password);
+        ui->showPasswordButton->setText("🙈");
+    });
 }
 

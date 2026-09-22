@@ -21,6 +21,8 @@ private slots:
     void on_Login_clicked();
 
 
+    void on_showPasswordButton_clicked();
+
 signals:
     void firstWindow();
 
